@@ -1,0 +1,13 @@
+{
+  "name": "my-project",
+  "version": "1.0.0",
+  "description": "Описание проекта",
+  "main": "cova_app.py",
+  "scripts": {
+    "start": "python cova_app.py"
+  },
+  "dependencies": {
+    "flask": "^2.1.0",
+    "vue-simple-progress": "^1.1.1"
+  }
+}

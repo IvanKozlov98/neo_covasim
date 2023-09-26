@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Bootstrap boilerplate -->
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+  <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap@4.4.1/dist/css/bootstrap.min.css"/>
+  <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@2.11.0/dist/bootstrap-vue.min.css"/>
+  <script src="https://polyfill.io/v3/polyfill.min.js?version=3.52.1&features=es2015%2CIntersectionObserver"></script>
+  <script src="https://unpkg.com/vue@2.6.11/dist/vue.min.js"></script>
+  <script src="https://unpkg.com/bootstrap-vue@2.11.0/dist/bootstrap-vue.min.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Avenir is not available -->
+
+  <!-- Customization -->
+  <title>NeoCovasim</title>
+  <link rel="icon" href="assets/sbm_iconn.png"> <!-- Remove favicon.ico 404 -->
+  <script src="https://unpkg.com/sciris-js@0.2.18/dist/sciris-js.js"></script>
+  <script src="https://cdn.plot.ly/plotly-1.53.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js"></script>
+
+  <!-- Define styles -->
+  <link rel="stylesheet" href="cova_app.css" type="text/css">
+
+  <style>
+    .horizontal-layout {
+      display: flex;
+    }
+
+    .horizontal-layout > div {
+      flex: 1;
+    }
+
+    .my-div {
+      margin-bottom: 15px;
+    }
+
+    .down-div {
+      /* Стили текущего div-элемента */
+      display: flex;
+      flex-direction: column; /* flex-элементы будут располагаться вертикально */
+    }
+    :fullscreen {
+      background-color: rgb(23,153,148);
+    }
+
+    .fullscreen-element {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 50%;
+    }
+    .button-separator {
+      display: inline-block;
+      width: 1px;
+      height: 10px;
+      margin: 0 1px;
+    }
+
+    :-webkit-full-screen#fs_section_img.fs_section #i2{
+  display:block;
+  z-index:1;
+}
+
+:-moz-full-screen#fs_section_img.fs_section #i2{
+  display:block;
+  z-index:1;
+}
+
+:-webkit-full-screen#fs_section_img.fs_section #i3{
+  opacity:1;
+   display:block;
+   z-index:2;
+  -webkit-transition: all 2s 2s ease-in-out;
+}
+
+:-moz-full-screen#fs_section_img.fs_section #i3{
+  opacity:1;
+   display:block;
+   z-index:2;
+  -moz-transition:    all 2s 2s ease-in-out;
+}
+
+    .progress-bar {
+			width: 20%;
+			height: 30px;
+			background-color: #f3f3f3;
+		}
+
+		.progress-bar-inner {
+			height: 100%;
+			width: 0;
+			background-color: #4caf50;
+		}
+
+    .progressbar {
+        width: 100%;
+        height: 30px;
+        background-color: #eee;
+        margin: 1em auto;
+    }
+
+    .centered-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red; /* Set the text color to red */
+        }
+
+   </style>
+</head>
+
+
+<body class="container-fluid">
+<section id="app" class="row" @mousemove="resize_apply" @mouseup="resize_end">
+  <header style="background-color:rgb(23,153,148)">
+    <b-navbar>
+      <b-navbar-brand href="#" style="color: rgb(255,255,255)">
+        <span class="logo-idm"></span>
+        NeoCovasim
+      </b-navbar-brand>
+      <b-navbar-nav class="ml-auto">
+        <b-nav-item :href="app.docs_url" target="_blank">Documentation</b-nav-item>
+        <b-nav-item :href="app.paper_url" target="_blank">Paper</b-nav-item>
+        <b-nav-item v-b-modal.about>About</b-nav-item>
+      </b-navbar-nav>
+    </b-navbar>
+
+    <!-- About modal -->
+    <b-modal id="about" ok-only ok-variant="secondary" ok-title="Close">
+      <template v-slot:modal-title>About {{ app.title }}</template>
+      <p>{{ app.title }} is an agent-based model that simulates the transmission of COVID-19 (novel coronavirus, SARS-CoV-2) in a population. Each individual in the model may pass through the following stages of COVID-19 infection: susceptible, exposed, infectious, and recovered (SEIR). The epidemiological parameter values are taken from literature.</p>
+      <p>Viral transmission occurs on a fixed contact network with undirected edges. Each day, infectious individuals expose susceptible individuals to possible infection. By default, the daily probability of infection, number of contacts, and mean duration of infectiousness roughly equates to R0 = 2.5 and a doubling time of 6-7 days. For more information, please read the <a :href="app.paper_url" target="_blank">paper</a> or visit the <a :href="app.github_url" target="_blank">GitHub</a> repository.</p>
+      <p><b>Note:</b> Models are only as good as the values of the parameters put into them. This is a rapidly changing situation, and we will update content as relevant information is received.</p>
+      <p><b>Acknowledgements:</b> Covasim is currently under active development by IDM's COVID-19 Response Team. Model development is led by Daniel Klein, Cliff Kerr, Robyn Stuart, Romesh Abeysuriya, and Dina Mistry. UI design is led by Lauren George, William Chen, and Scott Ayers, inspired by a prototype from Brian Lovin. For the full list of contributors, please see our <a href="https://github.com/IvanKozlov98/covasim/graphs/contributors" target="_blank">Contributors</a> page.</p>
+    </b-modal>
+
+  </header>
+
+    
+  <div class="content" v-bind:class="{ 'sidebar-closed': !panel_open , 'sidebar-opened': panel_open}">
+    <b-sidebar id="parameters" :visible="panel_open" v-model="panel_open" :width="panel_width+'vw'" @shown="dispatch_resize" @hidden="dispatch_resize" shadow  class="sidebar" title="Configuration">
+    <b-card no-body>
+      <b-tabs card>
+        <!--  Paramaters Accordion  -->
+      <template v-slot:header-close>
+        <b-button-close content="" v-b-toggle.parameters v-b-tooltip.hover.right title="Hide configuration" class="ti-angle-double-left"></b-button-close>
+      </template>
+        <!-- Render Tabs, supply a unique `key` to each tab -->
+        <b-tab v-for="i in tabs" :key="'dyn-tab-' + i" :title="'City ' + i" @click="someFun(i)">
+
+    
+
+      <div>
+      <div role="tablist">
+
+        <b-card no-body >
+          <b-card-header header-tag="header" class="p-0 rounded-0" role="tab" style="background-color:rgb(23,153,148)">
+            <b-button block href="#" style="color:rgb(255,255,255)" v-b-toggle.parameters-common variant="link">Common options <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
+          </b-card-header>
+
+          <b-collapse id="parameters-common" visible role="tabpanel">
+            <b-card-body>
+              <div class="form-row mb-3">
+                <div class="col">
+                  <label for="n_days">Simulation duration (in days):</label>
+                  <input id="n_days" type="number" :min="sim_length.min" :max="sim_length.max" :disabled="running" class="form-control" v-model.number="sim_length.best">
+                  <span id="'assertive' + i" aria-live="assertive" v-if="(sim_length.min > sim_length.best) || (sim_length.best > sim_length.max)" class="text-danger form-error">{{paramError.sim_length}}</span>
+                  <b-tooltip target="n_days">
+                    {{sim_length.tip}}
+                  </b-tooltip>
+                </div>
+              </div>
+            </b-card-body>
+          </b-collapse>
+        </b-card>
+
+        <!--  General Parameters -->
+        <b-card no-body >
+          <b-card-header header-tag="header" class="p-0 rounded-0" role="tab" style="background-color:rgb(23,153,148)">
+            <b-button block href="#" style="color:rgb(255,255,255)" v-b-toggle.parameters-general variant="link">General options <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
+          </b-card-header>
+          <b-collapse id="parameters-general" visible role="tabpanel">
+            <b-card-body>
+              <div class="form-row mb-3">
+                <label for="examples_infection_model_1" class="col-12">Infection model</label>
+                  <div class="col my-div">
+                  <select :disabled="running" :id="'examples_infection_model_1' + i" v-model="infection_step_choice_list[i]" class="form-control" aria-label="Example infection model">
+                    <option v-for="(item, index) in infection_step_options" :value="item">
+                      {{ item }}
+                    </option>
+                  </select>
+                  
+                </div>
+                <div class="col-auto">
+                  <span id="pr1" class="input-group-text">?</span>
+                    <b-tooltip target="pr1">
+                      The model of transmission of infection. 
+                      Covasim is a probabilistic model, with each episode of an encounter between an infected and a susceptible agent with a probability determined by the Beta parameter (below), infection may occur. Cumulative – during the day, the susceptible agent "dials the dose" when meeting with infected people, if the dose eventually exceeds the threshold level, infection occurs                  
+                    </b-tooltip>
+                </div>
+                <div class="col-auto">
+                  <button id="reset_btn" :disabled="running" class="btn btn-primary" type="button" @click="resetPars">
+                    Reset
+                  </button>
+                  <b-tooltip target="reset_btn">
+                    Reset parameters to default values
+                  </b-tooltip>
+                </div>
+                <div class="col-auto">
+                  <button id="download-parameters-button" :disabled="running" class="btn btn-primary" type="button" @click="downloadPars">
+                    <span class="ti-download"/>
+                    <span class="sr-only"> Download parameters </span>
+                  </button>
+                  <b-tooltip target="download-parameters-button">
+                    Download parameters
+                  </b-tooltip>
+                </div>
+                <div class="col-auto">
+                  <button id="upload-parameters-button" :disabled="running" class="btn btn-primary" type="button" @click="uploadPars">
+                    <span class="ti-upload"/>
+                    <span class="sr-only"> Upload parameters </span>
+                  </button>
+                  <b-tooltip target="upload-parameters-button">
+                    Upload parameters
+                  </b-tooltip>
+                </div>
+
+              <label for="'examples_transmisibilty_strategy_1' + i" class="col-12">Transmisibilty strategy</label>
+                  <div class="col my-div">
+                  <select :disabled="running" id="'examples_transmisibilty_strategy_1' + i" v-model="rel_trans_choice_list[i]" class="form-control" aria-label="Example transmisibilty strategy">
+                    <option v-for="(item, index) in rel_trans_options" :value="item">
+                      {{ item }}
+                    </option>
+                  </select>
+                  <b-tooltip target="'examples_transmisibilty_strategy_1' + i">
+                    The relationship between the susceptibility and contagiousness of the agent. Independent – the parameters are not related (as by default in Covasim), Dependent – the most susceptible agents are also more contagious (recommended in NeoCovasim)
+                  </b-tooltip>
+              </div>
+              <label for="'examples_population_size_1' + i" class="col-12">Population size</label>
+                  <div class="col my-div">
+                  <select :disabled="running" id="'examples_population_size_1' + i" v-model="population_volume_choice_list[i]" class="form-control" aria-label="Example population size">
+                    <option v-for="(item, index) in population_volume_options" :value="item">
+                      {{ item }}
+                    </option>
+                  </select>
+                  <b-tooltip target="'examples_population_size_1' + i">
+                    Cached population with given size. The large size of the population practically does not affect the accuracy of the simulation, but significantly slows down the calculations
+                  </b-tooltip>
+
+                    <button id="upload-city-button" :disabled="running" class="btn btn-primary" type="button" @click="uploadCity(i)">
+                      <span class="ti-upload"> </span>
+                      <span class="sr-only"> Upload location parameters </span>
+                    </button>
+                    <b-tooltip target="upload-city-button">
+                      Upload city parameters
+                    </b-tooltip>
+              </div>
+              <label for="'examples_distribution_susceptibility_1' + i" class="col-12">Distribution of susceptibility</label>
+              <div class="col my-div">
+              <select :disabled="running" id="'examples_distribution_susceptibility_1' + i" v-model="rel_sus_choice_list[i]" class="form-control" aria-label="Example distribution of susceptibility" @change="handleSimpleCase(i)">
+                <option v-for="(item, index) in rel_sus_options" :value="item">
+                  {{ item }}
+                </option>
+              </select>
+              <b-tooltip target="'examples_distribution_susceptibility_1' + i">
+                Distribution of conditional susceptibility in the initial population.
+                Visualized on histogram No. 8
+              </b-tooltip>
+              <my-plotly-chart v-if="cur_rel_sus_fig[i]" v-bind:graph="cur_rel_sus_fig[i]" v-bind:key="cur_rel_sus_fig[i].id"></my-plotly-chart>
+              </div>
+              </div>
+              <div class="form-row mb-3">
+                <!--                <label for="datafile" class="col-12">Upload data</label>-->
+                <!--                <div class="col">-->
+                <!--                  <b-form-file id="datafile" name="datafile" accept=".csv, .xlsx" placeholder="<none>" v-model="datafile.local_path" @change="upload_datafile" :disabled="running"></b-form-file>-->
+                <!--                </div>-->
+                <!--                <div class="col-auto">-->
+                <!--                  <button id="reset-datafile" :disabled="running" class="btn btn-primary" type="button" @click="reset_datafile">-->
+                <!--                    Clear-->
+                <!--                  </button>-->
+                <!--                  <b-tooltip target="reset-datafile">-->
+                <!--                    Remove the input data file from the simulation-->
+                <!--                  </b-tooltip>-->
+                <!--                </div>-->
+
+              </div>
+            </b-card-body>
+          </b-collapse>
+        </b-card>
+
+        <!--  Intervention Parameters -->
+        <b-card no-body>
+          <b-card-header header-tag="header" class="p-0 rounded-0" role="tab" style="background-color:rgb(23,153,148)">
+            <b-button style="color:rgb(255,255,255)" block v-b-toggle.parameters-intervention variant="link">Interventions <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
+          </b-card-header>
+          <b-collapse id="parameters-intervention" visible role="tabpanel">
+            <b-card no-body class="border-0 rounded-0">
+              <b-tabs fill card>
+                <template v-for="(intervention, name, index) in interventionTableConfig">
+                  <b-tab :class="[index === 0? 'active' : '']" :id="'intervention-interv-'+name">
+                    <template v-slot:title>
+                      <span v-b-tooltip.hover :title="intervention.toolTip">
+                        {{ intervention.formTitle }}
+                      </span>
+                    </template>
+                    <fieldset>
+                      <form @submit.prevent="(e) => addIntervention(name, e, i)">
+                        <div class="form-group">
+                          <div class="input-group mb-3">
+                  
+                            <template v-for="field in intervention.fields">
+                              
+                              <div v-if="intervention.toolTip === 'Vaccinating closures'" class="form-group">
+                                <div v-if="field.key !== 'min_age' && field.key !== 'max_age'">
+                                <label :for="field.key">{{ field.label }}</label>
+                                <input :max="field.max || sim_length.max" :min="field.min || 0" :value="field.value" :name="field.key"
+                                       :aria-label="field.label" class="form-control" v-if="field.type !== 'select'"
+                                       :type="field.type" :step="field.step" v-b-tooltip.hover :title="field.tooltip">
+                                <select class="form-control" :name="field.key" v-else>
+                                  <option v-for="option in field.options" :value="option.value">{{option.value}}</option>
+                                </select>
+                              </div>
+                              </div>
+
+                              <template v-else>
+                                
+                                <div class="form-group">
+                                  <div class="input-group-append" v-if="field.key === 'level' && intervention.formTitle !== 'Testing' && intervention.formTitle !== 'Tracing'">
+                                    <div class="form-row mb-3">
+                                      <div class="col">
+                                        <label :for="'examples_select_intervention_2' + i">Select intervention</label>
+                                        <select :disabled="running" :id="'examples_select_intervention_2' + i" :value="intervention.default_intervention_choice" :name="'intervention_choice'" class="form-control" aria-label="Example select intervention">
+                                          <option v-for="(item, index) in intervention_options" :value="item">
+                                            {{ item }}
+                                          </option>
+                                        </select>
+                                        <b-tooltip :target="'examples_select_intervention_2' + i">
+                                          A model for the implementation of anti-epidemic measures. 
+                                          Removing contacts – complete severance of part of the connections, isolation; Masks – reduction of the probability of transmission with each contact, the equivalent of individual protective equipment and distancing
+                                          The total effectiveness of limiting transmission from the use of PPE and distancing, taking into account the proportion of agents who comply with the measures. For example, if 50% of people wear masks that reduce transmission efficiency by 50%, then the total efficiency will be 0.5*0.5=25%
+                                        </b-tooltip>
+                                      </div>
+                                    </div>
+
+                                  </div>
+                                  <div v-if="field.key === 'level' && intervention.toolTip === 'Physical distancing and social distancing interventions'" class="form-group">
+                                    <label for="examples">Select age group</label>
+                                    <div class="form-row mb-3">
+                                      <div class="col">
+                                        <select :disabled="running" id="examples_vaccine" :value="intervention.default_age_group_choice" :name="'age_group_choice'" class="form-control" aria-label="Example presets">
+                                          <option v-for="(item, index) in age_group_options" :value="item">
+                                            {{ item }}
+                                          </option>
+                                        </select>
+                                        <b-tooltip target="examples_vaccine">
+                                          Example parameter configurations
+                                        </b-tooltip>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div v-if="field.key !== 'level' && field.key !== 'alevel'">
+
+                                  <label :for="field.key">{{ field.label }}</label>
+                                  <input :max="field.max || sim_length.max" :min="field.min || 0" :value="field.value" :name="field.key"
+                                        :aria-label="field.label" class="form-control" v-if="field.type !== 'select'"
+                                        :type="field.type" :step="field.step" v-b-tooltip.hover :title="field.tooltip">
+                                  <select class="form-control" :name="field.key" v-else>
+                                    <option v-for="option in field.options" :value="option.value">{{option.value}}</option>
+                                  </select>
+                                  
+                                </div>                                
+                                  <div v-if="field.key === 'level' || field.key === 'alevel'">
+                                    <label :for="field.key">{{ field.label }}</label>
+                                    <fieldset class="horizontal-layout">
+                                        <span>
+                                        <input :max="field.max || sim_length.max" :min="field.min || 0" :value="field.value" :name="field.key"
+                                              :aria-label="field.label" class="form-control" v-if="field.type !== 'select'"
+                                              :type="field.type" :step="field.step" v-b-tooltip.hover :title="field.tooltip">
+                                        <select class="form-control" :name="field.key" v-else>
+                                          <option v-for="option in field.options" :value="option.value">{{option.value}}</option>
+                                        </select>
+                                      </span>
+                                      <span>
+                                        <span class="input-group-text">%</span>
+                                      </span>
+                                      <span v-if="field.key === 'level'">
+                                        <button class="btn btn-outline-secondary" type="submit">Add intervention</button>
+                                      </span>
+                                        
+                                    </fieldset>
+
+                              
+                              </div>
+                              </template>
+                            </template>
+
+
+                            <div class="horizontal-layout">
+                            
+                            <template v-for="field in intervention.fields">
+                              <div v-if="field.key === 'min_age' || field.key === 'max_age'" class="form-group">
+                              <label :for="field.key">{{ field.label }}</label>
+                              
+                              <input :max="field.max || sim_length.max" :min="field.min || 0" :value="field.value" :name="field.key"
+                                    :aria-label="field.label" class="form-control" v-if="field.type !== 'select'"
+                                    :type="field.type" :step="field.step" v-b-tooltip.hover :title="field.tooltip">
+                              <select class="form-control" :name="field.key" v-else>
+                                <option v-for="option in field.options" :value="option.value">{{option.value}}</option>
+                              </select>
+                            </div>
+                            <span>
+                              <div>
+                              <label v-if="field.key === 'max_age'" :for="field.key">  
+                                <br>
+                              </label>
+                              </div>
+                              <div>
+                                <button v-if="field.key === 'max_age'" class="btn btn-outline-secondary" type="submit">Add intervention</button>                            
+                              </div>
+                            </span>
+  
+                          </template>
+
+                        </div>
+                            
+                          </div>
+                        </div>
+                      </form>
+                      <span aria-live="assertive" v-if="scenarioError[name]" class="text-danger form-error">{{scenarioError[name]}}</span>
+                      <div v-if="int_pars[i] && int_pars[i][name] && int_pars[i][name].length > 0">
+                        <table class="table">
+                          <thead>
+                          <tr>
+                            <th scope="col" v-for="field in intervention.fields">{{field.label}}</th>
+                            <th v-if="'default_intervention_choice' in intervention" scope="col">Intervention choice</th>
+                            <th v-if="'default_age_group_choice' in intervention" scope="col">Age group</th>
+                            <th scope="col"></th>
+                          </tr>
+                          </thead>
+                          <tbody>
+                          <tr v-for="(par, index) in int_pars[i][name]">
+                            <td v-for="field in intervention.fields" scope="row">
+                              {{par[field.key]}}<span v-if="field.key=== 'level' || field.key=== 'alevel'">%</span>
+                            </td>
+                            <td v-if="'intervention_choice' in par">{{par['intervention_choice']}}</td>
+                            <td v-if="'age_group_choice' in par">{{par['age_group_choice']}}</td>
+                            <td>
+                              <button @click="deleteIntervention(name, index, i)" class="btn btn-outline-danger" type="button">Delete</button>
+                            </td>
+                          </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </fieldset>
+                  </b-tab>
+                </template>
+              </b-tabs>
+            </b-card>
+            <my-plotly-chart v-if="intervention_figs[i] && intervention_figs[i].id" :graph="intervention_figs[i]" :key="intervention_figs[i].id"></my-plotly-chart>
+          </b-collapse>
+        </b-card>
+
+
+        <!--  Infectious Parameters -->
+        <b-card no-body>
+          <b-card-header header-tag="header" class="p-0 rounded-0" role="tab" style="background-color:rgb(23,153,148)">
+            <b-button id="'infectious_parameters_3' + i" style="color:rgb(255,255,255)" block v-b-toggle.parameters-infectious variant="link">Infectiousness <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
+            <b-tooltip target="'infectious_parameters_3' + i">
+              Conditional contagion of agents in various conditions. The default values are set according to the literature. It can be selected empirically taking into account schedule No. 7 "SAR per day
+            </b-tooltip>
+          </b-card-header>
+          <b-collapse id="parameters-infectious" visible role="tabpanel">
+            <b-card no-body class="border-0 rounded-0">
+              <b-tabs fill card>
+                <template v-for="(intervention, name, index) in infectiousTableConfig">
+                  <b-tab :class="[index === 0? 'active' : '']" :id="'intervention-infect-'+name">
+                    <template v-slot:title>
+                      <span v-b-tooltip.hover :title="intervention.toolTip">
+                        {{ intervention.formTitle }}
+                      </span>
+                    </template>
+                    <fieldset>
+                      <form>
+                        <div class="form-group">
+                          <div class="input-group mb-3">
+                            <template v-for="(field, fieldIndex) in intervention.fields">
+                              <div class="form-group">
+                                <label :for="field.key">{{ field.label }}</label>
+                                <input :max="field.max || sim_length.max" :min="field.min || 0" v-model="infectiousTableConfig[name].fields[fieldIndex].value[i]" :name="field.key"
+                                      :aria-label="field.label" class="form-control" v-if="field.type !== 'select'"
+                                      :type="field.type" :step="field.step" v-b-tooltip.hover :title="field.tooltip">
+                                <select class="form-control" :name="field.key" v-model="infectiousTableConfig[name].fields[fieldIndex].value[i]" v-else>
+                                  <option v-for="option in field.options" :value="option.value">{{option.value}}</option>
+                                </select>
+                                <div class="input-group-append" v-if="field.key === 'level'">
+                                  <span class="input-group-text">%</span>
+                                </div>
+                              </div>
+                            </template>
+                          </div>
+                        </div>
+                      </form>
+                    </fieldset>
+                  </b-tab>
+                </template>
+              </b-tabs>
+            </b-card>
+            <my-plotly-chart :id="'my-plotly-chart-' + intervention_figs[i].id" v-if="intervention_figs[i] && intervention_figs[i].id" :graph="intervention_figs[i]" :key="intervention_figs[i].id" ></my-plotly-chart>
+          </b-collapse>
+        </b-card>
+
+
+        <!--  Advanced Parameters -->
+        <b-card no-body>
+          <b-card-header header-tag="header" role="tab" class="p-0 rounded-0" style="background-color:rgb(23,153,148)">
+            <b-button block variant="link" v-b-toggle.parameters-advanced style="color:rgb(255,255,255)">Model parameters <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
+          </b-card-header>
+          <b-collapse id="parameters-advanced" role="tabpanel">
+            <b-card-body>
+              <div class="row">
+                <fieldset class="col-md-6">
+                  <legend>Population parameters</legend>
+                  <div v-for="(par, key) in sim_pars" class="form-group">
+                    <div v-if="key !== 'n_days'" :id="key+'-wpr'" v-b-tooltip.hover :title="par.tip">
+                      <label :for="key">{{par.name}}:</label>
+                      <input :id="key" :disabled="running" class="form-control" v-model="par.best[i]">
+                      <span aria-live="assertive" v-if="(par.min > par.best[i]) || (par.best[i] > par.max)" class="text-danger form-error">{{paramError[key]}}</span>
+                    </div>
+                  </div>
+                </fieldset>
+                <fieldset class="col-md-6">
+                  <legend>Epidemiological parameters</legend>
+                  <div v-for="(par, key) in epi_pars" class="form-group">
+                    <div :id="key+'-wpr'" v-b-tooltip.hover :title="par.tip">
+                      <label :for="key">{{par.name}}:</label>
+                      <input :id="key" :disabled="running" class="form-control" v-model="par.best[i]">
+                      <span aria-live="assertive" v-if="(par.min > par.best[i]) || (par.best[i] > par.max)" class="text-danger form-error">{{paramError[key]}}</span>
+                    </div>
+                  </div>
+                </fieldset>
+              </div>
+            </b-card-body>
+          </b-collapse>
+        </b-card>
+
+          <!--  Interaction Parameters -->
+  <b-card no-body>
+
+    <b-card-header header-tag="header" role="tab" class="p-0 rounded-0" style="background-color:rgb(23,153,148)">
+      <b-button id="'interaction_parameters_3'"  block variant="link" v-b-toggle.parameters-interaction style="color:rgb(255,255,255)">Interaction between cities <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
+      <b-tooltip target="'interaction_parameters_3'">
+        Interaction between cities parameters. Works only if Multiple cities mode enabled.
+        </b-tooltip>
+    </b-card-header>
+    <b-collapse id="parameters-interaction" role="tabpanel">
+      <form @submit.prevent="(e) => addInteraction(e)">
+        <div class="form-group">
+          <div class="input-group mb-3">
+
+            <div class="col" style="margin-top: 20px;">
+              <label :for="'from_city_q'">From City</label>
+              <select :disabled="running" :id="'from_city_q'" :name="'from_city_choice'" class="form-control" aria-label="Example select city">
+                <option v-for="(item, index) in city_options" :value="item">
+                  {{ item }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col" style="margin-top: 20px;">
+              <label :for="'to_city_q'">To City</label>
+              <select :disabled="running" :id="'to_city_q'" :name="'to_city_choice'" class="form-control" aria-label="Example select city">
+                <option v-for="(item, index) in city_options" :value="item">
+                  {{ item }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col" style="margin-top: 20px;">
+              <label>{{ interactionTableConfig.field.label }}</label>
+              <input :max="interactionTableConfig.field.max" :min="interactionTableConfig.field.min || 0" :value="interactionTableConfig.field.value" :name="interactionTableConfig.field.key"
+                    :aria-label="interactionTableConfig.field.label" class="form-control" v-if="interactionTableConfig.field.type !== 'select'"
+                    v-b-tooltip.hover :title="interactionTableConfig.field.tooltip">
+            </div>
+          </div>
+        </div>
+        <span>
+          <button class="btn btn-outline-secondary" type="submit" style="margin-left: 15px;">Add interaction</button>
+        </span>
+      </form>
+
+      <span aria-live="assertive" v-if="multipleCitiesError" class="text-danger form-error">{{multipleCitiesError}}</span>
+      <div v-if="interactionRecords && interactionRecords.length > 0">
+        <table class="table">
+          <thead>
+          <tr>
+            <th scope="col">From City</th>
+            <th scope="col">To City</th>
+            <th scope="col">Effectiveness</th>
+            <th scope="col"></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="(interaction, index) in interactionRecords">
+            <td>{{interaction['from_city_choice']}}</td>
+            <td>{{interaction['to_city_choice']}}</td>
+            <td>{{interaction['level']}}</td>
+            <td>
+              <button @click="deleteInteraction(index)" class="btn btn-outline-danger" type="button">Delete</button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </b-collapse>
+  </b-card>
+      </div>
+
+
+
+
+
+      <!-- Resize handle -->
+      <div id="resize-handle" @mousedown="resize_start"></div>
+
+     
+
+      <!-- Sidebar Footer: Errors-->
+      <template v-slot:footer>
+        <div v-if="errs.length > 0" class="errorbox" role="tablist">
+          <p>During the simulation, the following warning(s) were encountered:</p>
+          <b-card v-for="(err, index) in errs" :value="err">
+            <b-card-text>{{err.message}}</b-card-text>
+            <pre v-if="is_debug">{{ err.exception }}</pre>
+          </b-card>
+        </div>
+      </template>
+
+      <b-button size="sm" variant="danger" class="float-right" @click="closeTab(i)">
+        Close tab
+      </b-button>
+    </div>
+    
+    
+  </b-tab>
+
+    <template #tabs-end>
+      <b-nav-item role="presentation" @click.prevent="newTab" href="#"><b>+</b></b-nav-item>
+    </template>
+  </b-tabs>
+
+   <!-- Run Button -->
+   <b-form inline class="justify-content-end py-2 px-3">
+    <span>
+      <b-form-checkbox class="mr-3" v-model="show_contact_stat">Show contact statistics</b-form-checkbox>
+    </span>
+    <span>
+      <b-form-checkbox class="mr-3" v-model="multiple_cities">Multiple cities</b-form-checkbox>
+    </span>
+    <div>
+      
+    <span>
+  </span>
+  <span>
+    <b-button v-if="running" variant="success" size="lg" class="btn-run green" type="button" disabled>
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      <span v-if="currentTime === 0"> Building city...</span> 
+      <span v-if="currentTime !== 100"> Running...</span> 
+      <span v-else> Plotting...</span>
+    </b-button>
+    <b-button v-else id="run_btn" :disabled="isRunDisabled" variant="success" size="lg" class="btn-run green" type="button" @click="runSim">
+      Run
+    </b-button>
+  </span>
+    </div>
+    <br></br>
+    <b-progress max="100" class="w-50" variant='success' height="30px" show-progress animated>
+      <b-progress-bar :value="currentTime">
+        <span>Progress: <strong>{{ currentTime }}%</strong></span>
+      </b-progress-bar>
+    </b-progress>
+    
+  </b-form>
+</b-card>
+
+
+</b-sidebar>
+    <button id="open-sidebar" class="btn btn-secondary rounded-0" v-b-toggle.parameters :hidden="panel_open" v-b-tooltip.hover.right title="Open configuration">
+      <span class="sr-only">Open configuration</span>
+      <span class="ti-angle-double-right"></span>
+    </button>
+
+    <!-- Show the actual graphs -->
+    <div id="graphs" class="results" v-bind:class="{ empty: result.graphs.length === 0 }">
+      <template v-if="result.graphs.length === 0">
+        <p class="h5"><i>Click "Run" to display graphs</i></p>
+      </template>
+      <template v-else>
+        <template v-for="(group_graphs, ssInd) in result.graphs" no-body>
+          <b-card-header header-tag="header" role="tab" class="p-0 rounded-0" style="background-color:rgb(23,153,148)">
+            <b-button @click="clickCCC(ssInd)" :id="'graph_tabs_ids' + ssInd" block variant="link" v-b-toggle="'parameters-graphs' + ssInd" style="color:rgb(255,255,255)">{{ssInd}} <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
+            <b-tooltip :target="'graph_tabs_ids' + ssInd">
+              More information about it
+              </b-tooltip>
+          </b-card-header>
+          <b-collapse :id="'parameters-graphs' + ssInd" :visible="ssInd === 'Basic'" role="tabpanel">
+      <b-card>
+      <b-tabs card v-if="groupHides[ssInd]" lazy>
+        <b-tab v-for="(graphs, cityIndex) in group_graphs" :key="'graph-tab-' + cityIndex" :title="'City ' + cityIndex">
+    
+        <div class="row" style="border: 1px solid rgb(23,153,148);">
+          <template v-for="(x, index) in graphs">
+            <div :class="{'col-md-6': (index + 1 < graphs.length) || graphs.length%2 === 0, 'col-md-12': (index + 1 === graphs.length) && graphs.length%2 === 1 }" style="border: 1px solid rgb(23,153,148);">
+            <div style="margin-top: 5px;">
+                <button :id="'button_' + index" class="btn btn-primary blueish" type="button" style="font-size: smaller;" @click="alert(x.description);">Help</button>
+                <button class="btn btn-primary blueish" type="button" @click="enterFullscreen('graph_' + cityIndex + index + ssInd)" style="font-size: smaller;">Fullscreen</button>
+                <button class="btn btn-primary blueish" type="button" @click="downloadPlot(cityIndex, index, ssInd)" style="font-size: smaller;">Download</button>
+                <br /><br />
+              </div>
+              <div :id="'graph_' + cityIndex + index + ssInd">
+              <my-plotly-chart  :graph="x" :key="x.id"/>
+            </div>
+              
+            </div>
+            
+          </template>
+
+        </div>
+
+        </b-tab>
+      </b-tabs>
+      </b-card>
+    
+    </b-collapse>
+  </template>
+        <!-- <b>After {{ result.summary.days }} days: {{ result.summary.cases }} cases, {{ result.summary.deaths }} deaths</b> -->
+
+        <div class="w-100 mb-1 text-center">
+          <button id="download_xlsx" class="btn btn-primary blueish" type="button" @click="downloadExcel">
+            <span class="sr-only">Download</span> XLSX <span class="ti-download"/>
+          </button>
+          <button id="download_json" class="btn btn-primary blueish" type="button" @click="downloadJson">
+            <span class="sr-only">Download</span> JSON <span class="ti-download"/>
+          </button>
+          <b-tooltip target="download_xlsx">
+            Download results as an XLSX file
+          </b-tooltip>
+          <b-tooltip target="download_json">
+            Download results as a JSON file
+          </b-tooltip>
+        </div>
+      </template>
+
+    </div>
+
+  </div>
+
+  <footer style="background-color:rgb(23,153,148)">
+    <b-navbar style="color: rgb(255,255,255)">
+      <b-navbar-nav class="ml-auto">
+        <b-nav-item :href="app.github_url" target="_blank">
+          <svg viewBox="0 0 16 16" version="1.1" width="20" aria-hidden="true" style="vertical-align: text-bottom">
+            <path fill-rule="evenodd" fill="currentColor"
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+          </svg>
+          <span class="sr-only">View this project on GitHub</span>
+        </b-nav-item>
+      </b-navbar-nav>
+    </b-navbar>
+  </footer>
+</section>
+
+  <!-- Include the JavaScript file -->
+  <script src="script.js"></script>
+</body>
+
+<script>
+  // Note: FF nightly needs about:config full-screen-api.enabled set to true.
+    function enterFullscreen(elementId) {
+        const element = document.getElementById(elementId);
+        if (element.requestFullscreen) {
+          element.requestFullscreen();
+        } else if (element.mozRequestFullScreen) { // Для Firefox
+          element.mozRequestFullScreen();
+        } else if (element.webkitRequestFullscreen) { // Для Chrome, Safari и Opera
+          element.webkitRequestFullscreen();
+        } else if (element.msRequestFullscreen) { // Для IE/Edge
+          element.msRequestFullscreen();
+        }
+        element.classList.add('fullscreen');
+  }
+  
+  function exitFullscreen() {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.mozCancelFullScreen) { // Для Firefox
+      document.mozCancelFullScreen();
+    } else if (document.webkitExitFullscreen) { // Для Chrome, Safari и Opera
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) { // Для IE/Edge
+      document.msExitFullscreen();
+    }
+  }
+  
+
+  var changedTimout = 0;
+  var isCollapseOpen = false;
+  var lazyContentLoaded = false;
+
+
+  function toggleCollapse() {
+    console.log('Before pause');
+
+    setTimeout(() => {
+      console.log('After pause');
+    }, 2000);
+      //isCollapseOpen = !isCollapseOpen;
+  }
+
+  function loadLazyContent() {
+      if (!lazyContentLoaded) {
+        // Simulate loading content after a delay (you can replace this with your actual data loading logic)
+        setTimeout(() => {
+          lazyContentLoaded = true;
+        }, 1000); // Adjust the delay as needed
+      }
+  }
+
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+  document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+  document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+  
+  var prev_height_;
+  
+  function handleFullscreenChange() {
+    var graphElement = document.getElementsByClassName('fullscreen')[0];
+    if (!graphElement) {
+      return;
+    }
+  
+    if (document.fullscreenElement || document.webkitFullscreenElement ||
+        document.mozFullScreenElement || document.msFullscreenElement) {
+      // Применяем стили для полноэкранного режима
+      var svgContainers = graphElement.querySelectorAll('div div div.svg-container')[0];
+      console.log(graphElement.querySelectorAll('div div div.svg-container'));
+      //console.log(svgContainers);
+      var screenHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+      prev_height_ = svgContainers.style.height;
+      svgContainers.style = `position: relative; width: 100%; height: ${screenHeight}px;`;
+    } else {
+      // Восстанавливаем исходные размеры
+      var svgContainers = graphElement.querySelectorAll('div div div.svg-container')[0];
+      console.log(prev_height_);
+      svgContainers.style = `position: relative; width: 100%; height: ${prev_height_};`;
+      console.log(svgContainers.style);
+      console.log(svgContainers);
+      graphElement.classList.remove('fullscreen');
+    }
+  }
+
+  </script>
+</html>
