@@ -434,6 +434,7 @@ class Sim(cvb.BaseSim):
             self.load_population(init_people=False)
 
         # Actually make the people
+        print("Befoooooore")
         self.people = cvpop.make_people(self, prepared_pop=prepared_pop, reset=reset, verbose=verbose, **kwargs)
         self.people.initialize(sim_pars=self.pars) # Fully initialize the people
         self.reset_layer_pars(force=False) # Ensure that layer keys match the loaded population

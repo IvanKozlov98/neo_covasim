@@ -314,7 +314,7 @@ class Pop(sc.prettyobj):
         # mapping
         age_by_brackets = spb.get_age_by_brackets(age_brackets)
         self.age_by_brackets = age_by_brackets
-        print(f"age_by_brackets = {self.age_by_brackets}")
+        #print(f"age_by_brackets = {self.age_by_brackets}")
 
         # Load the contact matrix
         if self.contact_matrices is None:
@@ -323,11 +323,11 @@ class Pop(sc.prettyobj):
             self.contact_matrices = contact_matrices
         else:
             contact_matrices = self.contact_matrices
-        print(round_dict_values(self.contact_matrices))
-        
-        print("SCHOOL PARS")
-        print(self.school_pars)
-        print("______________")
+        #print(round_dict_values(self.contact_matrices))
+        #
+        #print("SCHOOL PARS")
+        #print(self.school_pars)
+        #print("______________")
 
         # Load age brackets, and mapping dictionary that matches contact matrices
         contact_matrix_shape = contact_matrices[list(contact_matrices.keys())[0]].shape

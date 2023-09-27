@@ -700,6 +700,29 @@ def plot_comparing(sims, show_contact_stat):
 def execute_function(func, *args):
     return func(*args)
 
+
+def build_city(sim):
+    pop = lp.make_people_from_file(location2filename[sim['label']], sim['popfile'])
+    return cv.Sim(pars=sim['pars'], datafile=sim['datafile'], analyzers=sim['analyzers'], label=sim['label']).init_people(prepared_pop=pop)
+
+
+def build_parallel_cities(sims):
+    inds = []
+    not_ready_sims = []
+    for (i, sim) in enumerate(sims):
+        if isinstance(sim, dict):            
+            inds.append(i)
+            not_ready_sims.append(sim)
+    if len(inds) > 0:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=len(inds)) as pool:
+            ready_sims = pool.map(build_city, not_ready_sims)
+        for (ind, ready_sim) in enumerate(ready_sims):
+            sims[inds[ind]] = ready_sim
+
+    return sims        
+
+
+
 @app.register_RPC()
 def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, tabs=None, interaction_records=None, verbose=True, die=die):
     ''' Create, run, and plot everything '''
@@ -751,8 +774,7 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
             analyzer = store_seir(show_contact_stat=show_contact_stat, label='seir')
 
             if population_volume not in predefined_pops:
-                pop = lp.make_people_from_file(location2filename[population_volume], popfile)
-                sim = cv.Sim(pars=pars, datafile=datafile, analyzers=analyzer, label=population_volume).init_people(prepared_pop=pop)
+                sim = dict(pars=pars, datafile=datafile, analyzers=analyzer, label=population_volume, popfile=popfile)
             else:
                 lbl = f"City {city_ind}"
                 if pars['pop_type'] != 'random':
@@ -760,6 +782,7 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
                 else:
                     sim = cv.Sim(pars=pars, datafile=datafile, popfile=popfile, contacts=dict(a=35), beta_layer=dict(a=pars['beta_layer']['c']), analyzers=analyzer, label=lbl)
             sims.append(sim)
+        sims = build_parallel_cities(sims)
     except Exception as E:
         errs.append(log_err('Sim creation failed!', E))
         if die: raise
@@ -877,7 +900,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8257
+        app.config['SERVER_PORT'] = 8262
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

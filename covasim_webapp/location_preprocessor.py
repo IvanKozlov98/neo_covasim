@@ -265,6 +265,9 @@ def make_people_from_file(excel_filename, popfile):
     
     pop = sp.Pop(**pars)
     print(f"Initiation is successful!")
+    if popfile is not None:
+        pop.save(popfile)
+        print(f"Population saved in {popfile}")
     return pop
 
 

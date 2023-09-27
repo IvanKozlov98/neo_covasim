@@ -669,9 +669,9 @@
   <span>
     <b-button v-if="running" variant="success" size="lg" class="btn-run green" type="button" disabled>
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      <span v-if="currentTime === 0"> Building city...</span> 
-      <span v-if="currentTime !== 100"> Running...</span> 
-      <span v-else> Plotting...</span>
+      <span v-if="currentTime === 0"> Building...</span> 
+      <span v-if="(0 < currentTime) && (currentTime < 100)"> Running...</span> 
+      <span v-if="currentTime === 100"> Plotting...</span> 
     </b-button>
     <b-button v-else id="run_btn" :disabled="isRunDisabled" variant="success" size="lg" class="btn-run green" type="button" @click="runSim">
       Run
