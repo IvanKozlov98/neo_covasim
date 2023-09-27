@@ -708,7 +708,7 @@
               More information about it
               </b-tooltip>
           </b-card-header>
-          <b-collapse :id="'parameters-graphs' + ssInd" :visible="ssInd === 'Basic'" role="tabpanel">
+          <b-collapse :id="'parameters-graphs' + ssInd" :visible="ssInd === 'Incidence and outcomes'" role="tabpanel">
       <b-card>
       <b-tabs card v-if="groupHides[ssInd]" lazy>
         <b-tab v-for="(graphs, cityIndex) in group_graphs" :key="'graph-tab-' + cityIndex" :title="'City ' + cityIndex">

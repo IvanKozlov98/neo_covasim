@@ -281,10 +281,10 @@ var vm = new Vue({
             currentTime: 0,
             activeTabInd: 0,
             groupHides: {
-                'Basic': true,
-                'Basic 2': false,
-                'By layers': false,
-                'By group ages': false,
+                'Incidence and outcomes': true,
+                'General spread parameters': false,
+                'Spread parameters by layer': false,
+                'Spread parameters by age': false,
                 'Rest': false
             },
             debug: false,

@@ -42,6 +42,19 @@ bgcolor  = '#eee' # Background color for app
 plotbg   = '#dde'
 location2filename = dict()
 
+Incidence_and_outcomes = 'Incidence and outcomes'
+General_spread_parameters = 'General spread parameters'
+Spread_parameters_by_layer = 'Spread parameters by layer'
+Spread_parameters_by_age = 'Spread parameters by age'
+Rest = 'Rest'
+graph_groups = [
+    Incidence_and_outcomes,
+    General_spread_parameters,
+    Spread_parameters_by_layer,
+    Spread_parameters_by_age,
+    Rest
+]
+
 
 #%% Define the API helper functions
 
@@ -474,9 +487,9 @@ def parseInfectiousConfig(infectiousConfig, city_ind):
 def get_description(key):
     descriptions = {
         "rs": """
-График R - {число заболеваний за текущие 7 дней}/{число за предыдущие 7 дней}. 
+График R - Наблюдаемое репродуктивное число по динамике регистрации случаев. 
 В динамике.
-График R_eff (from Covasim) - {{кол-во новых инфекций за день x} / {кол-во заразных агентов на день x}} * {среднее время заразности} 
+График R_eff (from Covasim) - Истинное репродуктивное число по данным модели Covasim, в реальности не может быть вычислено 
             """,
         "ars": """
 По формуле https://www.mdapp.co/attack-rate-formula-calculator-587/
@@ -539,8 +552,8 @@ def get_description(key):
 Графическое представление условного среза популяции  (2000 агентов) по статусу в динамике. Каждая точка соответствует одному агенту, по оси Х распределение агентов по восприимчивости, по оси Y распределение агентов по числу контактов. 
         """
         ,
-        "people": "Состав популяции по состоянию здоровья",
-        "common_sim": ["Кумулятивное число инфицированных агентов и зарегистрированных случаев.", "Число инфицированных агентов и зарегистрированных случаев.", "Кумулятивное число заболевших по тяжести заболевания."]
+        "people": "Состав популяции по состоянию и исходам",
+        "common_sim": ["Кумулятивное число инфицированных агентов и зарегистрированных случаев (с поправкой на отсрочку и неполную эффективность регистрации). Вертикальные пунктирные линии обозначают дни начала и окончания интервенций.", "Число инфицированных агентов и зарегистрированных случаев (с поправкой на отсрочку и неполную эффективность регистрации) в сутки. Вертикальные пунктирные линии обозначают дни начала и окончания интервенций.", "Кумулятивное число заболевших по тяжести заболевания. Вертикальные пунктирные линии обозначают дни начала и окончания интервенций."]
     }
     return descriptions[key] 
 
@@ -645,33 +658,33 @@ def process_graphs(figs, description):
 
 def plot_all_graphs(cur_sim, show_contact_stat):
     graphs = {}
-    graph_groups = ['Basic', 'Basic 2', 'By layers', 'By group ages', 'Rest']
+    
     for graph_group in graph_groups:
         graphs[graph_group] = []
     print(f"Starting: {cur_sim}")
-    graphs['Basic'] += process_graphs(cv.plotly_sim([cur_sim]), get_description('common_sim'))
-    graphs['Basic'] += process_graphs(cv.plotly_people(cur_sim), get_description('people'))
+    graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_sim([cur_sim]), get_description('common_sim'))
+    graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_people(cur_sim), get_description('people'))
     # Basic 2
-    graphs['Basic 2'] += process_graphs(cv.plotly_rs([cur_sim]), get_description('rs'))
-    graphs['Basic 2'] += process_graphs(cv.plotly_ars([cur_sim]), get_description('ars'))
+    graphs[General_spread_parameters] += process_graphs(cv.plotly_rs([cur_sim]), get_description('rs'))
+    graphs[General_spread_parameters] += process_graphs(cv.plotly_ars([cur_sim]), get_description('ars'))
     if show_contact_stat:
-        graphs['Basic 2'] += process_graphs(cv.plotly_part_80([cur_sim]), get_description('part_80'))
-        graphs['Basic 2'] += process_graphs(cv.plotly_hist_number_source_per_day(cur_sim), get_description('hist_number_source_per_day'))
-        graphs['Basic 2'] += process_graphs(cv.plotly_hist_number_source_cum(cur_sim), get_description('hist_number_source_cum'))
+        graphs[General_spread_parameters] += process_graphs(cv.plotly_part_80([cur_sim]), get_description('part_80'))
+        graphs[General_spread_parameters] += process_graphs(cv.plotly_hist_number_source_per_day(cur_sim), get_description('hist_number_source_per_day'))
+        graphs[General_spread_parameters] += process_graphs(cv.plotly_hist_number_source_cum(cur_sim), get_description('hist_number_source_cum'))
 
     # By layers
-    graphs['By layers'] += process_graphs(cv.plotly_sars([cur_sim]), get_description('sars'))
-    graphs['By layers'] += process_graphs(cv.plotly_viral_load_per_day([cur_sim]), get_description('viral_load_per_day'))
-    graphs['By layers'] += process_graphs(cv.plotly_viral_load_cum([cur_sim]), get_description('viral_load_cum'))
+    graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_sars([cur_sim]), get_description('sars'))
+    graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_per_day([cur_sim]), get_description('viral_load_per_day'))
+    graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_cum([cur_sim]), get_description('viral_load_cum'))
 
     # By group ages
-    graphs['By group ages'] += process_graphs(cv.plotly_not_infected_people_by_sus(cur_sim), get_description('not_infected_people_by_sus'))
-    graphs['By group ages'] += process_graphs(cv.plotly_not_infected_people_by_sus_norm(cur_sim), get_description('not_infected_people_by_sus_norm'))
-    graphs['By group ages'] += process_graphs(cv.plotly_risk_infected_by_age_group_per_day(cur_sim), get_description('risk_infected_by_age_group_per_day'))
-    graphs['By group ages'] += process_graphs(cv.plotly_risk_infected_by_age_group_cum(cur_sim), get_description('risk_infected_by_age_group_cum'))
+    graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_not_infected_people_by_sus(cur_sim), get_description('not_infected_people_by_sus'))
+    graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_not_infected_people_by_sus_norm(cur_sim), get_description('not_infected_people_by_sus_norm'))
+    graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_risk_infected_by_age_group_per_day(cur_sim), get_description('risk_infected_by_age_group_per_day'))
+    graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_risk_infected_by_age_group_cum(cur_sim), get_description('risk_infected_by_age_group_cum'))
     # Rest
-    graphs['Rest'] += process_graphs(cv.plotly_infected_non_infected_group(cur_sim), get_description('infected_non_infected_group'))
-    graphs['Rest'] += process_graphs(cv.plotly_contact_to_sus_trans(cur_sim), get_description('contact_to_sus_trans'))
+    graphs[Rest] += process_graphs(cv.plotly_infected_non_infected_group(cur_sim), get_description('infected_non_infected_group'))
+    graphs[Rest] += process_graphs(cv.plotly_contact_to_sus_trans(cur_sim), get_description('contact_to_sus_trans'))
     
     print(f"Finish: {cur_sim}")
     return graphs
@@ -679,21 +692,20 @@ def plot_all_graphs(cur_sim, show_contact_stat):
 def plot_comparing(sims, show_contact_stat):
     print("Start comparing")
     graphs = {}
-    graph_groups = ['Basic', 'Basic 2', 'By layers', 'By group ages', 'Rest']
     for graph_group in graph_groups:
         graphs[graph_group] = []
-    graphs['Basic'] = process_graphs(cv.plotly_sim(sims), get_description('common_sim'))
+    graphs[Incidence_and_outcomes] = process_graphs(cv.plotly_sim(sims), get_description('common_sim'))
 
-    graphs['Basic 2'] = []
-    graphs['Basic 2'] += process_graphs(cv.plotly_rs(sims), get_description('rs'))
-    graphs['Basic 2'] += process_graphs(cv.plotly_ars(sims), get_description('ars'))
+    graphs[General_spread_parameters] = []
+    graphs[General_spread_parameters] += process_graphs(cv.plotly_rs(sims), get_description('rs'))
+    graphs[General_spread_parameters] += process_graphs(cv.plotly_ars(sims), get_description('ars'))
     if show_contact_stat:
-        graphs['Basic 2'] += process_graphs(cv.plotly_part_80(sims), get_description('part_80'))
+        graphs[General_spread_parameters] += process_graphs(cv.plotly_part_80(sims), get_description('part_80'))
 
-    graphs['By layers'] = []
-    graphs['By layers'] += process_graphs(cv.plotly_sars(sims), get_description('sars'))
-    graphs['By layers'] += process_graphs(cv.plotly_viral_load_per_day(sims), get_description('viral_load_per_day'))
-    graphs['By layers'] += process_graphs(cv.plotly_viral_load_cum(sims), get_description('viral_load_cum'))
+    graphs[Spread_parameters_by_layer] = []
+    graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_sars(sims), get_description('sars'))
+    graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_per_day(sims), get_description('viral_load_per_day'))
+    graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_cum(sims), get_description('viral_load_cum'))
     print("Finish comparing")
     return graphs
 
@@ -823,7 +835,6 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
         
         # copy results from results_graph
         graphs = {}
-        graph_groups = ['Basic', 'Basic 2', 'By layers', 'By group ages', 'Rest']
         for graph_group in graph_groups:
             graphs[graph_group] = {}
         for (city_ind, graph) in enumerate(results_graph):
@@ -834,8 +845,8 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
             comparing_graph = plot_comparing(msim_with.sims, show_contact_stat)
             for (k, v) in comparing_graph.items():
                 graphs[k]['comparing'] = v
-            graphs['Rest'].pop('comparing')
-            graphs['By group ages'].pop('comparing')
+            graphs[Rest].pop('comparing')
+            graphs[Spread_parameters_by_age].pop('comparing')
 
 
     except Exception as E:
@@ -900,7 +911,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8262
+        app.config['SERVER_PORT'] = 8263
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

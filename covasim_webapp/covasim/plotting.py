@@ -811,6 +811,26 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
     sims_count = len(sims)
     brightnesses = np.linspace(0, 1, sims_count + 1)[1:]
 
+    title2new_title = {
+        'Total counts': 'Total cases',
+        'Daily counts': 'Daily cases',
+        'Health outcomes': 'Cumulative outcomes',
+    }
+    label2new_label = {
+        'Cumulative infections': 'Infections',
+        'Number of new infections': 'Infections',
+        'Cumulative severe cases': 'Severe cases',
+        'Cumulative critical cases': 'Critical cases',
+        'Cumulative deaths': 'Deaths',
+        'Number of new diagnoses_rpn': 'Registrations',
+        'Cumulative diagnoses_rpn': 'Registrations'
+    }
+    title2y_axis = {
+        'Total counts': 'Total cases',
+        'Daily counts': 'Daily cases',
+        'Health outcomes': 'Cases',
+    }
+
     for p,title,keylabels in to_plot.enumitems():
         fig = go.Figure()
         # plot several sims
@@ -826,7 +846,7 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
 
                 if label == "Cumulative known deaths" or label == "Number infectious" or ('diagnose' in label and not has_testing):
                     continue
-
+                new_label = label2new_label[label] if label in label2new_label else label
                 _r, _g, _b = _hsv2rgb(this_color)
                 is_show_legend = (i == sims_count - 1) or title == "Total counts" or title == "Daily counts"
                 fig.add_trace(go.Scatter(x=x, y=y, mode='lines',
@@ -834,7 +854,7 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
                             color=f'rgba({_r}, {_g}, {_b}, {brightness})',
                             width=2  # Ширина линии
                     ), showlegend=is_show_legend, 
-                    name=f"{sim.label}: {label}", hovertext=list(map(lambda t: str(t)+ '; ' + sim.label + '; ' + label, zip(x, y.astype(int)))), hoverinfo="text"))
+                    name=f"{sim.label}: {new_label}", hovertext=list(map(lambda t: str(t)+ '; ' + sim.label + '; ' + new_label, zip(x, y.astype(int)))), hoverinfo="text"))
                 if sim.data is not None and key in sim.data:
                     xdata = sim.data['date']
                     ydata = sim.data[key]
@@ -843,12 +863,11 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
                             color=f'rgba({_r}, {_g}, {_b}, {brightness})',
                             width=2  # Ширина линии
                         ), showlegend=is_show_legend,
-                        name=f"{sim.label}: {label} (data)", hovertemplate=f'{ydata}: {label}'))
+                        name=f"{sim.label}: {new_label} (data)", hovertemplate=f'{ydata}: {new_label}'))
             for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
                 plotly_interventions(sim, fig, basename=sim.label,
                                      max_y=max_y, add_to_legend=(p==0)) # Only add the intervention label to the legend for the first plot
-        
-        fig.update_layout(title={'text':title}, yaxis_title='Count', autosize=True, **plotly_legend)
+        fig.update_layout(title={'text':title2new_title[title]}, xaxis_title='Day', yaxis_title=title2y_axis[title], autosize=True, **plotly_legend)
         plots.append(fig)
 
     if do_show:
@@ -879,7 +898,7 @@ def plotly_people(sim, do_show=False): # pragma: no cover
 
     plotly_interventions(sim, fig, max_y=sim.n)
     fig.update_layout(yaxis_range=(0, sim.n))
-    fig.update_layout(title={'text': 'Numbers of people by health state'}, yaxis_title='People', autosize=True, **plotly_legend)
+    fig.update_layout(title={'text': 'Health status'}, xaxis_title='Day', yaxis_title='Agents', autosize=True, **plotly_legend)
 
     if do_show:
         fig.show()
@@ -1030,8 +1049,8 @@ def plotly_rs(sims, do_show=False):
                         width=2  # Ширина линии
                     )))
     
-    fig.update_layout(title={'text': make_bold('R')}, 
-                      yaxis_title='R', autosize=True,
+    fig.update_layout(title={'text': make_bold('Effective reproductive number (Rt)')}, 
+                      yaxis_title='Rt', autosize=True,
                       xaxis_title='Day',
                       updatemenus=[
                         dict(
@@ -1081,7 +1100,7 @@ def plotly_ars(sims, do_show=False):
                         width=2  # Ширина линии
                     )))
     
-    fig.update_layout(title={'text': make_bold('AR')}, 
+    fig.update_layout(title={'text': make_bold('Attack rate')}, 
                       yaxis_title='Attack rate (%)', autosize=True,
                       xaxis_title='Day',
                       updatemenus=[
@@ -1380,7 +1399,7 @@ def get_df_not_infected_people_by_sus(cur_analyzer, days):
         for i in range(10):
             df = pd.DataFrame({
                 'day': [day] * x.size, 
-                'Sus-group': x,
+                'Relative susceptibility': x,
                 'Age-group': [f"({i * 10}, {(i + 1) * 10})"] * x.size, 
                 'Y': y[i]})
             dfs.append(df)
@@ -1393,16 +1412,16 @@ def plotly_not_infected_people_by_sus(sim, do_show=False):
     df = get_df_not_infected_people_by_sus(cur_analyzer, days)
     # Plot
     fig = px.bar(df, 
-        x='Sus-group',
+        x='Relative susceptibility',
         y="Y",
         color="Age-group",
         barmode='stack',
         animation_frame='day',
-        labels={"Sus-group": "Sus-group",
+        labels={'Relative susceptibility': 'Relative susceptibility',
                 "day": "Day",
-                "Y": "Part of"
+                "Y": "Fraction of all agents"
                 },
-        title=make_bold("Not infected people by sus")
+        title=make_bold("Uninfected population per susceptibility group")
         )
     if do_show:
         fig.show()
@@ -1423,7 +1442,7 @@ def get_df_not_infected_people_by_sus_norm(cur_analyzer, days):
         for i in range(10):
             df = pd.DataFrame({
                 'day': [day] * x.size, 
-                'Sus-group': x,
+                'Relative susceptibility': x,
                 'Age-group': [f"({i * 10}, {(i + 1) * 10})"] * x.size, 
                 'Y': np.divide(y[i], sums, out=zz, where=sums!=0)})
             dfs.append(df)
@@ -1436,16 +1455,16 @@ def plotly_not_infected_people_by_sus_norm(sim, do_show=False):
     df = get_df_not_infected_people_by_sus_norm(cur_analyzer, days)
     # Plot
     fig = px.bar(df, 
-        x='Sus-group',
+        x='Relative susceptibility',
         y="Y",
         color="Age-group",
         barmode='stack',
         animation_frame='day',
-        labels={"Sus-group": "Sus-group",
+        labels={'Relative susceptibility': 'Relative susceptibility',
                 "day": "Day",
-                "Y": "Part of"
+                "Y": "Fraction of uninfected agents"
                 },
-        title=make_bold("Not infected people by sus")
+        title=make_bold("Age of uninfected population per susceptibility group")
         )
     if do_show:
         fig.show()
@@ -1489,9 +1508,9 @@ def plotly_infected_non_infected_group(sim, do_show=False):
         animation_frame='day',
         labels={"Age-group": "Age-group",
                 "day": "Day",
-                "Y": "Part of"
+                "Y": "Fraction"
                 },
-        title=make_bold("Infected and non infected groups")
+        title=make_bold("Fraction of uninfected agents per age group")
         )
     if do_show:
         fig.show()
@@ -1511,7 +1530,7 @@ def plotly_viral_load_per_day(sims, do_show=False):
         days = sim.tvec
         day_count = len(days)
         x_time = np.arange(day_count)
-        base_name = "pathogen fraction" if sim.pars['is_additive_formula'] else "infected count"
+        base_name = "Pathogen fraction" if sim.pars['is_additive_formula'] else "Agents"
         is_showlegend = (i == sims_count - 1)
         
         choice1 = 15 * [False]
@@ -1580,10 +1599,10 @@ def plotly_viral_load_per_day(sims, do_show=False):
                     )))
         
 
-    name_title = make_bold("Pathogen fraction per day on each layers" if sim.pars['is_additive_formula'] else "Infected count per day on each layers")
+    name_title = make_bold("Pathogen fraction per day on each layers" if sim.pars['is_additive_formula'] else "New infections at layers")
     fig.update_layout(title={'text': name_title}, 
                       yaxis_title=base_name, autosize=True,
-                      xaxis_title='time', 
+                      xaxis_title='Day', 
                       updatemenus=[
                             dict(
                                 active=1,
@@ -1663,9 +1682,9 @@ def plotly_sars(sims, do_show=False):
                             width=2  # Ширина линии
                         ), visible=False))
 
-    fig.update_layout(title={'text': make_bold('SAR per day')}, 
+    fig.update_layout(title={'text': make_bold('Secondary attack rate at layers')}, 
                       yaxis_title='SAR', autosize=True,
-                      xaxis_title='time', 
+                      xaxis_title='Day', 
                       updatemenus=[
                             dict(
                                 active=1,
@@ -1704,7 +1723,7 @@ def plotly_viral_load_cum(sims, do_show=False):
     brightnesses = np.linspace(0, 1, sims_count + 1)[1:]
     ind2color = ["255, 255, 0", "255, 0, 255", "0, 0, 255", "0, 255, 255", "0, 127, 255", "127, 127, 255"]
     for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
-        base_name = "pathogen fraction" if sim.pars['is_additive_formula'] else "infected count"
+        base_name = "Pathogen fraction" if sim.pars['is_additive_formula'] else "Agents"
         cur_analyzer= sim.get_analyzer('seir')
         days = sim.tvec
         day_count = len(days)
@@ -1730,10 +1749,10 @@ def plotly_viral_load_cum(sims, do_show=False):
             hoverinfo="text",
             hovertext=f"{sim.label}: {base_name} school\'&\'work"))
         
-    name_title = make_bold("Cumulative pathogen fraction on each layers" if sim.pars['is_additive_formula'] else "Cumulative infected count on each layers")
+    name_title = make_bold("Cumulative pathogen fraction on each layers" if sim.pars['is_additive_formula'] else "Cumulative infections at layers")
     fig.update_layout(title={'text': name_title}, 
                       yaxis_title=base_name, autosize=True,
-                      xaxis_title='time',  **plotly_legend) 
+                      xaxis_title='Day',  **plotly_legend) 
     
     if do_show:
         fig.show()
@@ -1780,12 +1799,12 @@ def plotly_risk_infected_by_age_group_cum(sim, do_show=False):
         y="Y",
         color="name",
         animation_frame='day',
-        labels={"x": "Susceptibilty",
+        labels={"x": "Relative susceptibility",
                 "day": "Day",
                 "Y": "Risk",
                 'name': "Age groups"
                 },
-        title=make_bold("Cumulative risk infected by age group")
+        title=make_bold("Cumulative infection risk per susceptibility and age")
         )
     fig.update_layout(yaxis_range=[0, 1.1 * np.max(df['Y'])])
 
@@ -1833,12 +1852,12 @@ def plotly_risk_infected_by_age_group_per_day(sim, do_show=False):
         y="Y",
         color="name",
         animation_frame='day',
-        labels={"x": "Susceptibilty",
+        labels={"x": "Relative susceptibility",
                 "day": "Day",
                 "Y": "Risk",
                 'name': "Age groups"
                 },
-        title=make_bold("Risk infected by age group per day")
+        title=make_bold("Infection risk per susceptibility and age")
         )
     fig.update_layout(yaxis_range=[0, 1.1 * np.max(df['Y'])])
 
@@ -1886,12 +1905,13 @@ def plotly_contact_to_sus_trans(sim, do_show=False):
         y="Y",
         animation_frame='day',
         color='state',
-        labels={"x": "Sus+trans",
+        opacity=0.5,
+        labels={"x": "Relative susceptibility",
                 "day": "Day",
-                "Y": "Contact count",
+                "Y": "Contacts per day",
                 'state': "State"
                 },
-        title=make_bold("Sus+trans to contacts")
+        title=make_bold("Population composition")
         )
 
     if do_show:
