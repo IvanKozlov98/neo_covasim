@@ -48,7 +48,7 @@ def main_households(df):
 
     def treat_family_size_dist():
         key = "Age distribution of the reference person for each household size"
-        tmp_df = treat_common(df=df, key=key, num_rows=6, num_columns=10, start_column=1)
+        tmp_df = treat_common(df=df, key=key, num_rows=8, num_columns=11)
         return list(map(list, tmp_df.values))
 
     def treat_household_contact_matrix():
@@ -62,6 +62,20 @@ def main_households(df):
         "num_bins": len(ages_bracket),
         "distribution": ages_bracket
     }]
+    
+    result_dict["household_head_age_brackets"] = [
+        [18, 19],
+        [20, 24],
+        [25, 29],
+        [30, 34],
+        [35, 39],
+        [40, 44],
+        [45, 49],
+        [50, 54],
+        [55, 64],
+        [65, 74],
+        [75, 99]
+    ]
     result_dict["household_head_age_distribution_by_family_size"] = treat_family_size_dist()
     result_dict["household_size_distribution"] = treat_household_dist()
     treat_household_contact_matrix()
@@ -82,16 +96,20 @@ def main_education_common(df):
     def treat_school_size_dist():
         key = "School size distribution"
         tmp_df = treat_common(df=df, key=key, num_rows=14, num_columns=1)
-        return get_distribution(tmp_df)
+        tmp_res = get_distribution(tmp_df)
+        res = []
+        for _, _, r in tmp_res:
+            res.append(r)
+        return res
 
     def treat_enrollment_by_age():
         key = "Enrollment by age"
-        tmp_df = treat_common(df=df, key=key, num_rows=14, num_columns=1)
+        tmp_df = treat_common(df=df, key=key, num_rows=101, num_columns=1)
         return get_distribution_2(tmp_df)
 
     def treat_employment_rates_by_age():
         key = "Employment rates by age"
-        tmp_df = treat_common(df=df, key=key, num_rows=7, num_columns=1)
+        tmp_df = treat_common(df=df, key=key, num_rows=101, num_columns=1)
         return get_distribution_2(tmp_df)
 
     def treat_school_contact_matrix():
@@ -108,8 +126,8 @@ def main_education_common(df):
     return result_dict
 
 
-def main_school():
-    df_education_common = pd.read_excel("Population_NeoCovasim.xlsx", header=None, sheet_name="Education_Common")
+def main_school(excel_file_location):
+    df_education_common = pd.read_excel(excel_file_location, header=None, sheet_name="Education_Common")
     result_dict = main_education_common(df_education_common)
 
     # set school parameters by type of school
@@ -129,9 +147,9 @@ def main_school():
         [2101, 2300],
         [2301, 2700]
       ]
-    df_kindergarten = pd.read_excel("Population_NeoCovasim.xlsx", header=None, sheet_name="Kindergarten")
-    df_school = pd.read_excel("Population_NeoCovasim.xlsx", header=None, sheet_name="School")
-    df_university = pd.read_excel("Population_NeoCovasim.xlsx", header=None, sheet_name="University")
+    df_kindergarten = pd.read_excel(excel_file_location, header=None, sheet_name="Kindergarten")
+    df_school = pd.read_excel(excel_file_location, header=None, sheet_name="School")
+    df_university = pd.read_excel(excel_file_location, header=None, sheet_name="University")
     result_dict["school_size_distribution_by_type"] = [{
         "school_type": "pk",
         "size_distribution": main_education_place(df_kindergarten)
@@ -148,7 +166,7 @@ def main_school():
         "age_range": [3, 6]
     }, {
         "school_type": "es",
-        "age_range": [7, 18]
+        "age_range": [7, 17]
     }, {
         "school_type": "uv",
         "age_range": [18, 100]
@@ -188,7 +206,7 @@ def save_location_in_json(excel_file_location, json_file_location, location_name
     df_work = pd.read_excel(excel_file_location, header=None, sheet_name="Work")
     # operation with data
     result_dict = dict()
-    school_dict = main_school()
+    school_dict = main_school(excel_file_location)
     household_dict = main_households(df_household)
     work_dict = main_work(df_work)
 
@@ -245,11 +263,11 @@ def get_dict_contact_matrices(filename):
 def make_people_from_file(excel_filename, popfile):
     other_parameters = get_other_parameters(excel_filename)
     location_name = other_parameters['location']
-    save_location_in_json(excel_filename, f"synthpops/synthpops/data/{location_name}.json", location_name)
+    save_location_in_json(excel_filename, f"/home/kozlov_ie/web_cov/covasim_webapp/covasim_webapp/synthpops/synthpops/data/{location_name}.json", location_name)
     contact_matrices = get_dict_contact_matrices(excel_filename)
     pars = sc.objdict(
         rand_seed                       = 123,
-        location                        = location_name,
+        country_location                = location_name,
         smooth_ages                     = True,
         window_length                   = 7,
         household_method                = 'infer_ages',
@@ -263,7 +281,12 @@ def make_people_from_file(excel_filename, popfile):
     #pars = dict(n_agents=10000, pop_type='synthpops')
     #sim = cv.Sim(pars).init_people()
     
+    #print("Before Pop")
+    #print(pars)
     pop = sp.Pop(**pars)
+    #print("Afterrr")
+    #print("Afterrr")
+
     print(f"Initiation is successful!")
     if popfile is not None:
         pop.save(popfile)
@@ -335,7 +358,7 @@ class SchoolParameters:
     def get_default_parameters():
         with open('synthpops/synthpops/data/Novosibirsk.json') as json_file:
             default_data = json.load(json_file)
-            default_data_school = get_other_parameters('Population_NeoCovasim.xlsx')
+            default_data_school = get_other_parameters('Population_Nsk.xlsx')
             return SchoolParameters(
                 average_student_teacher_ratio=default_data_school['average_student_teacher_ratio'],
                 average_class_size=default_data_school['average_class_size'],
@@ -353,7 +376,7 @@ class SchoolParameters:
                 employment_rates_by_age=default_data['employment_rates_by_age'],
                 school_size_distribution_by_type=default_data['school_size_distribution_by_type'],
                 school_types_by_age=default_data['school_types_by_age'],
-                contact_matrix=get_dict_contact_matrices("Population_NeoCovasim.xlsx")['S']
+                contact_matrix=get_dict_contact_matrices("Population_Nsk.xlsx")['S']
             )
 
 class HouseholdParameters:
@@ -376,7 +399,7 @@ class HouseholdParameters:
                 household_size_distribution=default_data['household_size_distribution'],
                 household_head_age_distribution_by_family_size=default_data['household_head_age_distribution_by_family_size'],
                 population_age_distributions=default_data['population_age_distributions'],
-                contact_matrix=get_dict_contact_matrices("Population_NeoCovasim.xlsx")['H']
+                contact_matrix=get_dict_contact_matrices("Population_Nsk.xlsx")['H']
             )
 
 
@@ -396,7 +419,7 @@ class WorkParameters:
             default_data = json.load(json_file)
             return WorkParameters(
                 workplace_size_counts_by_num_personnel=default_data['workplace_size_counts_by_num_personnel'],
-                contact_matrix=get_dict_contact_matrices("Population_NeoCovasim.xlsx")['W']
+                contact_matrix=get_dict_contact_matrices("Population_Nsk.xlsx")['W']
             )
 
 
@@ -407,7 +430,7 @@ class RandomParameters:
     @staticmethod
     def get_default_parameters():
         return RandomParameters(
-            contact_matrix=get_dict_contact_matrices("Population_NeoCovasim.xlsx")['C']
+            contact_matrix=get_dict_contact_matrices("Population_Nsk.xlsx")['C']
         )
 
 
@@ -439,7 +462,8 @@ def make_people_from_pars(
     pars = sc.objdict(
         n                               = common_pars.n,
         rand_seed                       = common_pars.rand_seed,
-        location                        = common_pars.location,
+        country_location                = common_pars.location,
+        sheet_name                      = common_pars.location,
         smooth_ages                     = True,
         window_length                   = 7,
         household_method                = 'infer_ages',

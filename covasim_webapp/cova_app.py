@@ -228,7 +228,7 @@ def get_dist_figs(rel_sus_choice_list=None, tabs=None):
     cur_rel_sus_fig = {}
     for city_ind in tabs:
         rel_sus_choice = rel_sus_choice_list[city_ind]
-        print(rel_sus_choice)
+        #print(rel_sus_choice)
         fig = cv.plotly_dist_sus(
             rel_sus_choice,
             some_ages
@@ -367,9 +367,9 @@ def parse_interventions(int_pars, is_random=False):
                 interv = intervention_function(days=[start, end], changes=[change, 1.0], layers='h', label=f"{intervention_base_name} home closures change on " + "{:.2f}".format(change))
             elif ikey == 'symptomatic_testing':
                 asymp_prob = float(iconfig['alevel'])/100
-                print("/*/*//**/*/*/")
-                print(asymp_prob)
-                print("/*/*//**/*/*/")
+                #print("/*/*//**/*/*/")
+                #print(asymp_prob)
+                #print("/*/*//**/*/*/")
                 interv = cv.test_prob(start_day=start, end_day=end, symp_prob=level, asymp_prob=asymp_prob, label=f"symptomatic testing with " + "{:.2f}".format(asymp_prob))
             elif ikey == 'vaccinate_closures':
                 pars_vac, label_d = parse_vaccine_parameters(iconfig)
@@ -403,7 +403,7 @@ def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, er
     web_pars['verbose'] = verbose # Control verbosity here
 
     for key,entry in {**sim_pars, **epi_pars}.items():
-        print(key, entry)
+        #print(key, entry)
 
         best   = defaults[key]['best']
         minval = defaults[key]['min']
@@ -573,8 +573,8 @@ def parse_interaction_records(interaction_records, tabs):
         to_city_ind = city_key2city_ind[get_city_key(interaction_record['to_city_choice'])]
         adjacency_matrix[from_city_ind][to_city_ind] = float(interaction_record['level'])
     
-    print("Adjacency_matrix")
-    print(adjacency_matrix)
+    #print("Adjacency_matrix")
+    #print(adjacency_matrix)
     return adjacency_matrix
 
 
@@ -661,7 +661,7 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     
     for graph_group in graph_groups:
         graphs[graph_group] = []
-    print(f"Starting: {cur_sim}")
+    #print(f"Starting: {cur_sim}")
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_sim([cur_sim]), get_description('common_sim'))
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_people(cur_sim), get_description('people'))
     # Basic 2
@@ -686,11 +686,11 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     graphs[Rest] += process_graphs(cv.plotly_infected_non_infected_group(cur_sim), get_description('infected_non_infected_group'))
     graphs[Rest] += process_graphs(cv.plotly_contact_to_sus_trans(cur_sim), get_description('contact_to_sus_trans'))
     
-    print(f"Finish: {cur_sim}")
+    #print(f"Finish: {cur_sim}")
     return graphs
 
 def plot_comparing(sims, show_contact_stat):
-    print("Start comparing")
+    #print("Start comparing")
     graphs = {}
     for graph_group in graph_groups:
         graphs[graph_group] = []
@@ -706,7 +706,7 @@ def plot_comparing(sims, show_contact_stat):
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_sars(sims), get_description('sars'))
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_per_day(sims), get_description('viral_load_per_day'))
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_cum(sims), get_description('viral_load_cum'))
-    print("Finish comparing")
+    #print("Finish comparing")
     return graphs
 
 def execute_function(func, *args):
@@ -739,7 +739,6 @@ def build_parallel_cities(sims):
 def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, tabs=None, interaction_records=None, verbose=True, die=die):
     ''' Create, run, and plot everything '''
     global msim_with
-    import time
     errs = []
     sim_pars_out, epi_pars_out, int_pars_out = copy.deepcopy(sim_pars), copy.deepcopy(epi_pars), copy.deepcopy(int_pars)
     (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs)
@@ -759,12 +758,12 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
     #print(population_volume_list)
     try:
         web_pars_list = []
-        print(int_pars_list)
+        #print(int_pars_list)
 
         for (sim_pars, epi_pars, int_pars, infection_step, rel_sus_type, rel_trans_type, population_volume, city_ind) in \
             zip(sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs):            
             web_pars = parse_parameters(sim_pars=sim_pars, epi_pars=epi_pars, int_pars=int_pars, n_days=n_days, location=location, verbose=verbose, errs=errs, die=die, infection_step=infection_step, rel_sus_type=rel_sus_type, rel_trans_type=rel_trans_type, infectiousTableConfig=infectiousTableConfig, population_volume=population_volume, city_ind=city_ind)
-            if True:
+            if False:
                 print(f'Input parameters for {city_ind}:')
                 print(web_pars)
                 print("---------------")

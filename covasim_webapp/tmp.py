@@ -69,9 +69,11 @@ def tmp_fun():
 
 
 if __name__ == '__main__':
-    #make_people_from_file('Population_NeoCovasim.xlsx')
-    pars = dict(n_agents=100000, pop_type='synthpops')
-    people_nsk = sp.Pop.load("synthpops_files/synth_pop_Novosibirsk.ppl")
-    sim2 = cv.Sim(pars).init_people(prepared_pop=people_nsk)
-    #sim = cv.Sim(pop_size=100000, pop_type='synthpops', popfile=)
-    sim2.run()
+    #make_people_from_file('Population_Nsk.xlsx')
+    #pars = dict(n_agents=100000, pop_type='synthpops')
+    #people_nsk = sp.Pop.load("synthpops_files/synth_pop_Novosibirsk.ppl")
+    #sim2 = cv.Sim(pars).init_people(prepared_pop=people_nsk)
+    ##sim = cv.Sim(pop_size=100000, pop_type='synthpops', popfile=)
+    #sim2.run()
+    pop = lp.make_people_from_pars()
+
