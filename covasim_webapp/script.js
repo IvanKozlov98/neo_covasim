@@ -134,8 +134,8 @@ const interventionTableConfig = {
         }
     },
     vaccinate_closures: {
-        formTitle: "Vaccinating",
-        toolTip: "Vaccinating closures",
+        formTitle: "Vaccination",
+        toolTip: "Vaccination rates",
         fields: [
             {key: 'start', type: 'number', step: "1", label: 'Start day', tooltip: 'Start day of intervention', value: 0},
             {key: 'end', type: 'number', step: "1", label: 'End day', tooltip: 'End day of intervention (leave blank for no end)', value: null},
@@ -342,20 +342,20 @@ var vm = new Vue({
             infection_step_options: ['Covasim', 'Cumulative'],
             infection_step_choice_list: Array.from({ length: 20 }, () => ('Covasim')),
             rel_sus_options: [
-                'constants', 
-                'normal_pos',
-                'lognormal',
-                'neg_binomial_all',
-                'beta_1_all',
-                'lognormal_lite_all',
-                'beta_3_all',
-                'beta_2_all',
-                'normal_pos_all',
-                'lognormal_hot_all',
-                'uniform',
-                'uniform_all'
+                "Constant (Covasim default)", 
+                'Normal by age',
+                'Lognormal by age',
+                //'neg_binomial_all',
+                'Beta 1 all',
+                'Lognormal lite all',
+                'Beta 3 all',
+                //'beta_2_all',
+                'Normal all',
+                'Lognormal hot all',
+                //'uniform',
+                //'uniform_all'
             ],
-            rel_sus_choice_list: Array.from({ length: 20 }, () => ('constants')),
+            rel_sus_choice_list: Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
             rel_trans_options: ['Dependent(sus)', 'Independent(sus)'],
             rel_trans_choice_list: Array.from({ length: 20 }, () => ('Independent(sus)')),
             population_volume_options: ['100K', '100K(Random)', '500K', '1M', '3M'],
@@ -655,7 +655,7 @@ var vm = new Vue({
             this.intervention_figs = Array.from({ length: 20 }, () => ({}));
             this.cur_rel_sus_fig = Array.from({ length: 20 }, () => ({}));
             this.infection_step_choice_list = Array.from({ length: 20 }, () => ('Covasim'));
-            this.rel_sus_choice_list = Array.from({ length: 20 }, () => ('constants')),
+            this.rel_sus_choice_list = Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
             this.rel_trans_choice_list = Array.from({ length: 20 }, () => ('Independent(sus)')),
             this.population_volume_choice_list = Array.from({ length: 20 }, () => ('100K')),
 

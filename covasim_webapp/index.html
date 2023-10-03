@@ -315,7 +315,7 @@
                   
                             <template v-for="field in intervention.fields">
                               
-                              <div v-if="intervention.toolTip === 'Vaccinating closures'" class="form-group">
+                              <div v-if="intervention.toolTip === 'Vaccination rates'" class="form-group">
                                 <div v-if="field.key !== 'min_age' && field.key !== 'max_age'">
                                 <label :for="field.key">{{ field.label }}</label>
                                 <input :max="field.max || sim_length.max" :min="field.min || 0" :value="field.value" :name="field.key"

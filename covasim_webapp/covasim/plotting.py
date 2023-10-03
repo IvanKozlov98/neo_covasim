@@ -16,7 +16,7 @@ from .settings import options as cvo
 
 
 __all__ = ['plot_sim', 'plot_scens', 'plot_result', 'plot_compare', 'plot_people', 'plotly_sim', 'plotly_people',
-           'plotly_hist_sus', 'plotly_hist_number_source_per_day', 'plotly_dist_sus',
+           'plotly_hist_sus', 'plotly_hist_number_source_per_day',
            'plotly_not_infected_people_by_sus_norm', 'plotly_hist_number_source_cum', 'plotly_sars',
            'plotly_not_infected_people_by_sus', 'plotly_animate', 'plotly_part_80', 'plotly_rs', 'plotly_ars',
            'plotly_viral_load_per_day', 'plotly_viral_load_cum', 'plotly_risk_infected_by_age_group_per_day',
@@ -923,88 +923,90 @@ def plotly_hist_sus(sim, do_show=False):
     return fig
 
 
-def plotly_dist_sus(distname, age_dist):
-    go = import_plotly() # Load Plotly
-    fig = go.Figure()
-    agent_count = np.sum(list(age_dist.values()))
-    rel_sus = np.zeros(agent_count, dtype=np.float32)
-    progs = dict(
-            age_cutoffs   = np.array([0,       10,      20,      30,      40,      50,      60,      70,      80,      90,]),     # Age cutoffs (lower limits)
-            sus_ORs       = np.array([0.34,    0.67,    1.00,    1.00,    1.00,    1.00,    1.24,    1.47,    1.47,    1.47]),    # Odds ratios for relative susceptibility -- from Zhang et al., https://science.sciencemag.org/content/early/2020/05/04/science.abb8001; 10-20 and 60-70 bins are the average across the ORs
-    )
-    # generate simple age dist
-    ppl_age = np.zeros(agent_count, dtype=np.int64)
-    tmp_ind = 0
-    for (ind, cnt) in enumerate(age_dist.values()):
-        ppl_age[tmp_ind:tmp_ind+cnt] = ind * 10
-        tmp_ind += cnt
-    inds = np.digitize(ppl_age, progs['age_cutoffs'])-1
-    if distname == 'constants':
-        rel_sus[:] = progs['sus_ORs'][inds]  # Default susceptibilities
-    elif distname == 'normal_pos':
-        for i in range(1, 10):
-            inds_age = np.where((progs['age_cutoffs'][i - 1] <= ppl_age) * (ppl_age < progs['age_cutoffs'][i]))[0]
-            rel_sus[inds_age] = cvu.sample(dist='normal_pos', par1=progs['sus_ORs'][i - 1], par2=0.2,
-                                                size=inds_age.size)
-        inds_age = np.where(ppl_age > progs['age_cutoffs'][9])[0]
-        rel_sus[inds_age] = cvu.sample(dist='normal_pos', par1=progs['sus_ORs'][9], par2=0.2,
-                                            size=inds_age.size)
-    elif distname == 'lognormal':
-        for i in range(1, 10):
-            inds_age = np.where((progs['age_cutoffs'][i - 1] <= ppl_age) * (ppl_age < progs['age_cutoffs'][i]))[0]
-            rel_sus[inds_age] = cvu.sample(dist='lognormal', par1=progs['sus_ORs'][i - 1], par2=0.2,
-                                                size=inds_age.size)
-        inds_age = np.where(ppl_age > progs['age_cutoffs'][9])[0]
-        rel_sus[inds_age] = cvu.sample(dist='lognormal', par1=progs['sus_ORs'][9], par2=0.2,
-                                            size=inds_age.size)
-    elif distname == 'uniform':
-        my_unfiform_intervals = [(0.17, 0.5), (0.5, 0.8), (0.8, 1.1), (0.8, 1.1), (0.8, 1.1), (0.8, 1.1),
-                                    (1.1, 1.34), (1.34, 1.5), (1.34, 1.5), (1.34, 1.5)]
-        for i in range(1, 10):
-            inds_age = np.where((progs['age_cutoffs'][i - 1] <= ppl_age) * (ppl_age < progs['age_cutoffs'][i]))[0]
-            rel_sus[inds_age] = np.random.uniform(
-                my_unfiform_intervals[i - 1][0], my_unfiform_intervals[i - 1][1], size=inds_age.size)
-        inds_age = np.where(ppl_age > progs['age_cutoffs'][9])[0]
-        rel_sus[inds_age] = np.random.uniform(
-            my_unfiform_intervals[9][0], my_unfiform_intervals[9][1], size=inds_age.size)
-    elif distname == 'uniform_all':
-        rel_sus[:]     = np.random.uniform(0, 1.47, size=rel_sus.size) # Uniform susceptibilities
-    elif distname == 'lognormal_lite_all':
-        rel_sus[:]     = cvu.sample(dist='lognormal', par1=0.65, par2=0.5, size=rel_sus.size) # lognormal susceptibilities
-        ss = rel_sus[rel_sus > 1.5].size
-        rel_sus[rel_sus > 1.5] = cvu.sample(dist='lognormal', par1=0.5, par2=0.5, size=ss)
-    elif distname == 'lognormal_hot_all':
-        rel_sus[:]     = cvu.sample(dist='lognormal', par1=1.0, par2=0.5, size=rel_sus.size) # lognormal susceptibilities
-        ss = rel_sus[rel_sus > 1.5].size
-        rel_sus[rel_sus > 1.5] = cvu.sample(dist='lognormal', par1=1.0, par2=0.5, size=ss)        
-    elif distname == 'normal_pos_all':
-        rel_sus[:]     = cvu.sample(dist='normal_pos', par1=1.0, par2=0.5, size=rel_sus.size) # normal susceptibilities
-        ss = rel_sus[rel_sus > 1.5].size
-        rel_sus[rel_sus > 1.5] = cvu.sample(dist='normal_pos', par1=1.0, par2=0.5, size=ss)
-    elif distname == 'beta_1_all':
-        rel_sus[:]     = 0.1 + cvu.sample(dist='beta', par1=1.2, par2=6.2, step=1.5, size=rel_sus.size)
-    elif distname == 'beta_2_all':
-        rel_sus[:]     = 0.1 + cvu.sample(dist='beta', par1=1.8, par2=6.2, step=1.5, size=rel_sus.size)
-    elif distname == 'beta_3_all':
-        rel_sus[:]     = 0.1 + cvu.sample(dist='beta', par1=2.2, par2=5.6, step=1.5, size=rel_sus.size)
-    elif distname == 'neg_binomial_all':
-        rel_sus[:]     = 0.1 + cvu.sample(dist='neg_binomial', par1=0.21, par2=3, step=0.07, size=rel_sus.size)
-    #elif pars['rel_sus_type'] == 'binom_2_all':
-    #    rel_sus[:]     = cvu.sample(dist='beta', par1=2.2, par2=5.6, step=1.5, size=rel_sus.size)    
-    else:
-        raise RuntimeError("Not corrected type of rel_sus")
-
-    rel_sus[rel_sus > 2.5] = 2.5
-    
-    hist_rel_sus = np.histogram(rel_sus)
-    summ = np.sum(list(age_dist.values()))
-    fig.add_trace(
-        go.Scatter(x=hist_rel_sus[1], y=hist_rel_sus[0] / summ, name="hist sus"))
-
-    fig.update_layout(title={'text': make_bold(f'Histogram susceptibility')}, 
-                      yaxis_title='People count', height=400, width=500,
-                      xaxis_title='susceptibility',  **plotly_legend)
-    return fig
+#def plotly_dist_sus(distname, age_dist):
+#    go = import_plotly() # Load Plotly
+#    fig = go.Figure()
+#    agent_count = np.sum(list(age_dist.values()))
+#    rel_sus = np.zeros(agent_count, dtype=np.float32)
+#    progs = dict(
+#            age_cutoffs   = np.array([0,       10,      20,      30,      40,      50,      60,      70,      80,      90,]),     # Age cutoffs (lower limits)
+#            sus_ORs       = np.array([0.34,    0.67,    1.00,    1.00,    1.00,    1.00,    1.24,    1.47,    1.47,    1.47]),    # Odds ratios for relative susceptibility -- from Zhang et al., https://science.sciencemag.org/content/early/2020/05/04/science.abb8001; 10-20 and 60-70 bins are the average across the ORs
+#    )
+#    # generate simple age dist
+#    ppl_age = np.zeros(agent_count, dtype=np.int64)
+#    tmp_ind = 0
+#    for (ind, cnt) in enumerate(age_dist.values()):
+#        ppl_age[tmp_ind:tmp_ind+cnt] = ind * 10
+#        tmp_ind += cnt
+#    inds = np.digitize(ppl_age, progs['age_cutoffs'])-1
+#    if distname == 'constants':
+#        rel_sus[:] = progs['sus_ORs'][inds]  # Default susceptibilities
+#    elif distname == 'normal_pos':
+#        for i in range(1, 10):
+#            inds_age = np.where((progs['age_cutoffs'][i - 1] <= ppl_age) * (ppl_age < progs['age_cutoffs'][i]))[0]
+#            rel_sus[inds_age] = cvu.sample(dist='normal_pos', par1=progs['sus_ORs'][i - 1], par2=0.2,
+#                                                size=inds_age.size)
+#        inds_age = np.where(ppl_age > progs['age_cutoffs'][9])[0]
+#        rel_sus[inds_age] = cvu.sample(dist='normal_pos', par1=progs['sus_ORs'][9], par2=0.2,
+#                                            size=inds_age.size)
+#    elif distname == 'lognormal':
+#        for i in range(1, 10):
+#            inds_age = np.where((progs['age_cutoffs'][i - 1] <= ppl_age) * (ppl_age < progs['age_cutoffs'][i]))[0]
+#            rel_sus[inds_age] = cvu.sample(dist='lognormal', par1=progs['sus_ORs'][i - 1], par2=0.2,
+#                                                size=inds_age.size)
+#        inds_age = np.where(ppl_age > progs['age_cutoffs'][9])[0]
+#        rel_sus[inds_age] = cvu.sample(dist='lognormal', par1=progs['sus_ORs'][9], par2=0.2,
+#                                            size=inds_age.size)
+#    elif distname == 'uniform':
+#        my_unfiform_intervals = [(0.17, 0.5), (0.5, 0.8), (0.8, 1.1), (0.8, 1.1), (0.8, 1.1), (0.8, 1.1),
+#                                    (1.1, 1.34), (1.34, 1.5), (1.34, 1.5), (1.34, 1.5)]
+#        for i in range(1, 10):
+#            inds_age = np.where((progs['age_cutoffs'][i - 1] <= ppl_age) * (ppl_age < progs['age_cutoffs'][i]))[0]
+#            rel_sus[inds_age] = np.random.uniform(
+#                my_unfiform_intervals[i - 1][0], my_unfiform_intervals[i - 1][1], size=inds_age.size)
+#        inds_age = np.where(ppl_age > progs['age_cutoffs'][9])[0]
+#        rel_sus[inds_age] = np.random.uniform(
+#            my_unfiform_intervals[9][0], my_unfiform_intervals[9][1], size=inds_age.size)
+#    elif distname == 'uniform_all':
+#        rel_sus[:]     = np.random.uniform(0, 1.47, size=rel_sus.size) # Uniform susceptibilities
+#    elif distname == 'lognormal_lite_all':
+#        rel_sus[:]     = cvu.sample(dist='lognormal', par1=0.65, par2=0.5, size=rel_sus.size) # lognormal susceptibilities
+#        ss = rel_sus[rel_sus > 1.5].size
+#        rel_sus[rel_sus > 1.5] = cvu.sample(dist='lognormal', par1=0.5, par2=0.5, size=ss)
+#    elif distname == 'lognormal_hot_all':
+#        rel_sus[:]     = cvu.sample(dist='lognormal', par1=1.0, par2=0.5, size=rel_sus.size) # lognormal susceptibilities
+#        ss = rel_sus[rel_sus > 1.5].size
+#        rel_sus[rel_sus > 1.5] = cvu.sample(dist='lognormal', par1=1.0, par2=0.5, size=ss)        
+#    elif distname == 'normal_pos_all':
+#        rel_sus[:]     = cvu.sample(dist='normal_pos', par1=1.0, par2=0.5, size=rel_sus.size) # normal susceptibilities
+#        ss = rel_sus[rel_sus > 1.5].size
+#        rel_sus[rel_sus > 1.5] = cvu.sample(dist='normal_pos', par1=1.0, par2=0.5, size=ss)
+#    elif distname == 'beta_1_all':
+#        rel_sus[:]     = 0.1 + cvu.sample(dist='beta', par1=1.2, par2=6.2, step=1.5, size=rel_sus.size)
+#    elif distname == 'beta_2_all':
+#        rel_sus[:]     = 0.1 + cvu.sample(dist='beta', par1=1.8, par2=6.2, step=1.5, size=rel_sus.size)
+#    elif distname == 'beta_3_all':
+#        rel_sus[:]     = 0.1 + cvu.sample(dist='beta', par1=2.2, par2=5.6, step=1.5, size=rel_sus.size)
+#    elif distname == 'neg_binomial_all':
+#        rel_sus[:]     = 0.1 + cvu.sample(dist='neg_binomial', par1=0.21, par2=3, step=0.07, size=rel_sus.size)
+#    #elif pars['rel_sus_type'] == 'binom_2_all':
+#    #    rel_sus[:]     = cvu.sample(dist='beta', par1=2.2, par2=5.6, step=1.5, size=rel_sus.size)    
+#    else:
+#        raise RuntimeError("Not corrected type of rel_sus")
+#
+#    rel_sus[rel_sus > 2.5] = 2.5
+#    
+#    hist_rel_sus = np.histogram(rel_sus)
+#    summ = np.sum(list(age_dist.values()))
+#    y_ttotal = hist_rel_sus[0] / summ
+#    fig.add_trace(
+#        go.Scatter(x=hist_rel_sus[1], y=y_ttotal, name="hist sus"))
+#
+#    fig.update_layout(title={'text': make_bold(f'Histogram susceptibility')}, 
+#                      yaxis_title='People count', height=400, width=500,
+#                      yaxis_range=[-0.03, np.max(y_ttotal) + 0.1],
+#                      xaxis_title='Susceptibility',  **plotly_legend)
+#    return fig
 
 
 def plotly_rs(sims, do_show=False):

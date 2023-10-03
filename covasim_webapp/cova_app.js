@@ -150,8 +150,8 @@ const interventionTableConfig = {
         }
     },
     vaccinate_closures: {
-        formTitle: "Vaccinating",
-        toolTip: "Vaccinating closures",
+        formTitle: "Vaccination",
+        toolTip: "Vaccination rates",
         fields: [
             {key: 'start', type: 'number', label: 'Start day', tooltip: 'Start day of intervention', value: 0},
             {key: 'end', type: 'number', label: 'End day', tooltip: 'End day of intervention (leave blank for no end)', value: null},

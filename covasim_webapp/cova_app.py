@@ -25,7 +25,7 @@ import pandas as pd
 import concurrent.futures
 from itertools import repeat
 import location_preprocessor as lp
-
+import pickle
 
 # Create the app
 app = sw.ScirisApp(__name__, name="NeoCovasim")
@@ -54,6 +54,10 @@ graph_groups = [
     Spread_parameters_by_age,
     Rest
 ]
+
+susdist2figs = dict()
+with open('susdist2figs.pkl', 'rb') as f:
+    susdist2figs = pickle.load(f)
 
 
 #%% Define the API helper functions
@@ -224,15 +228,10 @@ def upload_file(file):
 
 @app.register_RPC()
 def get_dist_figs(rel_sus_choice_list=None, tabs=None):
-    some_ages = dict({'0-9': 2430, '10-19': 2441, '20-29': 1861, '30-39': 3334, '40-49': 3190, '50-59': 2646, '60-69': 3391, '70-79': 1524, '80+': 815})
     cur_rel_sus_fig = {}
     for city_ind in tabs:
-        rel_sus_choice = rel_sus_choice_list[city_ind]
-        #print(rel_sus_choice)
-        fig = cv.plotly_dist_sus(
-            rel_sus_choice,
-            some_ages
-        )
+        rel_sus_choice = parse_rel_sus_type(rel_sus_choice_list[city_ind])
+        fig = susdist2figs[rel_sus_choice]
         cur_rel_sus_fig[city_ind] = dict({'id': f'dist_sus_{city_ind}', 'json': fig.to_json()})
     return cur_rel_sus_fig
 
@@ -394,6 +393,27 @@ with prob """ + "{:.2f}".format(label_d['prob'])
     return intervs
 
 
+def parse_rel_sus_type(rel_sus_type):
+    if rel_sus_type == "Constant (Covasim default)":
+        return 'constants'
+    elif rel_sus_type == "Normal by age":
+        return "normal_pos"
+    elif rel_sus_type == "Normal all":
+        return "normal_pos_all"
+    elif rel_sus_type == "Lognormal by age":
+        return "lognormal"
+    elif rel_sus_type == "Lognormal lite all":
+        return "lognormal_lite_all"
+    elif rel_sus_type == "Lognormal hot all":
+        return "lognormal_hot_all"
+    elif rel_sus_type == "Beta 1 all":
+        return "beta_1_all"
+    elif rel_sus_type == "Beta 3 all":
+        return "beta_3_all"
+    else:
+        raise Exception(f"Unrecognised sus type: {rel_sus_type}")
+
+
 def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, errs, die, infection_step, rel_sus_type, rel_trans_type, infectiousTableConfig, population_volume, city_ind):
     ''' Sanitize web parameters into actual simulation ones '''
     orig_pars = cv.make_pars()
@@ -450,7 +470,7 @@ def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, er
     
     web_pars['beta_layer'] = parseInfectiousConfig(infectiousTableConfig, city_ind)
     web_pars['is_additive_formula'] = (infection_step == "Cumulative")
-    web_pars['rel_sus_type'] = rel_sus_type
+    web_pars['rel_sus_type'] = parse_rel_sus_type(rel_sus_type)
     web_pars['rel_trans_type'] = 'beta_dist' if rel_trans_type == 'Independent(sus)' else 'eq_res_type'
 
     return web_pars
@@ -742,20 +762,6 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
     errs = []
     sim_pars_out, epi_pars_out, int_pars_out = copy.deepcopy(sim_pars), copy.deepcopy(epi_pars), copy.deepcopy(int_pars)
     (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs)
-    #print("SIM PARS")
-    #print(sim_pars)
-    #print("EPI PARS")
-    #print(epi_pars)
-    #print("INT PARS")
-    #print(int_pars)
-    #print('infection_step_list')
-    #print(infection_step_list)
-    #print('rel_sus_type_list')
-    #print(rel_sus_type_list)
-    #print('rel_trans_type_list')
-    #print(rel_trans_type_list)
-    #print('population_volume_list')
-    #print(population_volume_list)
     try:
         web_pars_list = []
         #print(int_pars_list)
@@ -910,7 +916,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8263
+        app.config['SERVER_PORT'] = 8265
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:
