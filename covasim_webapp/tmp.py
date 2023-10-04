@@ -200,6 +200,6 @@ if __name__ == '__main__':
     #sim2 = cv.Sim(pars).init_people(prepared_pop=people_nsk)
     ##sim = cv.Sim(pop_size=100000, pop_type='synthpops', popfile=)
     #sim2.run()
-    #pop = lp.make_people_from_pars()
-    make_dict_dist2fig()
+    pop = lp.make_people_from_pars()
+    #make_dict_dist2fig()
 

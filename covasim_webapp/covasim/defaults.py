@@ -361,10 +361,12 @@ def get_default_plots(which='default', kind='sim', sim=None):
                 'Total counts': [
                     'cum_infections',
                     'cum_diagnoses_rpn',
+                    'cum_reinfections'
                 ],
                 'Daily counts': [
                     'new_infections',
                     'new_diagnoses_rpn',
+                    'new_reinfections'
                 ],
                 'Health outcomes': [
                     'cum_severe',
@@ -372,6 +374,9 @@ def get_default_plots(which='default', kind='sim', sim=None):
                     'cum_deaths',
                     'cum_known_deaths',
                 ],
+                #'Vaccinating': [
+                #    'n_vaccinated'
+                #]
             })
 
         else: # pragma: no cover

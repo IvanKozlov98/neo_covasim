@@ -815,10 +815,13 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
         'Total counts': 'Total cases',
         'Daily counts': 'Daily cases',
         'Health outcomes': 'Cumulative outcomes',
+        'Vaccinating': 'Vaccinating'
     }
     label2new_label = {
         'Cumulative infections': 'Infections',
         'Number of new infections': 'Infections',
+        'Cumulative reinfections': 'Reinfections',
+        'Number of new reinfections': 'Reinfections',
         'Cumulative severe cases': 'Severe cases',
         'Cumulative critical cases': 'Critical cases',
         'Cumulative deaths': 'Deaths',
@@ -829,6 +832,7 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
         'Total counts': 'Total cases',
         'Daily counts': 'Daily cases',
         'Health outcomes': 'Cases',
+        'Vaccinating': 'Fraction'
     }
 
     for p,title,keylabels in to_plot.enumitems():
@@ -1033,6 +1037,26 @@ def plotly_rs(sims, do_show=False):
                 color=f'rgba(255, 0, 0, {brightness})',
                 width=2  # Ширина линии
             )))
+        # base testing
+        y_bt = cur_analyzer.rs_based_testing
+        has_testing = np.sum(y_bt) > 0 
+        if has_testing:
+            x_bt = np.arange(y_bt.size) * 7 + 7
+            fig.add_trace(
+                go.Scatter(x=x_bt, y=y_bt, visible=False,
+                name=f"{sim.label}: R (based testing)",
+                line=dict(
+                    color=f'rgba(255, 100, 0, {2 * brightness})',
+                    width=2  # Ширина линии
+                )))
+            fig.add_trace(
+                go.Scatter(x=x_bt, y=get_window_data(y_bt), 
+                    name=f"{sim.label}: R (based testing)",
+                    line=dict(
+                    color=f'rgba(255, 100, 0, {2 * brightness})',
+                    width=2  # Ширина линии
+                )))
+
         y_sim = sim.compute_r_eff()
         x_sim = np.arange(y_sim.size)
         fig.add_trace(
@@ -1051,6 +1075,8 @@ def plotly_rs(sims, do_show=False):
                         width=2  # Ширина линии
                     )))
     
+    n_ft = 3 if has_testing else 2
+    tf_arr, ft_arr = ([True, False] * n_ft, [False, True] * n_ft)
     fig.update_layout(title={'text': make_bold('Effective reproductive number (Rt)')}, 
                       yaxis_title='Rt', autosize=True,
                       xaxis_title='Day',
@@ -1060,10 +1086,10 @@ def plotly_rs(sims, do_show=False):
                             buttons=list([
                                 dict(label="Raw",
                                     method="update",
-                                    args=[{"visible": [True, False, True, False] * sims_count}]),
+                                    args=[{"visible": tf_arr * sims_count}]),
                                 dict(label="Window",
                                     method="update",
-                                    args=[{"visible": [False, True, False, True] * sims_count}])
+                                    args=[{"visible": ft_arr * sims_count}])
                             ]),
                             x=1,  # Устанавливаем положение кнопки по горизонтали (1 = справа)
                             xanchor="right",  # Устанавливаем якорную точку кнопки справа

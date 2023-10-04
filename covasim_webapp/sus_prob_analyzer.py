@@ -173,6 +173,12 @@ class store_seir(cv.Analyzer):
         import time
         if sim is None:
             raise RuntimeError("Sim in finalize is None!")
+
+        print('new_diagnoses_rpn')
+        print(sim.results['new_diagnoses_rpn'])
+        print('+++++++++++')
+        print('+++++++++++')
+
         self.neo_strike_numbers = []
         self.neo_cum_strike_numbers = []
         t0 = time.time()
@@ -183,14 +189,21 @@ class store_seir(cv.Analyzer):
         self.state_statistics = sim.state_statistics
         # Calculate rs
         self.rs = []
+        self.rs_based_testing = []
         timestep_r = 7
-        prev_sum = np.sum(self.new_infections[0:timestep_r])
-        for i in range(timestep_r, len(self.new_infections), timestep_r):
-            cur_sum = np.sum(self.new_infections[i:(i+timestep_r)])
+        prev_sum = np.sum(sim.results['new_infections'][0:timestep_r])
+        prev_sum_bt = np.sum(sim.results['new_diagnoses_rpn'][0:timestep_r])
+        for i in range(timestep_r, len(sim.results['new_infections']), timestep_r):
+            cur_sum = np.sum(sim.results['new_infections'][i:(i+timestep_r)])
+            cur_sum_bt = np.sum(sim.results['new_diagnoses_rpn'][i:(i+timestep_r)])
             cur_r = cur_sum / (prev_sum + 1)
+            cur_r_bt = cur_sum_bt / (prev_sum_bt + 1)
             self.rs.append(cur_r)
+            self.rs_based_testing.append(cur_r_bt)
             prev_sum = cur_sum
+            prev_sum_bt = cur_sum_bt
         self.rs = np.array(self.rs)
+        self.rs_based_testing = np.array(self.rs_based_testing)
 
         # calculate ars
         self.ars = []
