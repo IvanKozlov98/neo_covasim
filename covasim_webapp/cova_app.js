@@ -155,7 +155,7 @@ const interventionTableConfig = {
         fields: [
             {key: 'start', type: 'number', label: 'Start day', tooltip: 'Start day of intervention', value: 0},
             {key: 'end', type: 'number', label: 'End day', tooltip: 'End day of intervention (leave blank for no end)', value: null},
-            {key: 'level', type: 'number', label: 'Probability', tooltip: 'Probability of being vaccinated (i.e., fraction of the population)', min: 0, max: 100, value: 30},
+            {key: 'level', type: 'number', label: 'Probability', tooltip: 'Probability of being vaccinated (i.e., fraction of the population)', min: 0, max: 100, value: 0.3},
             {key: 'rel_sus_vaccine', type: 'number', label: 'Changing in susceptibility', tooltip: 'Relative change in susceptibility; 0 = perfect, 100 = no effect', min: 0, max: 100, value: 50},
             {key: 'rel_symp_vaccine', type: 'number', label: 'Changing in symptom probability', tooltip: 'Relative change in symptom probability for people who still get infected; 0 = perfect, 100 = no effect', min: 0, max: 100, value: 10},
             {key: 'min_age', type: 'number', label: 'Min age', tooltip: 'Min age bound', value: 0},

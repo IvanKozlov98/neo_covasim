@@ -139,21 +139,21 @@ const interventionTableConfig = {
         fields: [
             {key: 'start', type: 'number', step: "1", label: 'Start day', tooltip: 'Start day of intervention', value: 0},
             {key: 'end', type: 'number', step: "1", label: 'End day', tooltip: 'End day of intervention (leave blank for no end)', value: null},
-            {key: 'level', type: 'number', step: "0.01", label: 'Probability', tooltip: 'Probability of being vaccinated (i.e., fraction of the population)', min: 0, max: 100, value: 30},
-            {key: 'rel_sus_vaccine', type: 'number', step: "0.01", label: 'Changing in susceptibility', tooltip: 'Relative change in susceptibility; 0 = perfect, 100 = no effect', min: 0, max: 100, value: 50},
-            {key: 'rel_symp_vaccine', type: 'number', step: "0.01", label: 'Changing in symptom probability', tooltip: 'Relative change in symptom probability for people who still get infected; 0 = perfect, 100 = no effect', min: 0, max: 100, value: 10},
+            {key: 'level', type: 'number', step: "0.01", label: 'Probability', tooltip: 'Probability of being vaccinated (i.e., fraction of the population)', min: 0, max: 100, value: 0.3},
             {key: 'min_age', type: 'number', step: "1", label: 'Min age', tooltip: 'Min age bound', value: 0},
             {key: 'max_age', type: 'number', step: "1", label: 'Max age', tooltip: 'Max age bound (leave blank for no end)', value: null}
         ],
+        default_vaccine_choice: 'pfizer',
         handleSubmit: function(event, city_ind) {
             const start = vm.parse_day(event.target.elements.start.value, city_ind);
             const end = vm.parse_day(event.target.elements.end.value, city_ind);
             const level = event.target.elements.level.value;
-            const rel_sus_vaccine = event.target.elements.rel_sus_vaccine.value;
-            const rel_symp_vaccine = event.target.elements.rel_symp_vaccine.value;
             const min_age = event.target.elements.min_age.value;
             const max_age = vm.parse_max_age(event.target.elements.max_age.value);
-            return {start, end, level, rel_sus_vaccine, rel_symp_vaccine, min_age, max_age};
+            return {start, end, level, min_age, max_age};
+        },
+        handleDop: function(prob) {
+            this.fields['level'] = prob;
         }
     },
     symptomatic_testing: {
@@ -271,6 +271,12 @@ function clone(obj) {
     return temp;
 }
 
+function changeOnlyOne(lst, ind, obj) {
+    copy_lst = clone(lst);
+    copy_lst[ind] = obj;
+    return copy_lst;
+}
+
 
 var vm = new Vue({
     el: '#app',
@@ -356,6 +362,21 @@ var vm = new Vue({
                 //'uniform_all'
             ],
             rel_sus_choice_list: Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
+            vaccine_options: [
+                'pfizer',
+                'moderna',
+                'az',
+                'jj',
+                'novavax',
+                'sinovac',
+                'sinopharm'
+            ],
+            nab_init_par1_vaccine_list: Array.from({ length: 20 }, () => (-1)),
+            nab_init_par2_vaccine_list: Array.from({ length: 20 }, () => (2)),
+            nab_boost_vaccine_list: Array.from({ length: 20 }, () => (8)),
+            doses_vaccine_list: Array.from({ length: 20 }, () => (2)),
+            interval_vaccine_list: Array.from({ length: 20 }, () => (28)),
+            vaccine_choice_list: Array.from({ length: 20 }, () => ('pfizer')),
             rel_trans_options: ['Dependent(sus)', 'Independent(sus)'],
             rel_trans_choice_list: Array.from({ length: 20 }, () => ('Independent(sus)')),
             population_volume_options: ['100K', '100K(Random)', '500K', '1M', '3M'],
@@ -412,6 +433,7 @@ var vm = new Vue({
             this.cur_rel_sus_fig[newInd] = clone(this.cur_rel_sus_fig[oldInd]); 
             this.infection_step_choice_list[newInd] = clone(this.infection_step_choice_list[oldInd]); 
             this.rel_sus_choice_list[newInd] = clone(this.rel_sus_choice_list[oldInd]); 
+            this.vaccine_choice_list[newInd] = clone(this.vaccine_choice_list[oldInd]); 
             this.rel_trans_choice_list[newInd] = clone(this.rel_trans_choice_list[oldInd]); 
             this.population_volume_choice_list[newInd] = clone(this.population_volume_choice_list[oldInd]);
             // copy sim_pars
@@ -442,6 +464,18 @@ var vm = new Vue({
             this.cur_rel_sus_fig = response.data;
         },
 
+        async handleChangeVaccine(city_ind) {
+            const city_ind_int = parseInt(city_ind);
+            const response = await sciris.rpc('get_vaccine_pars', undefined, {vaccine_choice: this.vaccine_choice_list[parseInt(city_ind)]});
+            console.log(this.vaccine_choice_list);
+            console.log(response.data);
+            this.nab_init_par1_vaccine_list = changeOnlyOne(this.nab_init_par1_vaccine_list, city_ind_int, response.data['nab_init_par1']);
+            this.nab_init_par2_vaccine_list = changeOnlyOne(this.nab_init_par2_vaccine_list, city_ind_int, response.data['nab_init_par2']);
+            this.nab_boost_vaccine_list = changeOnlyOne(this.nab_boost_vaccine_list, city_ind_int, response.data['nab_boost']);
+            this.doses_vaccine_list = changeOnlyOne(this.doses_vaccine_list, city_ind_int, response.data['doses']);
+            this.interval_vaccine_list = changeOnlyOne(this.interval_vaccine_list, city_ind_int, response.data['interval']);
+        },
+
         async addInteraction(event) {
             const interaction = this.interactionTableConfig.handleSubmit(event);
             if (!(interaction.from_city_choice == interaction.to_city_choice))
@@ -470,6 +504,13 @@ var vm = new Vue({
 
             let overlaps = false;
             const int_pars = this.int_pars[city_ind][key];
+            if (scenarioKey == 'vaccinate_closures') {
+                intervention['nab_init_par1'] = this.nab_init_par1_vaccine_list[city_ind];
+                intervention['nab_init_par2'] = this.nab_init_par2_vaccine_list[city_ind];
+                intervention['nab_boost'] = this.nab_boost_vaccine_list[city_ind];
+                intervention['doses'] = this.doses_vaccine_list[city_ind];
+                intervention['interval'] = this.interval_vaccine_list[city_ind];
+            }
             for (let i = 0; i < int_pars.length; i++) {
                 const { start, end } = int_pars[i];
                 const is_time_overlap = ((start <= intervention.start && end >= intervention.start) ||
@@ -656,6 +697,7 @@ var vm = new Vue({
             this.cur_rel_sus_fig = Array.from({ length: 20 }, () => ({}));
             this.infection_step_choice_list = Array.from({ length: 20 }, () => ('Covasim'));
             this.rel_sus_choice_list = Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
+            this.vaccine_choice_list = Array.from({ length: 20 }, () => ('pfizer')),
             this.rel_trans_choice_list = Array.from({ length: 20 }, () => ('Independent(sus)')),
             this.population_volume_choice_list = Array.from({ length: 20 }, () => ('100K')),
 

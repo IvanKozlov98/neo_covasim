@@ -227,6 +227,15 @@ def upload_file(file):
 
 
 @app.register_RPC()
+def get_vaccine_pars(vaccine_choice):
+    from covasim import parameters as cvpar
+    tmp_res = cvpar.get_vaccine_dose_pars(vaccine_choice)
+    tmp_res['nab_init_par1'] = tmp_res['nab_init']['par1']
+    tmp_res['nab_init_par2'] = tmp_res['nab_init']['par2']
+    return tmp_res
+
+
+@app.register_RPC()
 def get_dist_figs(rel_sus_choice_list=None, tabs=None):
     cur_rel_sus_fig = {}
     for city_ind in tabs:
@@ -273,13 +282,13 @@ def vaccinate_by_age(prob, min_age, max_age, sim):
     return output
 
 def parse_vaccine_parameters(int_str_pars): 
-    prob = int(int_str_pars['level']) / 100
+    prob = float(int_str_pars['level']) / 100
     min_age = 0 if int_str_pars['min_age'] == '' else int(int_str_pars['min_age'])
     max_age = 100 if int_str_pars['max_age'] == '' else int(int_str_pars['max_age'])
 
     return {
-        'rel_sus': int(int_str_pars['rel_sus_vaccine']) / 100,
-        'rel_symp': int(int_str_pars['rel_symp_vaccine']) / 100,
+        #'rel_sus': int(int_str_pars['rel_sus_vaccine']) / 100,
+        #'rel_symp': int(int_str_pars['rel_symp_vaccine']) / 100,
         'subtarget': partial(vaccinate_by_age, prob, min_age, max_age)
     }, {
         'prob': prob,
@@ -371,16 +380,30 @@ def parse_interventions(int_pars, is_random=False):
                 #print("/*/*//**/*/*/")
                 interv = cv.test_prob(start_day=start, end_day=end, symp_prob=level, asymp_prob=asymp_prob, label=f"symptomatic testing with " + "{:.2f}".format(asymp_prob))
             elif ikey == 'vaccinate_closures':
+                print("VVVVVVVVV")
+                print(iconfig)
+                print("VVVVVVVVV")
+                
                 pars_vac, label_d = parse_vaccine_parameters(iconfig)
-                interv = cv.simple_vaccine(
-                    days=[start, end], 
-                    rel_sus=pars_vac['rel_sus'],
-                    rel_symp=pars_vac['rel_symp'],
+                vaccine_dict = dict(
+                    nab_init  = dict(dist='normal', par1=float(iconfig['nab_init_par1']), par2=float(iconfig['nab_init_par2'])),
+                    nab_boost = float(iconfig['nab_boost']),
+                    doses     = int(iconfig['doses']),
+                    interval  = int(iconfig['interval']),
+                )
+                print("VACCINE CHOICE")
+                print(vaccine_dict)
+                print('________')
+                interv = cv.historical_vaccinate_prob(
+                    vaccine=vaccine_dict,
+                    days=np.arange(start, end), 
                     subtarget=pars_vac['subtarget'],
                     label=f"""
 vaccinate {(label_d['min_age'], label_d['max_age'])}
-with prob """ + "{:.2f}".format(label_d['prob'])
+with prob """ + "{:.2f}".format(label_d['prob']),
+                    prob=label_d['prob']
                 )
+
             elif ikey == 'contact_tracing':
                 trace_prob = {k:level for k in 'hswc'}
                 trace_time = {k:1.0 for k in 'hswc'}
@@ -576,7 +599,9 @@ def get_description(key):
         "common_sim": ["Кумулятивное число инфицированных агентов и зарегистрированных случаев (с поправкой на отсрочку и неполную эффективность регистрации). Вертикальные пунктирные линии обозначают дни начала и окончания интервенций.", 
                        "Число инфицированных агентов и зарегистрированных случаев (с поправкой на отсрочку и неполную эффективность регистрации) в сутки. Вертикальные пунктирные линии обозначают дни начала и окончания интервенций.", 
                        "Кумулятивное число заболевших по тяжести заболевания. Вертикальные пунктирные линии обозначают дни начала и окончания интервенций.",
-                       "Процент вакцинированных людей"]
+                       "Процент вакцинированных людей",
+                       "Информация о защищенности популяции от патогена"
+                       ]
     }
     return descriptions[key] 
 
@@ -919,7 +944,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8266
+        app.config['SERVER_PORT'] = 8269
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

@@ -374,9 +374,13 @@ def get_default_plots(which='default', kind='sim', sim=None):
                     'cum_deaths',
                     'cum_known_deaths',
                 ],
-                #'Vaccinating': [
-                #    'n_vaccinated'
-                #]
+                'Vaccinating': [
+                    'n_vaccinated'
+                ],
+                'Protection': [
+                    'pop_nabs',
+                    'pop_protection'
+                ]
             })
 
         else: # pragma: no cover

@@ -174,10 +174,10 @@ class store_seir(cv.Analyzer):
         if sim is None:
             raise RuntimeError("Sim in finalize is None!")
 
-        print('new_diagnoses_rpn')
-        print(sim.results['new_diagnoses_rpn'])
-        print('+++++++++++')
-        print('+++++++++++')
+        #print('new_diagnoses_rpn')
+        #print(sim.results)
+        #print('+++++++++++')
+        #print('+++++++++++')
 
         self.neo_strike_numbers = []
         self.neo_cum_strike_numbers = []

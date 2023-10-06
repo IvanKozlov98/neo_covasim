@@ -777,10 +777,13 @@ def plotly_interventions(sim, fig, basename="", max_y=1, add_to_legend=False): #
     ''' Add vertical lines for interventions to the plot '''
     go = import_plotly() # Load Plotly
     freq_count = 300
+    print("plotly_interventions")
+    was_plot_interv = set()
     if sim['interventions']:
         for interv in sim['interventions']:
             if hasattr(interv, 'days'):
-                for interv_day in interv.days:
+                interv_days = interv.days if len(interv.days) < 2 else [interv.days[0], interv.days[-1]]
+                for interv_day in interv_days:
                     if interv_day and interv_day < sim['n_days']:
                         #interv_date = sim.date(interv_day, as_date=False)
                         #fig.add_shape(dict(type='line', xref='x', yref='paper', x0=interv_day, x1=interv_day, y0=0, y1=1, line=dict(width=0.5, dash='dash')))
@@ -790,6 +793,9 @@ def plotly_interventions(sim, fig, basename="", max_y=1, add_to_legend=False): #
                             hovertext=f"{basename}: {interv.label} on day {interv_day}",
                             hovertemplate=f'{basename}: {interv.label} on day {interv_day}<extra></extra>', 
                             mode='lines', line=dict(dash='dash', width=0.5), showlegend=False))
+            was_plot_interv.add(interv.label)
+
+
 
     return
 
@@ -815,7 +821,8 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
         'Total counts': 'Total cases',
         'Daily counts': 'Daily cases',
         'Health outcomes': 'Cumulative outcomes',
-        'Vaccinating': 'Vaccinating'
+        'Vaccinating': 'Vaccinating',
+        'Protection': 'Protection'
     }
     label2new_label = {
         'Cumulative infections': 'Infections',
@@ -826,13 +833,16 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
         'Cumulative critical cases': 'Critical cases',
         'Cumulative deaths': 'Deaths',
         'Number of new diagnoses_rpn': 'Registrations',
-        'Cumulative diagnoses_rpn': 'Registrations'
+        'Cumulative diagnoses_rpn': 'Registrations',
+        'Population average nabs': 'Population average nabs',
+        'Population average protective immunity': 'Population average protective immunity'
     }
     title2y_axis = {
         'Total counts': 'Total cases',
         'Daily counts': 'Daily cases',
         'Health outcomes': 'Cases',
-        'Vaccinating': 'Fraction'
+        'Vaccinating': 'Total cases',
+        'Protection': 'Protection coef'
     }
 
     for p,title,keylabels in to_plot.enumitems():

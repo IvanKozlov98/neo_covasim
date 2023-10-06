@@ -316,6 +316,58 @@
                             <template v-for="field in intervention.fields">
                               
                               <div v-if="intervention.toolTip === 'Vaccination rates'" class="form-group">
+                                <div v-if="field.key === 'min_age'">
+                                  <label for="examples">Select vaccine</label>
+                                  <div class="form-row mb-3">
+                                    <div class="col">
+                                      <select :disabled="running" id="examples_vaccine_tr" v-model="vaccine_choice_list[i]" :name="'vaccine_choice'" class="form-control" aria-label="Example presets" @change=handleChangeVaccine(i)>
+                                        <option v-for="(item, index) in vaccine_options" :value="item">
+                                          {{ item }}
+                                        </option>
+                                      </select>
+                                      <b-tooltip target="examples_vaccine_tr">
+                                        Example parameter configurations
+                                      </b-tooltip>
+                                    </div>
+                                  </div>
+                                  <div class="col">
+                                    <label>Nab init par1:</label>
+                                    <input id="nab_init_par1_id" type="number" :disabled="running" class="form-control" v-model="nab_init_par1_vaccine_list[i]">
+                                    <b-tooltip target="nab_init_par1_id">
+                                      The initial antibody level (higher = more protection)
+                                      N(par1, par2)
+                                    </b-tooltip>
+                                  </div>
+                                  <div class="col">
+                                    <label>Nab init par2:</label>
+                                    <input id="nab_init_par2_id" type="number" :disabled="running" class="form-control" v-model="nab_init_par2_vaccine_list[i]">
+                                    <b-tooltip target="nab_init_par2_id">
+                                      The initial antibody level (higher = more protection)
+                                      N(par1, par2)
+                                    </b-tooltip>
+                                  </div>
+                                  <div class="col">
+                                    <label>Nab boost:</label>
+                                    <input id="nab_boost_id" type="number" :disabled="running" class="form-control" v-model="nab_boost_vaccine_list[i]">
+                                    <b-tooltip target="nab_boost_id">
+                                      How much of a boost being vaccinated on top of a previous dose or natural infection provides
+                                    </b-tooltip>
+                                  </div>
+                                  <div class="col">
+                                    <label>Doses:</label>
+                                    <input id="doses_id" type="number" :disabled="running" class="form-control" v-model="doses_vaccine_list[i]">
+                                    <b-tooltip target="doses_id">
+                                      The number of doses required to be fully vaccinated
+                                    </b-tooltip>
+                                  </div>
+                                  <div class="col">
+                                    <label>Interval:</label>
+                                    <input id="interval_id" type="number" :disabled="running" class="form-control" v-model="interval_vaccine_list[i]">
+                                    <b-tooltip target="interval_id">
+                                      The interval between doses
+                                    </b-tooltip>
+                                  </div>
+                                </div>
                                 <div v-if="field.key !== 'min_age' && field.key !== 'max_age'">
                                 <label :for="field.key">{{ field.label }}</label>
                                 <input :max="field.max || sim_length.max" :min="field.min || 0" :value="field.value" :name="field.key"
