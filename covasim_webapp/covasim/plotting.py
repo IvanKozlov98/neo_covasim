@@ -16,8 +16,8 @@ from .settings import options as cvo
 
 
 __all__ = ['plot_sim', 'plot_scens', 'plot_result', 'plot_compare', 'plot_people', 'plotly_sim', 'plotly_people',
-           'plotly_hist_sus', 'plotly_hist_number_source_per_day',
-           'plotly_not_infected_people_by_sus_norm', 'plotly_hist_number_source_cum', 'plotly_sars',
+           'plotly_hist_sus', 'plotly_hist_number_source_per_day', 'plotly_hist_nab_per_day', 'plotly_nabs',
+           'plotly_not_infected_people_by_sus_norm', 'plotly_hist_number_source_cum', 'plotly_sars', 'plotly_hist_immunity_per_day',
            'plotly_not_infected_people_by_sus', 'plotly_animate', 'plotly_part_80', 'plotly_rs', 'plotly_ars',
            'plotly_viral_load_per_day', 'plotly_viral_load_cum', 'plotly_risk_infected_by_age_group_per_day',
            'plotly_risk_infected_by_age_group_cum', 'plotly_infected_non_infected_group', 'plotly_contact_to_sus_trans']
@@ -1389,6 +1389,148 @@ def plotly_hist_number_source_per_day(sim, do_show=False):
     if do_show:
         fig.show()
     return fig
+
+#####################################
+def get_df_hist_immunity_per_day(cur_analyzer, days):
+    import pandas as pd
+    dfs = []
+    for day in days:
+        y, bins = cur_analyzer.immunity_histograms[day]
+        print(y[:1000])
+        df = pd.DataFrame({
+            'day': [day] * len(bins), 
+            'X': bins,
+            'Y': y})
+        dfs.append(df)
+    return pd.concat(dfs, axis=0)
+
+
+def plotly_hist_immunity_per_day(sim, do_show=False):
+    import plotly.express as px
+    cur_analyzer= sim.get_analyzer('seir')
+    days = sim.tvec
+    df = get_df_hist_immunity_per_day(cur_analyzer, days[:-3])
+    # Plot
+    fig = px.bar(df, 
+        x='X',
+        y="Y",
+        animation_frame='day',
+        labels={"X": "Immunity",
+                "day": "Day",
+                "Y": "Number of agents with given immunity"
+                },
+        title=make_bold('Immunity histogram')
+        )
+    degree = int(1 + np.log10(np.max(df['Y'])))
+    fig.update_layout(yaxis_range=[0, 10 ** degree])
+    fig.update_yaxes(type='log', range=[0, degree])
+
+    if do_show:
+        fig.show()
+    return fig
+#####################################
+
+#####################################
+def get_df_hist_nab_per_day(cur_analyzer, days):
+    import pandas as pd
+    dfs = []
+    for day in days:
+        y, bins = cur_analyzer.nab_histograms[day]
+        bins = list(map(lambda x: '<' + x, bins))
+        df = pd.DataFrame({
+            'day': [day] * len(bins), 
+            'X': bins,
+            'Y': y})
+        dfs.append(df)
+    return pd.concat(dfs, axis=0)
+
+
+def plotly_hist_nab_per_day(sim, do_show=False):
+    import plotly.express as px
+    cur_analyzer= sim.get_analyzer('seir')
+    days = sim.tvec
+    df = get_df_hist_nab_per_day(cur_analyzer, days[:-3])
+    # Plot
+    fig = px.bar(df, 
+        x='X',
+        y="Y",
+        animation_frame='day',
+        labels={"X": "NAB",
+                "day": "Day",
+                "Y": "Number of agents with given nab"
+                },
+        title=make_bold('NABs histogram')
+        )
+    degree = int(1 + np.log10(np.max(df['Y'])))
+    fig.update_layout(yaxis_range=[0, 10 ** degree])
+    fig.update_yaxes(type='log', range=[0, degree])
+
+    if do_show:
+        fig.show()
+    return fig
+#####################################
+
+
+def plotly_nabs(sims, do_show=False):
+    go = import_plotly() # Load Plotly
+    plots = []
+    to_plot = cvd.get_default_plots()
+    
+    sims_count = len(sims)
+    brightnesses = np.linspace(0, 1, sims_count + 1)[1:]
+
+    title2new_title = {
+        'Protection': 'Protection'
+    }
+    label2new_label = {
+        'Population average nabs': 'Population average nabs',
+        'Population average protective immunity': 'Population average protective immunity'
+    }
+    title2y_axis = {
+        'Protection': 'Protection coef'
+    }
+
+    title = 'Protection'
+    keylabels = to_plot[title]
+    fig = go.Figure()
+    # plot several sims
+    for key in keylabels:
+        max_y = 0
+        for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
+            label = sim.results[key].name
+            this_color = sim.results[key].color
+            x = np.arange(sim.results['date'][:].size)
+            y = sim.results[key][:]
+            max_y = np.max(sim.results[key][:]) if np.max(sim.results[key][:]) > max_y else max_y 
+
+            new_label = label2new_label[label] if label in label2new_label else label
+            _r, _g, _b = _hsv2rgb(this_color)
+            fig.add_trace(go.Scatter(x=x, y=y, mode='lines',
+                line=dict(
+                        color=f'rgba({_r}, {_g}, {_b}, {brightness})',
+                        width=2  # Ширина линии
+                ), showlegend=True, 
+                name=f"{sim.label}: {new_label}", hovertext=list(map(lambda t: str(t)+ '; ' + sim.label + '; ' + new_label, zip(x, y.astype(int)))), hoverinfo="text"))
+            if sim.data is not None and key in sim.data:
+                xdata = sim.data['date']
+                ydata = sim.data[key]
+                fig.add_trace(go.Scatter(x=xdata, y=ydata, mode='markers',
+                    line=dict(
+                        color=f'rgba({_r}, {_g}, {_b}, {brightness})',
+                        width=2  # Ширина линии
+                    ), showlegend=True,
+                    name=f"{sim.label}: {new_label} (data)", hovertemplate=f'{ydata}: {new_label}'))
+        for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
+            plotly_interventions(sim, fig, basename=sim.label,
+                                    max_y=max_y, add_to_legend=True) # Only add the intervention label to the legend for the first plot
+    fig.update_layout(title={'text':title2new_title[title]}, xaxis_title='Day', yaxis_title=title2y_axis[title], autosize=True, **plotly_legend)
+    plots.append(fig)
+
+    if do_show:
+        for fig in plots:
+            fig.show()
+
+    return plots
 
 
 def get_df_hist_number_source_cum(cur_analyzer, days):

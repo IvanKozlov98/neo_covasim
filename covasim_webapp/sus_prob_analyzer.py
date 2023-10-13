@@ -46,6 +46,9 @@ class store_seir(cv.Analyzer):
         self.sizes_of_box_by_ages = None
         self.sizes_ages_groups = None
         self.hist_sus = None
+
+        self.nab_histograms = []
+        self.immunity_histograms = []
         return
     
     def _init_sizes_of_box(self, ppl):
@@ -84,6 +87,24 @@ class store_seir(cv.Analyzer):
 
     def to_json(self):
         return {}
+
+    def work_nab_histograms(self, sim):
+        bins = np.array([0.001, 0.01, 0.05] + list(np.array(np.exp(np.arange(0.2, 8)), dtype=int)))
+        def make_hist(nab):
+            y, _ = np.histogram(nab, bins=bins)
+            return (y, list(map(str, bins[:-1])))
+        nab_histogram = make_hist(sim.people.nab)
+        self.nab_histograms.append(nab_histogram)
+
+    def work_immunity_histograms(self, sim):
+        max_rel_sus = np.max(sim.people.rel_sus)
+        bins = np.arange(0, max_rel_sus, max_rel_sus / 11)
+        print(f"bins={bins}")
+        def make_hist(immunity):
+            y, _ = np.histogram(immunity, bins=bins)
+            return (y, 0.5 * (bins[:-1] + bins[1:]))
+        immunity_histogram = make_hist(sim.people.sus_imm * sim.people.rel_sus)
+        self.immunity_histograms.append(immunity_histogram)
 
     def apply(self, sim):
         ppl = sim.people
@@ -126,6 +147,12 @@ class store_seir(cv.Analyzer):
         self.naive_by_sus_agegroup_list.append(np.array(self.naive_by_sus_agegroup, copy=True))
         #
         self.exposed_by_sus_by_ages_list.append(np.array(self.exposed_by_sus_by_ages, copy=True))
+
+        # work with nab histograms
+        self.work_nab_histograms(sim=sim)
+
+        # work with immunity histograms
+        self.work_immunity_histograms(sim=sim)
 
         return
 
@@ -171,13 +198,17 @@ class store_seir(cv.Analyzer):
 
     def finalize(self, sim=None):
         import time
+
+        print('+++++++++++')
+        print('+++++++++++')
+        print(f"Summ: {np.sum(sim.people.rel_sus)}")
+
         if sim is None:
             raise RuntimeError("Sim in finalize is None!")
 
         #print('new_diagnoses_rpn')
         #print(sim.results)
-        #print('+++++++++++')
-        #print('+++++++++++')
+
 
         self.neo_strike_numbers = []
         self.neo_cum_strike_numbers = []

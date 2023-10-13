@@ -46,10 +46,12 @@ Incidence_and_outcomes = 'Incidence and outcomes'
 General_spread_parameters = 'General spread parameters'
 Spread_parameters_by_layer = 'Spread parameters by layer'
 Spread_parameters_by_age = 'Spread parameters by age'
+Immunity = 'Immunity'
 Rest = 'Rest'
 graph_groups = [
     Incidence_and_outcomes,
     General_spread_parameters,
+    Immunity,
     Spread_parameters_by_layer,
     Spread_parameters_by_age,
     Rest
@@ -433,6 +435,8 @@ def parse_rel_sus_type(rel_sus_type):
         return "beta_1_all"
     elif rel_sus_type == "Beta 3 all":
         return "beta_3_all"
+    elif rel_sus_type == 'Constant all':
+        return "uniform"
     else:
         raise Exception(f"Unrecognised sus type: {rel_sus_type}")
 
@@ -544,6 +548,14 @@ def get_description(key):
 А именно {кол-во агентов заразившихся на уровне layer} / {кол-во контактов на уровне layer, в которых один здоровый, а другой заразный} * 100.0
                 """
         ,
+        "nabs": """
+Гистограмма NABs агентов.
+                    """
+        ,
+                "immunities": """
+Гистограмма иммунитета агентов.
+                    """
+        ,
         "hist_sus": """
 Гистограмма распределения восприимчивости агентов в исходной популяции.
 Включает суммарную оценку восприимчивости, определяемую генетическими, физиологическими, иммунологическими, поведенческими факторами. Ось Х - условная восприимчивость, ось Y - число агентов с данным уровнем восприимчивости.
@@ -595,12 +607,12 @@ def get_description(key):
 Графическое представление условного среза популяции  (2000 агентов) по статусу в динамике. Каждая точка соответствует одному агенту, по оси Х распределение агентов по восприимчивости, по оси Y распределение агентов по числу контактов. 
         """
         ,
+        "nab_common": "Информация о защищенности популяции от патогена",
         "people": "Состав популяции по состоянию и исходам",
         "common_sim": ["Кумулятивное число инфицированных агентов и зарегистрированных случаев (с поправкой на отсрочку и неполную эффективность регистрации). Вертикальные пунктирные линии обозначают дни начала и окончания интервенций.", 
                        "Число инфицированных агентов и зарегистрированных случаев (с поправкой на отсрочку и неполную эффективность регистрации) в сутки. Вертикальные пунктирные линии обозначают дни начала и окончания интервенций.", 
                        "Кумулятивное число заболевших по тяжести заболевания. Вертикальные пунктирные линии обозначают дни начала и окончания интервенций.",
-                       "Процент вакцинированных людей",
-                       "Информация о защищенности популяции от патогена"
+                       "Процент вакцинированных людей"
                        ]
     }
     return descriptions[key] 
@@ -715,6 +727,11 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     # Basic 2
     graphs[General_spread_parameters] += process_graphs(cv.plotly_rs([cur_sim]), get_description('rs'))
     graphs[General_spread_parameters] += process_graphs(cv.plotly_ars([cur_sim]), get_description('ars'))
+    # Immunity
+    graphs[Immunity] += process_graphs(cv.plotly_hist_nab_per_day(cur_sim), get_description('nabs'))
+    graphs[Immunity] += process_graphs(cv.plotly_hist_immunity_per_day(cur_sim), get_description('immunities'))
+    graphs[Immunity] += process_graphs(cv.plotly_nabs([cur_sim]), get_description('nab_common'))
+
     if show_contact_stat:
         graphs[General_spread_parameters] += process_graphs(cv.plotly_part_80([cur_sim]), get_description('part_80'))
         graphs[General_spread_parameters] += process_graphs(cv.plotly_hist_number_source_per_day(cur_sim), get_description('hist_number_source_per_day'))
@@ -749,6 +766,8 @@ def plot_comparing(sims, show_contact_stat):
     graphs[General_spread_parameters] += process_graphs(cv.plotly_ars(sims), get_description('ars'))
     if show_contact_stat:
         graphs[General_spread_parameters] += process_graphs(cv.plotly_part_80(sims), get_description('part_80'))
+
+    graphs[Immunity] += process_graphs(cv.plotly_nabs(sims), get_description('nab_common'))
 
     graphs[Spread_parameters_by_layer] = []
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_sars(sims), get_description('sars'))
@@ -944,7 +963,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8269
+        app.config['SERVER_PORT'] = 8201
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

@@ -278,6 +278,11 @@ class People(cvb.BasePeople):
 
         # 0.34   0.67   1   1   1   1   1.24   1.47   1.47   1.47
         # (0.17, 0.5)  (0.5, 0.8) (0.8, 1.1) (1.1, 1.34) (1.34, 1.5)
+        constants_sum = np.sum(progs['sus_ORs'][inds])
+        def normalize_rel_sus(rel_sus_b):
+            coef = float(constants_sum) / (np.sum(rel_sus_b))
+            return rel_sus_b * coef
+
         if pars['rel_sus_type'] == 'constants':
             self.rel_sus[:] = progs['sus_ORs'][inds]  # Default susceptibilities
         elif pars['rel_sus_type'] == 'normal_pos':
@@ -334,6 +339,7 @@ class People(cvb.BasePeople):
             raise RuntimeError("Not corrected type of rel_sus")
         
         self.rel_sus[self.rel_sus > 2.5] = 2.5
+        self.rel_sus = normalize_rel_sus(self.rel_sus)
 
         tmp_trans = progs['trans_ORs'][inds] * cvu.sample(**self.pars['beta_dist'], size=len(inds))  # Default transmissibilities, with viral load drawn from a distribution
         if pars['rel_trans_type'] == 'eq_res_type':

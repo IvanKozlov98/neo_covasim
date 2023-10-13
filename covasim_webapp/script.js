@@ -289,6 +289,7 @@ var vm = new Vue({
             groupHides: {
                 'Incidence and outcomes': true,
                 'General spread parameters': false,
+                'Immunity': false,
                 'Spread parameters by layer': false,
                 'Spread parameters by age': false,
                 'Rest': false
@@ -358,7 +359,7 @@ var vm = new Vue({
                 //'beta_2_all',
                 'Normal all',
                 'Lognormal hot all',
-                //'uniform',
+                'Constant all',
                 //'uniform_all'
             ],
             rel_sus_choice_list: Array.from({ length: 20 }, () => ('Constant (Covasim default)')),

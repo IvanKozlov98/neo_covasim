@@ -111,6 +111,12 @@ def plotly_dist_sus(distname):
         ppl_age[tmp_ind:tmp_ind+cnt] = ind * 10
         tmp_ind += cnt
     inds = np.digitize(ppl_age, progs['age_cutoffs'])-1
+
+    constants_sum = np.sum(progs['sus_ORs'][inds])
+    def normalize_rel_sus(rel_sus_b):
+        coef = float(constants_sum) / (np.sum(rel_sus_b))
+        return rel_sus_b * coef
+
     if distname == 'constants':
         rel_sus[:] = progs['sus_ORs'][inds]  # Default susceptibilities
     elif distname == 'normal_pos':
@@ -167,6 +173,8 @@ def plotly_dist_sus(distname):
         raise RuntimeError("Not corrected type of rel_sus")
 
     rel_sus[rel_sus > 2.5] = 2.5
+    rel_sus = normalize_rel_sus(rel_sus)
+
     bins = np.arange(0, 2.5, 0.2)
     hist_rel_sus = np.histogram(rel_sus, bins=bins)
     bins = 0.5 * (bins[:-1] + bins[1:])
@@ -200,6 +208,6 @@ if __name__ == '__main__':
     #sim2 = cv.Sim(pars).init_people(prepared_pop=people_nsk)
     ##sim = cv.Sim(pop_size=100000, pop_type='synthpops', popfile=)
     #sim2.run()
-    pop = lp.make_people_from_pars()
-    #make_dict_dist2fig()
+    #pop = lp.make_people_from_pars()
+    make_dict_dist2fig()
 
