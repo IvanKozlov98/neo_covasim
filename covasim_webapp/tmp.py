@@ -6,6 +6,8 @@ import synthpops as sp
 import json
 import location_preprocessor as lp
 from covasim import utils as cvu
+from sus_prob_analyzer import store_seir
+
 
 
 def create_population(pop_size, filename):
@@ -201,6 +203,35 @@ def plotly_dist_sus(distname):
     return fig
 
 
+def plot_nabs():
+    import plotly.express as px
+
+    #analyzer = store_seir(show_contact_stat=False, label='seir')
+    ## dict(form='nab_decay', decay_rate1=0.007701635339554948, decay_time1=250, decay_rate2=0.001)
+    ## dict(form='exp_decay', init_val=-0.2, half_life=40)
+    #pars = {
+    #    'nab_decay': dict(form='nab_decay', decay_rate1=0.007701635339554948, decay_time1=250, decay_rate2=0.001)
+    #}
+    #sim = cv.Sim(n_days=300, n_agents=100000, pop_type='hybrid', analyzers=analyzer, label="default")
+    #sim.run()
+    #print(sim.people.peak_nab[:100])
+    #print("_______________")
+    nabs_arr = np.load("nab_arrs.pkl.npy")
+    nabs_arr = nabs_arr.T
+    for i in range(nabs_arr.shape[0]):
+        print(np.max(nabs_arr[i]))
+        if np.max(nabs_arr[i]) > 20:
+            nabs_arr[i] = np.zeros(shape=nabs_arr.shape[1])
+    
+    nabs_arr = nabs_arr.T
+    fig = px.line(nabs_arr)
+    fig.update_layout(
+        xaxis_title="time", yaxis_title="nab"
+    )
+    fig.show()
+
+
+
 if __name__ == '__main__':
     #make_people_from_file('Population_Nsk.xlsx')
     #pars = dict(n_agents=100000, pop_type='synthpops')
@@ -209,5 +240,5 @@ if __name__ == '__main__':
     ##sim = cv.Sim(pop_size=100000, pop_type='synthpops', popfile=)
     #sim2.run()
     #pop = lp.make_people_from_pars()
-    make_dict_dist2fig()
-
+    #make_dict_dist2fig()
+    plot_nabs()

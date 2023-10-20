@@ -493,6 +493,7 @@ def exp_decay(length, init_val, half_life, delay=None):
     else:
         t = np.arange(length, dtype=cvd.default_int)
         result = init_val * np.exp(-decay_rate * t)
+    print(f"np.diff(result) = {list(map(float,np.diff(result)))}")
     return np.diff(result)
 
 

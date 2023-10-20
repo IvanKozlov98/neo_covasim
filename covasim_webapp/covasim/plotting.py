@@ -1382,7 +1382,8 @@ def plotly_hist_number_source_per_day(sim, do_show=False):
                 },
         title=make_bold('Susceptible infected by one source')
         )
-    degree = int(1 + np.log10(np.max(df['Y'])))
+    float_degree = 1 + np.log10(np.max(df['Y']))
+    degree = int(float_degree) if ~np.isinf(float_degree) else 0
     fig.update_layout(yaxis_range=[0, 10 ** degree])
     fig.update_yaxes(type='log', range=[0, degree])
 
@@ -1421,7 +1422,8 @@ def plotly_hist_immunity_per_day(sim, do_show=False):
                 },
         title=make_bold('Immunity histogram')
         )
-    degree = int(1 + np.log10(np.max(df['Y'])))
+    float_degree = 1 + np.log10(np.max(df['Y']))
+    degree = int(float_degree) if ~np.isinf(float_degree) else 0
     fig.update_layout(yaxis_range=[0, 10 ** degree])
     fig.update_yaxes(type='log', range=[0, degree])
 
@@ -1461,7 +1463,8 @@ def plotly_hist_nab_per_day(sim, do_show=False):
                 },
         title=make_bold('NABs histogram')
         )
-    degree = int(1 + np.log10(np.max(df['Y'])))
+    float_degree = 1 + np.log10(np.max(df['Y']))
+    degree = int(float_degree) if ~np.isinf(float_degree) else 0
     fig.update_layout(yaxis_range=[0, 10 ** degree])
     fig.update_yaxes(type='log', range=[0, degree])
 
@@ -1562,7 +1565,8 @@ def plotly_hist_number_source_cum(sim, do_show=False):
                 },
         title=make_bold("Cumulative histogram number source")
         )
-    degree = int(1 + np.log10(np.max(df['Y'])))
+    float_degree = 1 + np.log10(np.max(df['Y']))
+    degree = int(float_degree) if ~np.isinf(float_degree) else 0
     fig.update_layout(yaxis_range=[0, 10 ** degree])
     fig.update_yaxes(type='log', range=[0, degree])
 

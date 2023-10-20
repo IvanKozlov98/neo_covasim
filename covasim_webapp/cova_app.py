@@ -133,7 +133,7 @@ def get_defaults(region=None, merge=False, die=die):
 
     sim_pars = dict(
         #pop_size     = dict(best=10000, min=1, max=max_pop,  name='Population size',            tip='Number of agents simulated in the model'),
-        pop_infected = dict(best=[10] * max_city_count,    min=1, max=max_pop,  name='Initial infections',         tip='Number of initial seed infections in the model'),
+        pop_infected = dict(best=[10] * max_city_count,    min=0, max=max_pop,  name='Initial infections',         tip='Number of initial seed infections in the model'),
         n_imports    = dict(best=[0] * max_city_count,     min=0, max=100,      name='Daily imported infections',  tip='Number of infections that are imported each day'),
         rand_seed    = dict(best=[0] * max_city_count,     min=0, max=100,      name='Random seed',                tip='The parameter of the random number generator; with a single stimulation, it does not matter'),
         n_days       = dict(best=90,     min=1, max=max_days, name="Simulation duration",        tip='Total duration (in days) of the simulation'),
@@ -841,6 +841,7 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
                 sim = dict(pars=pars, datafile=datafile, analyzers=analyzer, label=population_volume, popfile=popfile)
             else:
                 lbl = f"City {city_ind}"
+                print(pars)
                 if pars['pop_type'] != 'random':
                     sim = cv.Sim(pars=pars, datafile=datafile, popfile=popfile, analyzers=analyzer, label=lbl)
                 else:
@@ -963,7 +964,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8201
+        app.config['SERVER_PORT'] = 8270
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

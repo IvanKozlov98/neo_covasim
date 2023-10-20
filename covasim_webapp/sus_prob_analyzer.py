@@ -49,6 +49,8 @@ class store_seir(cv.Analyzer):
 
         self.nab_histograms = []
         self.immunity_histograms = []
+
+        self.nab_arrs = np.zeros(shape=(360, 100), dtype=float)
         return
     
     def _init_sizes_of_box(self, ppl):
@@ -99,7 +101,6 @@ class store_seir(cv.Analyzer):
     def work_immunity_histograms(self, sim):
         max_rel_sus = np.max(sim.people.rel_sus)
         bins = np.arange(0, max_rel_sus, max_rel_sus / 11)
-        print(f"bins={bins}")
         def make_hist(immunity):
             y, _ = np.histogram(immunity, bins=bins)
             return (y, 0.5 * (bins[:-1] + bins[1:]))
@@ -108,6 +109,7 @@ class store_seir(cv.Analyzer):
 
     def apply(self, sim):
         ppl = sim.people
+        self.nab_arrs[sim.t, :] = sim.people.nab[:100]
         self.new_infections.append(len(ppl.inds_new_infections))
         norm_rel_sus = ppl.rel_sus[ppl.inds_new_infections]
         naive_rel_sus = ppl.rel_sus[ppl.naive]
@@ -251,6 +253,8 @@ class store_seir(cv.Analyzer):
         zz = np.zeros((sim.viral_load_by_layers.shape), dtype=np.float)
         self.sars = np.divide(sim.viral_load_by_layers, sim.dangerous_contacts_count_by_layers,
                               out=zz, where=sim.dangerous_contacts_count_by_layers!=0)[:, :sim.people.t] * 100.0
+        
+        np.save("nab_arrs.pkl", self.nab_arrs)
         self.finalized = True
         return
 
