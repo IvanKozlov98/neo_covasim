@@ -16,7 +16,7 @@ from .settings import options as cvo
 
 
 __all__ = ['plot_sim', 'plot_scens', 'plot_result', 'plot_compare', 'plot_people', 'plotly_sim', 'plotly_people',
-           'plotly_hist_sus', 'plotly_hist_number_source_per_day', 'plotly_hist_nab_per_day', 'plotly_nabs',
+           'plotly_hist_sus', 'plotly_hist_number_source_per_day', 'plotly_hist_nab_per_day', 'plotly_nabs', 'plot_by_variant',
            'plotly_not_infected_people_by_sus_norm', 'plotly_hist_number_source_cum', 'plotly_sars', 'plotly_hist_immunity_per_day',
            'plotly_not_infected_people_by_sus', 'plotly_animate', 'plotly_part_80', 'plotly_rs', 'plotly_ars',
            'plotly_viral_load_per_day', 'plotly_viral_load_cum', 'plotly_risk_infected_by_age_group_per_day',
@@ -889,6 +889,52 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
             fig.show()
 
     return plots
+
+
+def plot_by_variant(sims, do_show=False): # pragma: no cover
+    import random
+    go = import_plotly() # Load Plotly
+    plots = []
+    tuples_list = [(random.randint(1, 254), random.randint(1, 254), random.randint(1, 254)) for _ in range(100)]
+    sims_count = len(sims)
+    brightnesses = np.linspace(0, 1, sims_count + 1)[1:]
+    
+    for is_cum in [True, False]:
+        fig = go.Figure()
+        for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
+            variant_names = [variant.label for variant in sim.pars['variants']]
+            x = np.arange(sim.results['date'][:].size)
+            max_y = 0
+            is_showlegend = (i == sims_count - 1)
+            for (j, variant_name) in enumerate(variant_names):
+                v_map = dict([(v,k) for k,v in sim.pars['variant_map'].items()])
+                y = sim.results['variant']['new_infections_by_variant'][v_map[variant_name]]
+                y = np.cumsum(y) if is_cum else y
+                max_y = np.max(y) if np.max(y) > max_y else max_y 
+                name = sim.results['variant']['new_infections_by_variant'].name + ' ' + variant_name
+                _r, _g, _b = tuples_list[j]
+                fig.add_trace(go.Scatter(x=x, y=y,
+                    hovertext=list(map(lambda t: str(t)+ '; ' + sim.label + '; ' + name, zip(x, y.astype(int)))),
+                    hoverinfo="text",
+                    name=name,
+                    showlegend=is_showlegend,
+                    line=dict(
+                        color=f'rgba({_r}, {_g}, {_b}, {brightness})',
+                        width=2  # Ширина линии
+                    )))
+        pref = 'Total' if is_cum else 'Daily'
+        fig.update_layout(title={'text': f'{pref} cases by variant'}, xaxis_title='Day', yaxis_title=f'{pref} cases', autosize=True, **plotly_legend)
+        for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
+            plotly_interventions(sim, fig, basename=sim.label,
+                                max_y=max_y, add_to_legend=True) # Only add the intervention label to the legend for the first plot
+    
+        plots.append(fig)
+
+    if do_show:
+        fig.show()
+
+    return plots
+
 
 
 def plotly_people(sim, do_show=False): # pragma: no cover

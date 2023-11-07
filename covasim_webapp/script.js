@@ -363,6 +363,7 @@ var vm = new Vue({
                 //'uniform_all'
             ],
             rel_sus_choice_list: Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
+            
             vaccine_options: [
                 'pfizer',
                 'moderna',
@@ -378,6 +379,25 @@ var vm = new Vue({
             doses_vaccine_list: Array.from({ length: 20 }, () => (2)),
             interval_vaccine_list: Array.from({ length: 20 }, () => (28)),
             vaccine_choice_list: Array.from({ length: 20 }, () => ('pfizer')),
+            
+            variant_options: [
+                'wild',
+                'alpha',
+                'beta',
+                'gamma',
+                'delta'
+            ],
+            variant_choice_list: Array.from({ length: 20 }, () => ('wild')),
+            rel_beta_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            rel_symp_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            rel_severe_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            rel_crit_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            rel_death_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            start_day_by_variant_list: Array.from({ length: 20 }, () => (0)),
+            n_import_by_variant_list: Array.from({ length: 20 }, () => (10)),
+            introduced_variants_list: Array.from({ length: 20 }, () => ([['wild', 10, 0, 1.0, 1.0, 1.0, 1.0, 1.0]])),
+            variant_figs: Array(20).fill({ }),
+
             rel_trans_options: ['Dependent(sus)', 'Independent(sus)'],
             rel_trans_choice_list: Array.from({ length: 20 }, () => ('Independent(sus)')),
             population_volume_options: ['100K', '100K(Random)', '500K', '1M', '3M'],
@@ -431,10 +451,13 @@ var vm = new Vue({
 
           async copyTab(oldInd, newInd) {
             this.int_pars[newInd] = clone(this.int_pars[oldInd]); 
-            this.cur_rel_sus_fig[newInd] = clone(this.cur_rel_sus_fig[oldInd]); 
+            this.cur_rel_sus_fig[newInd] = clone(this.cur_rel_sus_fig[oldInd]);
+            this.introduced_variants_list[newInd] = clone(this.introduced_variants_list[oldInd]);
+            this.variant_figs[newInd] = clone(this.variant_figs[oldInd]); 
             this.infection_step_choice_list[newInd] = clone(this.infection_step_choice_list[oldInd]); 
             this.rel_sus_choice_list[newInd] = clone(this.rel_sus_choice_list[oldInd]); 
             this.vaccine_choice_list[newInd] = clone(this.vaccine_choice_list[oldInd]); 
+            this.variant_choice_list[newInd] = clone(this.variant_choice_list[oldInd]); 
             this.rel_trans_choice_list[newInd] = clone(this.rel_trans_choice_list[oldInd]); 
             this.population_volume_choice_list[newInd] = clone(this.population_volume_choice_list[oldInd]);
             // copy sim_pars
@@ -457,6 +480,8 @@ var vm = new Vue({
             this.tabs.push(city_ind);
             const response = await sciris.rpc('get_gantt', undefined, {int_pars_list: this.int_pars, intervention_config: this.interventionTableConfig, n_days: this.sim_length.best, tabs: this.tabs});
             this.intervention_figs = response.data;
+            const response_variant = await sciris.rpc('get_gantt_variant', undefined, {introduced_variants_list: this.introduced_variants_list, n_days: this.sim_length.best, tabs: this.tabs});
+            this.variant_figs = response_variant.data;
             this.tabCounter = this.tabCounter + 1;
           },
 
@@ -465,11 +490,43 @@ var vm = new Vue({
             this.cur_rel_sus_fig = response.data;
         },
 
+        async handleChangeVariant(city_ind) {
+            const city_ind_int = parseInt(city_ind);
+            const response = await sciris.rpc('get_variant_pars', undefined, {variant_choice: this.variant_choice_list[parseInt(city_ind)]});
+            this.rel_beta_by_variant_list = changeOnlyOne(this.rel_beta_by_variant_list, city_ind_int, response.data['rel_beta']);
+            this.rel_symp_prob_by_variant_list = changeOnlyOne(this.rel_symp_prob_by_variant_list, city_ind_int, response.data['rel_symp_prob']);
+            this.rel_severe_prob_by_variant_list = changeOnlyOne(this.rel_severe_prob_by_variant_list, city_ind_int, response.data['rel_severe_prob']);
+            this.rel_crit_prob_by_variant_list = changeOnlyOne(this.rel_crit_prob_by_variant_list, city_ind_int, response.data['rel_crit_prob']);
+            this.rel_death_prob_by_variant_list = changeOnlyOne(this.rel_death_prob_by_variant_list, city_ind_int, response.data['rel_death_prob']);
+            this.start_day_by_variant_list = changeOnlyOne(this.start_day_by_variant_list, city_ind_int, 0);
+            this.n_import_by_variant_list = changeOnlyOne(this.n_import_by_variant_list, city_ind_int, 10);
+        },
+
+        async addVariant(city_ind) {
+            const city_ind_int = parseInt(city_ind);
+            variant_name = this.variant_choice_list[city_ind_int];
+            start_day = this.start_day_by_variant_list[city_ind_int];
+            n_import = this.n_import_by_variant_list[city_ind_int];
+            rel_beta = this.rel_beta_by_variant_list[city_ind_int];
+            rel_symp_prob = this.rel_symp_prob_by_variant_list[city_ind_int];
+            rel_severe_prob = this.rel_severe_prob_by_variant_list[city_ind_int];
+            rel_crit_prob = this.rel_crit_prob_by_variant_list[city_ind_int];
+            rel_death_prob = this.rel_death_prob_by_variant_list[city_ind_int];
+            this.introduced_variants_list[city_ind_int].push([variant_name, n_import, start_day, rel_beta, rel_symp_prob, rel_severe_prob, rel_crit_prob, rel_death_prob]);
+            const response_variant = await sciris.rpc('get_gantt_variant', undefined, {introduced_variants_list: this.introduced_variants_list, n_days: this.sim_length.best, tabs: this.tabs});
+            this.variant_figs = response_variant.data;
+        },
+
+        async deleteVariant(city_ind, index) {
+            const city_ind_int = parseInt(city_ind);
+            this.introduced_variants_list[city_ind_int].splice(index, 1);
+            const response_variant = await sciris.rpc('get_gantt_variant', undefined, {introduced_variants_list: this.introduced_variants_list, n_days: this.sim_length.best, tabs: this.tabs});
+            this.variant_figs = response_variant.data;
+        },
+
         async handleChangeVaccine(city_ind) {
             const city_ind_int = parseInt(city_ind);
             const response = await sciris.rpc('get_vaccine_pars', undefined, {vaccine_choice: this.vaccine_choice_list[parseInt(city_ind)]});
-            console.log(this.vaccine_choice_list);
-            console.log(response.data);
             this.nab_init_par1_vaccine_list = changeOnlyOne(this.nab_init_par1_vaccine_list, city_ind_int, response.data['nab_init_par1']);
             this.nab_init_par2_vaccine_list = changeOnlyOne(this.nab_init_par2_vaccine_list, city_ind_int, response.data['nab_init_par2']);
             this.nab_boost_vaccine_list = changeOnlyOne(this.nab_boost_vaccine_list, city_ind_int, response.data['nab_boost']);
@@ -660,6 +717,7 @@ var vm = new Vue({
                     interaction_records: this.interactionRecords,
                     population_volume_list: this.population_volume_choice_list,
                     infectiousTableConfig: this.infectiousTableConfig,
+                    introduced_variants_list: this.introduced_variants_list,
                     tabs: this.tabs,
                     timeH: this.timeH
                 }
@@ -696,9 +754,18 @@ var vm = new Vue({
             this.int_pars = Array.from({ length: 20 }, () => ({}));
             this.intervention_figs = Array.from({ length: 20 }, () => ({}));
             this.cur_rel_sus_fig = Array.from({ length: 20 }, () => ({}));
+            this.variant_figs = Array.from({ length: 20 }, () => ({}));
             this.infection_step_choice_list = Array.from({ length: 20 }, () => ('Covasim'));
             this.rel_sus_choice_list = Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
             this.vaccine_choice_list = Array.from({ length: 20 }, () => ('pfizer')),
+            this.variant_choice_list = Array.from({ length: 20 }, () => ('wild')),
+            this.rel_beta_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
+            this.rel_symp_prob_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
+            this.rel_severe_prob_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
+            this.rel_crit_prob_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
+            this.rel_death_prob_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
+            this.start_day_by_variant_list = Array.from({ length: 20 }, () => (0)),
+            this.n_import_by_variant_list = Array.from({ length: 20 }, () => (10)),
             this.rel_trans_choice_list = Array.from({ length: 20 }, () => ('Independent(sus)')),
             this.population_volume_choice_list = Array.from({ length: 20 }, () => ('100K')),
 

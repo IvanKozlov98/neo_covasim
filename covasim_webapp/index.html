@@ -293,6 +293,112 @@
           </b-collapse>
         </b-card>
 
+    <!--  Intervention Parameters -->
+    <b-card no-body>
+      <b-card-header header-tag="header" class="p-0 rounded-0" role="tab" style="background-color:rgb(23,153,148)">
+        <b-button style="color:rgb(255,255,255)" block v-b-toggle.parameters-varianta variant="link">Variants <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
+      </b-card-header>
+      <b-collapse id="parameters-varianta" visible role="tabpanel">
+        <b-card no-body class="border-0 rounded-0">
+          <b-tabs fill card>
+
+            <label for="examples">Select variant</label>
+            <div class="form-row mb-3">
+              <div class="col">
+                <select :disabled="running" id="examples_variant_tr" v-model="variant_choice_list[i]" :name="'variant_choice'" class="form-control" aria-label="Example presets" @change=handleChangeVariant(i)>
+                  <option v-for="(item, index) in variant_options" :value="item">
+                    {{ item }}
+                  </option>
+                </select>
+                <b-tooltip target="examples_variant_tr">
+                  Example parameter configurations
+                </b-tooltip>
+              </div>
+            </div>
+            <div class="col">
+              <label>Transmisibilty:</label>
+              <input id="rel_beta_id" type="number" :disabled="running" class="form-control" v-model="rel_beta_by_variant_list[i]">
+              <b-tooltip target="rel_beta_id">
+                Relative transmissibility varies by variant
+              </b-tooltip>
+            </div>
+            <div class="col">
+              <label>Symptomatic factor:</label>
+              <input id="rel_symp_prob_by_variant_id" type="number" :disabled="running" class="form-control" v-model="rel_symp_prob_by_variant_list[i]">
+              <b-tooltip target="rel_symp_prob_by_variant_id">
+                Scale factor for proportion of symptomatic cases
+              </b-tooltip>
+            </div>
+            <div class="col">
+              <label>Severe factor:</label>
+              <input id="rel_severe_prob_by_variant_id" type="number" :disabled="running" class="form-control" v-model="rel_severe_prob_by_variant_list[i]">
+              <b-tooltip target="rel_severe_prob_by_variant_id">
+                Scale factor for proportion of symptomatic cases that become severe
+              </b-tooltip>
+            </div>
+            <div class="col">
+              <label>Critical factor:</label>
+              <input id="rel_crit_prob_by_variant_id" type="number" :disabled="running" class="form-control" v-model="rel_crit_prob_by_variant_list[i]">
+              <b-tooltip target="rel_crit_prob_by_variant_id">
+                Scale factor for proportion of severe cases that become critical
+              </b-tooltip>
+            </div>
+            <div class="col">
+              <label>Death factor:</label>
+              <input id="rel_death_prob_by_variant_id" type="number" :disabled="running" class="form-control" v-model="rel_death_prob_by_variant_list[i]">
+              <b-tooltip target="rel_death_prob_by_variant_id">
+                Scale factor for proportion of critical cases that result in death
+              </b-tooltip>
+            </div>
+            <div class="col">
+              <label>Start day:</label>
+              <input id="start_day_by_variant_id" type="number" :disabled="running" class="form-control" v-model="start_day_by_variant_list[i]">
+              <b-tooltip target="start_day_by_variant_id">
+                Start day of introducing virus
+              </b-tooltip>
+            </div>
+            <div class="col">
+              <label>Number of imported:</label>
+              <input id="n_import_by_variant_id" type="number" :disabled="running" class="form-control" v-model="n_import_by_variant_list[i]">
+              <b-tooltip target="n_import_by_variant_id">
+                The number of imports of the variant to be added
+              </b-tooltip>
+            </div>
+            <div class="col" style="margin-top: 20px;">
+
+              <button @click="addVariant(i)" class="btn btn-outline-secondary" type="button">Add</button>
+            </div>
+            <my-plotly-chart v-if="variant_figs[i] && variant_figs[i].id" v-bind:graph="variant_figs[i]" v-bind:key="variant_figs[i].id"></my-plotly-chart>
+          
+            <div v-if="introduced_variants_list[i] && introduced_variants_list[i].length > 0">
+              <table class="table">
+                <thead>
+                <tr>
+                  <th scope="col">Variant</th>
+                  <th scope="col">Imported</th>
+                  <th scope="col">Start day</th>
+                  <th scope="col"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="index in introduced_variants_list[i].length" :key="index">
+                  <td>{{introduced_variants_list[i][index - 1][0]}}</td>
+                  <td>{{introduced_variants_list[i][index - 1][1]}}</td>
+                  <td>{{introduced_variants_list[i][index - 1][2]}}</td>
+                  <td>
+                    <button @click="deleteVariant(i, index - 1)" class="btn btn-outline-danger" type="button">Delete</button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </b-tabs>
+        </b-card>
+      </b-collapse>
+    </b-card>
+
+
         <!--  Intervention Parameters -->
         <b-card no-body>
           <b-card-header header-tag="header" class="p-0 rounded-0" role="tab" style="background-color:rgb(23,153,148)">

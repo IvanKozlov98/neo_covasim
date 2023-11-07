@@ -7,6 +7,7 @@ import json
 import location_preprocessor as lp
 from covasim import utils as cvu
 from sus_prob_analyzer import store_seir
+from scipy import optimize
 
 
 
@@ -232,7 +233,53 @@ def plot_nabs():
 
 
 
-if __name__ == '__main__':
+
+
+def simplest_altai(x, n_runs=10):
+    def norm_data(infile, outfile, norm_coef):
+        import pandas as pd
+        df = pd.read_csv(infile, sep=',')
+        for name in df.columns:
+            if name != 'date':
+                df[name] = np.array(df[name], dtype=int) // norm_coef
+        df.to_csv(outfile, sep=',', index=False)
+
+    norm_coef = 20
+    #norm_data("tmp_epidemy_altai.csv", f"tmp_epidemy_altai_{norm_coef}.csv", norm_coef)
+
+    start_day = "2022-01-06"
+    end_day = "2022-05-14"
+
+    print("___________")
+    print(x)
+    print("___________")
+    pars = dict({
+        'pop_size': 2163693 // norm_coef,
+        'start_day': start_day,
+        'end_day': end_day,
+        'rand_seed': 42,
+        'beta': float(x),
+        'pop_infected': 200,
+        'interventions': cv.test_num(daily_tests='data')
+    })
+
+    sim = cv.Sim(pars, datafile="tmp_epidemy_altai_20.csv", pop_type='hybrid', label='classic formula ')
+    #msim = cv.MultiSim(sim)
+    #msim.run(n_runs=n_runs)
+    #mismatches = []
+    #for sim in msim.sims:
+    #    fit = sim.compute_fit()
+    #    mismatches.append(fit.mismatch)
+    #mismatch = np.mean(mismatches)
+    #return mismatch
+    
+    sim.run()
+    fig = sim.plot(to_plot=['cum_tests', 'cum_diagnoses', 'cum_deaths'])
+    fig.savefig("after_calib.pdf", format='pdf')
+
+
+
+def unreg():
     #make_people_from_file('Population_Nsk.xlsx')
     #pars = dict(n_agents=100000, pop_type='synthpops')
     #people_nsk = sp.Pop.load("synthpops_files/synth_pop_Novosibirsk.ppl")
@@ -242,3 +289,10 @@ if __name__ == '__main__':
     #pop = lp.make_people_from_pars()
     #make_dict_dist2fig()
     plot_nabs()
+
+
+if __name__ == '__main__':
+    simplest_altai(0.006125)
+    #pars = optimize.minimize(simplest_altai, x0=0.010, method='nelder-mead')
+    #print(pars)
+    

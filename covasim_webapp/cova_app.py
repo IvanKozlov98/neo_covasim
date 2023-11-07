@@ -133,7 +133,7 @@ def get_defaults(region=None, merge=False, die=die):
 
     sim_pars = dict(
         #pop_size     = dict(best=10000, min=1, max=max_pop,  name='Population size',            tip='Number of agents simulated in the model'),
-        pop_infected = dict(best=[10] * max_city_count,    min=0, max=max_pop,  name='Initial infections',         tip='Number of initial seed infections in the model'),
+        #pop_infected = dict(best=[10] * max_city_count,    min=0, max=max_pop,  name='Initial infections',         tip='Number of initial seed infections in the model'),
         n_imports    = dict(best=[0] * max_city_count,     min=0, max=100,      name='Daily imported infections',  tip='Number of infections that are imported each day'),
         rand_seed    = dict(best=[0] * max_city_count,     min=0, max=100,      name='Random seed',                tip='The parameter of the random number generator; with a single stimulation, it does not matter'),
         n_days       = dict(best=90,     min=1, max=max_days, name="Simulation duration",        tip='Total duration (in days) of the simulation'),
@@ -236,6 +236,11 @@ def get_vaccine_pars(vaccine_choice):
     tmp_res['nab_init_par2'] = tmp_res['nab_init']['par2']
     return tmp_res
 
+@app.register_RPC()
+def get_variant_pars(variant_choice):
+    from covasim import parameters as cvpar
+    return cvpar.get_variant_pars(variant_choice)
+
 
 @app.register_RPC()
 def get_dist_figs(rel_sus_choice_list=None, tabs=None):
@@ -271,6 +276,24 @@ def get_gantt(int_pars_list=None, intervention_config=None, n_days=90, tabs=None
         intervention_figs.append(response)
 
     return intervention_figs
+
+
+@app.register_RPC()
+def get_gantt_variant(introduced_variants_list=None, n_days=90, tabs=None):
+    variants_figs = []
+    for (city_ind, introduced_variants) in zip(tabs, introduced_variants_list):
+        df = []
+        response = {'id': f'test: {city_ind}'}
+        for (variant, n_import, start_day, _, _, _, _, _) in introduced_variants:
+            df.append(dict(Task=variant, Start=start_day, Finish=n_days, Level=f"{variant} with {n_import}"))
+        if len(df) > 0:
+            fig = ff.create_gantt(df, height=400, index_col='Level', title='Variant timeline',
+                                show_colorbar=True, group_tasks=True, showgrid_x=True, showgrid_y=True)
+            fig.update_xaxes(type='linear', range=[0, n_days])
+            response['json'] = fig.to_json()
+        variants_figs.append(response)
+
+    return variants_figs
 
 
 #%% Define the core API
@@ -638,7 +661,7 @@ def parse_interaction_records(interaction_records, tabs):
     return adjacency_matrix
 
 
-def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs):
+def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list):
     def filter_inds(ll):
         return list(ll[i] for i in tabs)
     sim_pars_list = []
@@ -667,7 +690,8 @@ def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_
     rel_sus_type_list = filter_inds(rel_sus_type_list) 
     rel_trans_type_list = filter_inds(rel_trans_type_list) 
     population_volume_list = filter_inds(population_volume_list)
-    return sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list
+    introduced_variants_list = filter_inds(introduced_variants_list)
+    return sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list
 
 msim_with = None
 prev_time = []
@@ -724,6 +748,8 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     #print(f"Starting: {cur_sim}")
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_sim([cur_sim]), get_description('common_sim'))
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_people(cur_sim), get_description('people'))
+    graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant([cur_sim]), get_description('common_sim')[:2])
+   
     # Basic 2
     graphs[General_spread_parameters] += process_graphs(cv.plotly_rs([cur_sim]), get_description('rs'))
     graphs[General_spread_parameters] += process_graphs(cv.plotly_ars([cur_sim]), get_description('ars'))
@@ -759,7 +785,9 @@ def plot_comparing(sims, show_contact_stat):
     graphs = {}
     for graph_group in graph_groups:
         graphs[graph_group] = []
-    graphs[Incidence_and_outcomes] = process_graphs(cv.plotly_sim(sims), get_description('common_sim'))
+    graphs[Incidence_and_outcomes] = []
+    graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_sim(sims), get_description('common_sim'))
+    graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant(sims), get_description('common_sim')[:2])
 
     graphs[General_spread_parameters] = []
     graphs[General_spread_parameters] += process_graphs(cv.plotly_rs(sims), get_description('rs'))
@@ -782,7 +810,7 @@ def execute_function(func, *args):
 
 def build_city(sim):
     pop = lp.make_people_from_file(location2filename[sim['label']], sim['popfile'])
-    return cv.Sim(pars=sim['pars'], datafile=sim['datafile'], analyzers=sim['analyzers'], label=sim['label']).init_people(prepared_pop=pop)
+    return cv.Sim(pars=sim['pars'], variants=sim['variants'], datafile=sim['datafile'], analyzers=sim['analyzers'], label=sim['label']).init_people(prepared_pop=pop)
 
 
 def build_parallel_cities(sims):
@@ -800,18 +828,32 @@ def build_parallel_cities(sims):
 
     return sims        
 
+def get_variants(introduced_variants_list):
+    variants_list = []
+    for introduced_variants in introduced_variants_list:
+        variants = []
+        for (lbl, n_import, start_day, rel_beta, rel_symp_prob, rel_severe_prob, rel_crit_prob, rel_death_prob) in introduced_variants:
+            variant_dict = dict(
+                {"rel_beta": float(rel_beta), 
+                "rel_symp_prob": float(rel_symp_prob), 
+                "rel_severe_prob": float(rel_severe_prob), 
+                "rel_crit_prob": float(rel_crit_prob), 
+                "rel_death_prob": float(rel_death_prob)}
+            )
+            variants.append(cv.variant(variant=variant_dict, n_imports=n_import, days=int(start_day), label=lbl))
+        variants_list.append(variants)
+    return variants_list
 
 
 @app.register_RPC()
-def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, tabs=None, interaction_records=None, verbose=True, die=die):
+def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, interaction_records=None, verbose=True, die=die):
     ''' Create, run, and plot everything '''
     global msim_with
     errs = []
     sim_pars_out, epi_pars_out, int_pars_out = copy.deepcopy(sim_pars), copy.deepcopy(epi_pars), copy.deepcopy(int_pars)
-    (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs)
+    (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list)
     try:
         web_pars_list = []
-        #print(int_pars_list)
 
         for (sim_pars, epi_pars, int_pars, infection_step, rel_sus_type, rel_trans_type, population_volume, city_ind) in \
             zip(sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs):            
@@ -827,25 +869,34 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
         if die: raise
 
     predefined_pops = ['100K', '100K(Random)', '500K', '1M', '3M']
+    variants_list = get_variants(introduced_variants_list)
     # Create the sim and update the parameters
     try:
         sims = []
-        for pars, population_volume, city_ind in zip(web_pars_list, population_volume_list, tabs):
+        for pars, population_volume, variants, city_ind in zip(web_pars_list, population_volume_list, variants_list, tabs):
             new_pop_size = parse_population_size(population_volume)
             pars['pop_size'] = new_pop_size
             pars['pop_type'] = 'synthpops' if population_volume != "100K(Random)" else 'random'
+            pars['n_variants'] = len(variants)
+            #print("111111111111111111")
+            #alpha    = cv.variant('alpha', days=10) # Make the alpha variant B117 active from day 10
+            #p1      = cv.variant('p1', days=15) # Make variant P1 active from day 15
+            #my_var  = cv.variant(variant={'rel_beta': 2.5}, label='My variant', days=20)
+            #print("111111111111111111")
+            #cv.Sim(variants=[alpha, p1, my_var]).run()
+            #print("222222222")
             popfile = f"synthpops_files/synth_pop_{population_volume}.ppl"
             analyzer = store_seir(show_contact_stat=show_contact_stat, label='seir')
-
+            pars['pop_infected'] = 0
+            print(pars)
             if population_volume not in predefined_pops:
                 sim = dict(pars=pars, datafile=datafile, analyzers=analyzer, label=population_volume, popfile=popfile)
             else:
                 lbl = f"City {city_ind}"
-                print(pars)
                 if pars['pop_type'] != 'random':
-                    sim = cv.Sim(pars=pars, datafile=datafile, popfile=popfile, analyzers=analyzer, label=lbl)
+                    sim = cv.Sim(pars=pars, datafile=datafile, variants=variants, popfile=popfile, analyzers=analyzer, label=lbl)
                 else:
-                    sim = cv.Sim(pars=pars, datafile=datafile, popfile=popfile, contacts=dict(a=35), beta_layer=dict(a=pars['beta_layer']['c']), analyzers=analyzer, label=lbl)
+                    sim = cv.Sim(pars=pars, datafile=datafile, variants=variants, popfile=popfile, contacts=dict(a=35), beta_layer=dict(a=pars['beta_layer']['c']), analyzers=analyzer, label=lbl)
             sims.append(sim)
         sims = build_parallel_cities(sims)
     except Exception as E:
@@ -964,7 +1015,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8270
+        app.config['SERVER_PORT'] = 8201
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:
