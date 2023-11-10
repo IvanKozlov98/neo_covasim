@@ -291,8 +291,22 @@ def unreg():
     plot_nabs()
 
 
+def get_new_matrix():
+    pass
+
+
 if __name__ == '__main__':
-    simplest_altai(0.006125)
-    #pars = optimize.minimize(simplest_altai, x0=0.010, method='nelder-mead')
-    #print(pars)
+
+    experiment_count = 1000
+    for _ in range(experiment_count):
+        lp.make_people_from_pars()
+        pass
+
+
+    sim = cv.Sim()
+    sim.run(verbose=False)
+    res = sim.results['new_infections']
+    print({'pars': 'classic', 'results': res})
+
+
     

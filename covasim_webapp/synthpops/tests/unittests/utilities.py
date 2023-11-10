@@ -47,7 +47,7 @@ def runpop(resultdir, actual_vals, testprefix, method):
         if name not in ['self', 'test_prefix', 'filename']: # Remove automatically generated but invalid parameters
             params[name] = actual_vals[name]
     sc.savejson(os.path.join(resultdir, f"{testprefix}.config.json"), params, indent=2)
-    print(params)
+
     pop = sp.make_population(**params)
     if do_save:
         sc.savejson(os.path.join(resultdir, f"{testprefix}_pop.json"), pop, indent=2)
