@@ -689,12 +689,11 @@ class People(cvb.BasePeople):
         ]
         infect_pars = {k:self.pars[k] for k in variant_keys}
         variant_label = self.pars['variant_map'][variant]
-        if variant:
-            for k in variant_keys:
-                if 'dur' in k:
-                    infect_pars[k] = self.pars['variant_pars'][variant_label][k]
-                else:     
-                    infect_pars[k] *= self.pars['variant_pars'][variant_label][k]
+        for k in variant_keys:
+            if 'dur' in k:
+                infect_pars[k] = self.pars['variant_pars'][variant_label][k]
+            else:     
+                infect_pars[k] *= self.pars['variant_pars'][variant_label][k]
 
         # Retrieve those with a breakthrough infection (defined nabs)
         breakthrough_inds = inds[cvu.true(self.peak_nab[inds])]

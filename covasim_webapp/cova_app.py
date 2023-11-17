@@ -949,7 +949,7 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
             analyzer = store_seir(show_contact_stat=show_contact_stat, label='seir')
             pars['pop_infected'] = 0
             if population_volume not in predefined_pops:
-                sim = dict(pars=pars, datafile=datafile, analyzers=analyzer, label=population_volume, popfile=popfile)
+                sim = dict(pars=pars, datafile=datafile, analyzers=analyzer, variants=variants, label=population_volume, popfile=popfile)
             else:
                 lbl = f"City {city_ind}"
                 if pars['pop_type'] != 'random':
