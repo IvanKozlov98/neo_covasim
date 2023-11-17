@@ -315,57 +315,35 @@
                 </b-tooltip>
               </div>
             </div>
-            <div class="col">
-              <label>Transmisibilty:</label>
-              <input id="rel_beta_id" type="number" :disabled="running" class="form-control" v-model="rel_beta_by_variant_list[i]">
-              <b-tooltip target="rel_beta_id">
-                Relative transmissibility varies by variant
-              </b-tooltip>
+            <div class="row">
+              <fieldset class="col-md-6">
+                <legend>Multiplier factors</legend>
+                <div v-for="(info_variant, name, index) in parameters_by_variant"  class="form-group">
+                  <div v-if="name.substring(0, 3) === 'rel'" v-b-tooltip.hover :title="info_variant.description">
+                    <label>{{info_variant.name}}</label>
+                    <input :id="info_variant.name + '_id'" type="number" :disabled="running" class="form-control" v-model="info_variant.data[i]">
+                  </div>
+                </div>
+                <legend>Common parameters</legend>
+                <div v-for="(info_variant, name, index) in parameters_by_variant"  class="form-group">
+                  <div v-if="name === 'n_import' || name === 'start_day'" v-b-tooltip.hover :title="info_variant.description">
+                    <label>{{info_variant.name}}</label>
+                    <input :id="info_variant.name + '_id'" type="number" :disabled="running" class="form-control" v-model="info_variant.data[i]">
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset class="col-md-6">
+                <legend>Duration parameters</legend>
+                <div v-for="(info_variant, name, index) in parameters_by_variant"  class="form-group">
+                  <div v-if="name.substring(0, 3) !== 'rel' && name !== 'n_import' && name !== 'start_day'" v-b-tooltip.hover :title="info_variant.description">
+                    <label>{{info_variant.name}}</label>
+                    <input :id="info_variant.name + '_id'" type="number" :disabled="running" class="form-control" v-model="info_variant.data[i]">
+                  </div>
+                </div>
+              </fieldset>
+              
             </div>
-            <div class="col">
-              <label>Symptomatic factor:</label>
-              <input id="rel_symp_prob_by_variant_id" type="number" :disabled="running" class="form-control" v-model="rel_symp_prob_by_variant_list[i]">
-              <b-tooltip target="rel_symp_prob_by_variant_id">
-                Scale factor for proportion of symptomatic cases
-              </b-tooltip>
-            </div>
-            <div class="col">
-              <label>Severe factor:</label>
-              <input id="rel_severe_prob_by_variant_id" type="number" :disabled="running" class="form-control" v-model="rel_severe_prob_by_variant_list[i]">
-              <b-tooltip target="rel_severe_prob_by_variant_id">
-                Scale factor for proportion of symptomatic cases that become severe
-              </b-tooltip>
-            </div>
-            <div class="col">
-              <label>Critical factor:</label>
-              <input id="rel_crit_prob_by_variant_id" type="number" :disabled="running" class="form-control" v-model="rel_crit_prob_by_variant_list[i]">
-              <b-tooltip target="rel_crit_prob_by_variant_id">
-                Scale factor for proportion of severe cases that become critical
-              </b-tooltip>
-            </div>
-            <div class="col">
-              <label>Death factor:</label>
-              <input id="rel_death_prob_by_variant_id" type="number" :disabled="running" class="form-control" v-model="rel_death_prob_by_variant_list[i]">
-              <b-tooltip target="rel_death_prob_by_variant_id">
-                Scale factor for proportion of critical cases that result in death
-              </b-tooltip>
-            </div>
-            <div class="col">
-              <label>Start day:</label>
-              <input id="start_day_by_variant_id" type="number" :disabled="running" class="form-control" v-model="start_day_by_variant_list[i]">
-              <b-tooltip target="start_day_by_variant_id">
-                Start day of introducing virus
-              </b-tooltip>
-            </div>
-            <div class="col">
-              <label>Number of imported:</label>
-              <input id="n_import_by_variant_id" type="number" :disabled="running" class="form-control" v-model="n_import_by_variant_list[i]">
-              <b-tooltip target="n_import_by_variant_id">
-                The number of imports of the variant to be added
-              </b-tooltip>
-            </div>
-            <div class="col" style="margin-top: 20px;">
-
+            <div>
               <button @click="addVariant(i)" class="btn btn-outline-secondary" type="button">Add</button>
             </div>
             <my-plotly-chart v-if="variant_figs[i] && variant_figs[i].id" v-bind:graph="variant_figs[i]" v-bind:key="variant_figs[i].id"></my-plotly-chart>
@@ -382,9 +360,9 @@
                 </thead>
                 <tbody>
                 <tr v-for="index in introduced_variants_list[i].length" :key="index">
-                  <td>{{introduced_variants_list[i][index - 1][0]}}</td>
-                  <td>{{introduced_variants_list[i][index - 1][1]}}</td>
-                  <td>{{introduced_variants_list[i][index - 1][2]}}</td>
+                  <td>{{introduced_variants_list[i][index - 1].variant_name}}</td>
+                  <td>{{introduced_variants_list[i][index - 1].n_import}}</td>
+                  <td>{{introduced_variants_list[i][index - 1].start_day}}</td>
                   <td>
                     <button @click="deleteVariant(i, index - 1)" class="btn btn-outline-danger" type="button">Delete</button>
                   </td>

@@ -922,12 +922,6 @@ class BasePeople(FlexPretty):
             verbose (bool): detail to print
         '''
 
-        print("--------------")
-        print("--------------")
-        print(sim_pars)
-        print("--------------")
-        print("--------------")
-
         # Check that parameters match
         if sim_pars is not None:
             mismatches = {}
@@ -959,12 +953,6 @@ class BasePeople(FlexPretty):
                 actual_len = len(self[key])
             else: # If it's 2D, variants need to be checked separately
                 actual_variants, actual_len = self[key].shape
-                print(key)
-                print("_____")
-                print(self[key].shape)
-                print(f'Resizing "{key}" from {actual_variants} to {expected_variants}')
-                print(expected_variants, expected_len)
-                print("+++++++++")
                 if actual_variants != expected_variants:
                     if verbose:
                         print(f'Resizing "{key}" from {actual_variants} to {expected_variants}')

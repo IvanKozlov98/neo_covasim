@@ -99,36 +99,36 @@ def get_defaults(region=None, merge=False, die=die):
             'Optimistic': 0.010,
             'Pessimistic': 0.025,
         },
-        'web_exp2inf': {
-            'Default': 4.0,
-            'Optimistic': 5.0,
-            'Pessimistic': 3.0,
-        },
-        'web_inf2sym': {
-            'Default': 1.0,
-            'Optimistic': 0.0,
-            'Pessimistic': 3.0,
-        },
-        'rel_symp_prob': {
-            'Default': 1.0,
-            'Optimistic': 1.2,
-            'Pessimistic': 0.5,
-        },
-        'rel_severe_prob': {
-            'Default': 1.0,
-            'Optimistic': 0.3,
-            'Pessimistic': 3.0,
-        },
-        'rel_crit_prob': {
-            'Default': 1.0,
-            'Optimistic': 0.7,
-            'Pessimistic': 5.0,
-        },
-        'rel_death_prob': {
-            'Default': 1.0,
-            'Optimistic': 0.5,
-            'Pessimistic': 2.0,
-        },
+        #'web_exp2inf': {
+        #    'Default': 4.0,
+        #    'Optimistic': 5.0,
+        #    'Pessimistic': 3.0,
+        #},
+        #'web_inf2sym': {
+        #    'Default': 1.0,
+        #    'Optimistic': 0.0,
+        #    'Pessimistic': 3.0,
+        #},
+        #'rel_symp_prob': {
+        #    'Default': 1.0,
+        #    'Optimistic': 1.2,
+        #    'Pessimistic': 0.5,
+        #},
+        #'rel_severe_prob': {
+        #    'Default': 1.0,
+        #    'Optimistic': 0.3,
+        #    'Pessimistic': 3.0,
+        #},
+        #'rel_crit_prob': {
+        #    'Default': 1.0,
+        #    'Optimistic': 0.7,
+        #    'Pessimistic': 5.0,
+        #},
+        #'rel_death_prob': {
+        #    'Default': 1.0,
+        #    'Optimistic': 0.5,
+        #    'Pessimistic': 2.0,
+        #},
     }
 
     sim_pars = dict(
@@ -141,14 +141,14 @@ def get_defaults(region=None, merge=False, die=die):
 
     epi_pars = dict(
         beta            = dict(best=[0.015] * max_city_count, min=0.0, max=0.2, name='Beta (infectiousness)',              tip ='Probability of infection per contact per day'),
-        web_exp2inf     = dict(best=[4.0] * max_city_count,   min=0.0, max=30,  name='Time to infectiousness (days)',      tip ='Average number of days between exposure and being infectious'),
-        web_inf2sym     = dict(best=[1.0] * max_city_count,   min=0.0, max=30,  name='Asymptomatic period (days)',         tip ='Average number of days between exposure and developing symptoms'),
-        web_dur         = dict(best=[10.0] * max_city_count,  min=0.0, max=30,  name='Infection duration (days)',          tip ='Average number of days between infection and recovery (viral shedding period)'),
-        web_timetodie   = dict(best=[6.0] * max_city_count,   min=0.0, max=30,  name='Time until death (days)',            tip ='Average number of days between becoming critically ill and death'),
-        rel_symp_prob   = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Symptomatic probability multiplier', tip ='Adjustment factor on literature-derived values for proportion of infected people who become symptomatic'),
-        rel_severe_prob = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Severe probability multiplier',      tip ='Adjustment factor on literature-derived values for proportion of symptomatic people who develop severe disease'),
-        rel_crit_prob   = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Critical probability multiplier',    tip ='Adjustment factor on literature-derived values for proportion of people with severe disease who become crtiically ill'),
-        rel_death_prob  = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Death probability multiplier',       tip ='Adjustment factor on literature-derived values for proportion of critically ill people who die'),
+        #web_exp2inf     = dict(best=[4.0] * max_city_count,   min=0.0, max=30,  name='Time to infectiousness (days)',      tip ='Average number of days between exposure and being infectious'),
+        #web_inf2sym     = dict(best=[1.0] * max_city_count,   min=0.0, max=30,  name='Asymptomatic period (days)',         tip ='Average number of days between exposure and developing symptoms'),
+        #web_dur         = dict(best=[10.0] * max_city_count,  min=0.0, max=30,  name='Infection duration (days)',          tip ='Average number of days between infection and recovery (viral shedding period)'),
+        #web_timetodie   = dict(best=[6.0] * max_city_count,   min=0.0, max=30,  name='Time until death (days)',            tip ='Average number of days between becoming critically ill and death'),
+        #rel_symp_prob   = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Symptomatic probability multiplier', tip ='Adjustment factor on literature-derived values for proportion of infected people who become symptomatic'),
+        #rel_severe_prob = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Severe probability multiplier',      tip ='Adjustment factor on literature-derived values for proportion of symptomatic people who develop severe disease'),
+        #rel_crit_prob   = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Critical probability multiplier',    tip ='Adjustment factor on literature-derived values for proportion of people with severe disease who become crtiically ill'),
+        #rel_death_prob  = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Death probability multiplier',       tip ='Adjustment factor on literature-derived values for proportion of critically ill people who die'),
         tourist_contact_count  = dict(best=[4] * max_city_count,   min=0.0, max=10,  name='Tourist contact number multiplier',       tip ='Tourist contact count is equal this coefficient multiple by number of random contacts'),
     )
 
@@ -239,7 +239,11 @@ def get_vaccine_pars(vaccine_choice):
 @app.register_RPC()
 def get_variant_pars(variant_choice):
     from covasim import parameters as cvpar
-    return cvpar.get_variant_pars(variant_choice)
+    tmp_res = cvpar.get_variant_pars(variant_choice)
+    for k in tmp_res.keys():
+        if 'dur' in k:
+            tmp_res[k] = tmp_res[k]['par1']  
+    return tmp_res
 
 
 @app.register_RPC()
@@ -281,10 +285,15 @@ def get_gantt(int_pars_list=None, intervention_config=None, n_days=90, tabs=None
 @app.register_RPC()
 def get_gantt_variant(introduced_variants_list=None, n_days=90, tabs=None):
     variants_figs = []
+
+
     for (city_ind, introduced_variants) in zip(tabs, introduced_variants_list):
         df = []
         response = {'id': f'test: {city_ind}'}
-        for (variant, n_import, start_day, _, _, _, _, _) in introduced_variants:
+        for variant_dict in introduced_variants:
+            variant = variant_dict['variant_name']
+            n_import = variant_dict['n_import']
+            start_day = variant_dict['start_day']
             df.append(dict(Task=variant, Start=start_day, Finish=n_days, Level=f"{variant} with {n_import}"))
         if len(df) > 0:
             fig = ff.create_gantt(df, height=400, index_col='Level', title='Variant timeline',
@@ -400,15 +409,8 @@ def parse_interventions(int_pars, is_random=False):
                 interv = intervention_function(days=[start, end], changes=[change, 1.0], layers='h', label=f"{intervention_base_name} home closures change on " + "{:.2f}".format(change))
             elif ikey == 'symptomatic_testing':
                 asymp_prob = float(iconfig['alevel'])/100
-                #print("/*/*//**/*/*/")
-                #print(asymp_prob)
-                #print("/*/*//**/*/*/")
                 interv = cv.test_prob(start_day=start, end_day=end, symp_prob=level, asymp_prob=asymp_prob, label=f"symptomatic testing with " + "{:.2f}".format(asymp_prob))
             elif ikey == 'vaccinate_closures':
-                print("VVVVVVVVV")
-                print(iconfig)
-                print("VVVVVVVVV")
-                
                 pars_vac, label_d = parse_vaccine_parameters(iconfig)
                 vaccine_dict = dict(
                     nab_init  = dict(dist='normal', par1=float(iconfig['nab_init_par1']), par2=float(iconfig['nab_init_par2'])),
@@ -416,9 +418,6 @@ def parse_interventions(int_pars, is_random=False):
                     doses     = int(iconfig['doses']),
                     interval  = int(iconfig['interval']),
                 )
-                print("VACCINE CHOICE")
-                print(vaccine_dict)
-                print('________')
                 interv = cv.historical_vaccinate_prob(
                     vaccine=vaccine_dict,
                     days=np.arange(start, end), 
@@ -473,8 +472,6 @@ def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, er
     web_pars['verbose'] = verbose # Control verbosity here
 
     for key,entry in {**sim_pars, **epi_pars}.items():
-        #print(key, entry)
-
         best   = defaults[key]['best']
         minval = defaults[key]['min']
         maxval = defaults[key]['max']
@@ -495,13 +492,13 @@ def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, er
             epi_pars[key]['best'] = web_pars[key]
 
     # Convert durations
-    web_pars['dur'] = sc.dcp(orig_pars['dur']) # This is complicated, so just copy it
-    web_pars['dur']['exp2inf']['par1']  = web_pars.pop('web_exp2inf')
-    web_pars['dur']['inf2sym']['par1']  = web_pars.pop('web_inf2sym')
-    web_pars['dur']['crit2die']['par1'] = web_pars.pop('web_timetodie')
-    web_dur = web_pars.pop('web_dur')
-    for key in ['asym2rec', 'mild2rec', 'sev2rec', 'crit2rec']:
-        web_pars['dur'][key]['par1'] = web_dur
+    #web_pars['dur'] = sc.dcp(orig_pars['dur']) # This is complicated, so just copy it
+    #web_pars['dur']['exp2inf']['par1']  = web_pars.pop('web_exp2inf')
+    #web_pars['dur']['inf2sym']['par1']  = web_pars.pop('web_inf2sym')
+    #web_pars['dur']['crit2die']['par1'] = web_pars.pop('web_timetodie')
+    #web_dur = web_pars.pop('web_dur')
+    #for key in ['asym2rec', 'mild2rec', 'sev2rec', 'crit2rec']:
+    #    web_pars['dur'][key]['par1'] = web_dur
 
     # Add n_days
     web_pars['n_days'] = n_days
@@ -656,8 +653,6 @@ def parse_interaction_records(interaction_records, tabs):
         to_city_ind = city_key2city_ind[get_city_key(interaction_record['to_city_choice'])]
         adjacency_matrix[from_city_ind][to_city_ind] = float(interaction_record['level'])
     
-    #print("Adjacency_matrix")
-    #print(adjacency_matrix)
     return adjacency_matrix
 
 
@@ -745,13 +740,12 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     
     for graph_group in graph_groups:
         graphs[graph_group] = []
-    #print(f"Starting: {cur_sim}")
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_sim([cur_sim]), get_description('common_sim'))
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_people(cur_sim), get_description('people'))
     graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant([cur_sim]), get_description('common_sim')[:2])
    
     # Basic 2
-    graphs[General_spread_parameters] += process_graphs(cv.plotly_rs([cur_sim]), get_description('rs'))
+    #graphs[General_spread_parameters] += process_graphs(cv.plotly_rs([cur_sim]), get_description('rs'))
     graphs[General_spread_parameters] += process_graphs(cv.plotly_ars([cur_sim]), get_description('ars'))
     # Immunity
     graphs[Immunity] += process_graphs(cv.plotly_hist_nab_per_day(cur_sim), get_description('nabs'))
@@ -777,11 +771,9 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     graphs[Rest] += process_graphs(cv.plotly_infected_non_infected_group(cur_sim), get_description('infected_non_infected_group'))
     graphs[Rest] += process_graphs(cv.plotly_contact_to_sus_trans(cur_sim), get_description('contact_to_sus_trans'))
     
-    #print(f"Finish: {cur_sim}")
     return graphs
 
 def plot_comparing(sims, show_contact_stat):
-    #print("Start comparing")
     graphs = {}
     for graph_group in graph_groups:
         graphs[graph_group] = []
@@ -790,7 +782,7 @@ def plot_comparing(sims, show_contact_stat):
     graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant(sims), get_description('common_sim')[:2])
 
     graphs[General_spread_parameters] = []
-    graphs[General_spread_parameters] += process_graphs(cv.plotly_rs(sims), get_description('rs'))
+    #graphs[General_spread_parameters] += process_graphs(cv.plotly_rs(sims), get_description('rs'))
     graphs[General_spread_parameters] += process_graphs(cv.plotly_ars(sims), get_description('ars'))
     if show_contact_stat:
         graphs[General_spread_parameters] += process_graphs(cv.plotly_part_80(sims), get_description('part_80'))
@@ -801,7 +793,6 @@ def plot_comparing(sims, show_contact_stat):
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_sars(sims), get_description('sars'))
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_per_day(sims), get_description('viral_load_per_day'))
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_cum(sims), get_description('viral_load_cum'))
-    #print("Finish comparing")
     return graphs
 
 def execute_function(func, *args):
@@ -828,21 +819,95 @@ def build_parallel_cities(sims):
 
     return sims        
 
-def get_variants(introduced_variants_list):
+def var_d_raw2var_d(variant_dict_raw):
+    return dict(
+                {"rel_beta": float(variant_dict_raw['rel_beta']), 
+                "rel_symp_prob": float(variant_dict_raw['rel_symp_prob']), 
+                "rel_severe_prob": float(variant_dict_raw['rel_severe_prob']), 
+                "rel_crit_prob": float(variant_dict_raw['rel_crit_prob']), 
+                "rel_death_prob": float(variant_dict_raw['rel_death_prob']),
+                'dur_exp2inf': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_exp2inf']), par2=1.5),
+                'dur_inf2sym': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_inf2sym']), par2=0.9),
+                'dur_sym2sev': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_sym2sev']), par2=4.9),
+                'dur_sev2crit': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_sev2crit']), par2=2.0),
+                'dur_asym2rec': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_asym2rec']),  par2=2.0),
+                'dur_mild2rec': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_mild2rec']),  par2=2.0),
+                'dur_sev2rec': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_sev2rec']), par2=6.3),
+                'dur_crit2rec': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_crit2rec']), par2=6.3),
+                'dur_crit2die': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_crit2die']), par2=4.8),
+                }
+            )
+
+def get_variant_for_not_multi(introduced_variants_list):
     variants_list = []
     for introduced_variants in introduced_variants_list:
         variants = []
-        for (lbl, n_import, start_day, rel_beta, rel_symp_prob, rel_severe_prob, rel_crit_prob, rel_death_prob) in introduced_variants:
-            variant_dict = dict(
-                {"rel_beta": float(rel_beta), 
-                "rel_symp_prob": float(rel_symp_prob), 
-                "rel_severe_prob": float(rel_severe_prob), 
-                "rel_crit_prob": float(rel_crit_prob), 
-                "rel_death_prob": float(rel_death_prob)}
+        for variant_dict_raw in introduced_variants:
+            variant_dict = var_d_raw2var_d(variant_dict_raw)
+            label = variant_dict_raw['variant_name'] + '.'
+            variants.append(cv.variant(
+                variant=variant_dict, 
+                n_imports=variant_dict_raw['n_import'], 
+                days=int(variant_dict_raw['start_day']), 
+                label=label
+                )
             )
-            variants.append(cv.variant(variant=variant_dict, n_imports=n_import, days=int(start_day), label=lbl))
         variants_list.append(variants)
     return variants_list
+
+
+def is_equal_var_dicts(d1, d2):
+    for k in d1.keys():
+        if k == "variant_name":
+            continue
+        if d1[k] != d2[k]:
+            return False
+    return True
+
+
+def hasnt_list_this_variant(var_list, var_dict):
+    for vv in var_list:
+        if is_equal_var_dicts(vv, var_dict):
+            return False
+    return True
+
+def get_variant_for_multi(introduced_variants_list, tabs):
+    # preprocessing
+    for (i, introduced_variants) in enumerate(introduced_variants_list):
+        for variant_dict_raw in introduced_variants:
+            variant_dict_raw['variant_name'] = variant_dict_raw['variant_name'] + f' of City {tabs[i]}'
+ 
+    # make introduced_variants_set 
+    introduced_variants_set = []
+    for (i, introduced_variants) in enumerate(introduced_variants_list):
+        for variant_dict_raw in introduced_variants:
+            if hasnt_list_this_variant(introduced_variants_set, variant_dict_raw):
+                introduced_variants_set.append(variant_dict_raw)
+            else:
+                for vv in introduced_variants_set:
+                    if is_equal_var_dicts(vv, variant_dict_raw):
+                        vv['variant_name'] = vv['variant_name'] + f', {tabs[i]}'
+    variants_list = []
+    # make variant_list
+    for i in range(len(tabs)):
+        variants = []
+        for variant_dict_raw in introduced_variants_set:
+            variant_dict = var_d_raw2var_d(variant_dict_raw)
+            variants.append(cv.variant(
+                variant=variant_dict, 
+                n_imports=( 0 if hasnt_list_this_variant(introduced_variants_list[i], variant_dict_raw) else variant_dict_raw['n_import']), 
+                days=int(variant_dict_raw['start_day']), 
+                label=variant_dict_raw['variant_name']
+                )
+            )
+        variants_list.append(variants)
+    return variants_list
+
+
+def get_variants(introduced_variants_list, is_multi, tabs):
+    if is_multi:
+        return get_variant_for_multi(introduced_variants_list, tabs)
+    return get_variant_for_not_multi(introduced_variants_list)
 
 
 @app.register_RPC()
@@ -869,7 +934,9 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
         if die: raise
 
     predefined_pops = ['100K', '100K(Random)', '500K', '1M', '3M']
-    variants_list = get_variants(introduced_variants_list)
+    variants_list = get_variants(introduced_variants_list, multiple_cities, tabs)
+    print("_______|)))))))))")
+    print(variants_list)
     # Create the sim and update the parameters
     try:
         sims = []
@@ -878,17 +945,9 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
             pars['pop_size'] = new_pop_size
             pars['pop_type'] = 'synthpops' if population_volume != "100K(Random)" else 'random'
             pars['n_variants'] = len(variants)
-            #print("111111111111111111")
-            #alpha    = cv.variant('alpha', days=10) # Make the alpha variant B117 active from day 10
-            #p1      = cv.variant('p1', days=15) # Make variant P1 active from day 15
-            #my_var  = cv.variant(variant={'rel_beta': 2.5}, label='My variant', days=20)
-            #print("111111111111111111")
-            #cv.Sim(variants=[alpha, p1, my_var]).run()
-            #print("222222222")
             popfile = f"synthpops_files/synth_pop_{population_volume}.ppl"
             analyzer = store_seir(show_contact_stat=show_contact_stat, label='seir')
             pars['pop_infected'] = 0
-            print(pars)
             if population_volume not in predefined_pops:
                 sim = dict(pars=pars, datafile=datafile, analyzers=analyzer, label=population_volume, popfile=popfile)
             else:
@@ -900,6 +959,8 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
             sims.append(sim)
         sims = build_parallel_cities(sims)
     except Exception as E:
+        print('Sim creation failed!')
+        print(E)
         errs.append(log_err('Sim creation failed!', E))
         if die: raise
 
@@ -925,19 +986,8 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
         cites_count = len(tabs) 
         n_cpus = cites_count + is_several_cities
         with concurrent.futures.ProcessPoolExecutor(max_workers=n_cpus) as pool:
-            #if is_several_cities:
-            #    tasks = list(zip(len(msim_with.sims) * [plot_all_graphs] + [plot_comparing], msim_with.sims + [msim_with.sims], list(repeat(show_contact_stat, len(msim_with.sims))) + [show_contact_stat]))
-            #    result = pool.map(execute_function, tasks)
-            #else:
-            #result = pool.map(plot_all_graphs, list(zip(msim_with.sims, repeat(show_contact_stat, len(msim_with.sims)))))
             results_graph = pool.map(plot_all_graphs, msim_with.sims, repeat(show_contact_stat, cites_count))
-        
-        #results_graph = []
-        #for sim in msim_with.sims:
-        #    results_graph.append(plot_all_graphs(sim, show_contact_stat))
-        #results_graph.append(plot_comparing(msim_with.sims, show_contact_stat))        
-        
-        # copy results from results_graph
+
         graphs = {}
         for graph_group in graph_groups:
             graphs[graph_group] = {}
@@ -1015,7 +1065,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8213
+        app.config['SERVER_PORT'] = 8220
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

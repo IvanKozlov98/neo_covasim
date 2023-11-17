@@ -199,16 +199,8 @@ class store_seir(cv.Analyzer):
     def finalize(self, sim=None):
         import time
 
-        print('+++++++++++')
-        print('+++++++++++')
-        print(f"Summ: {np.sum(sim.people.rel_sus)}")
-
         if sim is None:
             raise RuntimeError("Sim in finalize is None!")
-
-        #print('new_diagnoses_rpn')
-        #print(sim.results)
-
 
         self.neo_strike_numbers = []
         self.neo_cum_strike_numbers = []
@@ -216,7 +208,6 @@ class store_seir(cv.Analyzer):
         if self.show_contact_stat:
             self.calc_contact_stats(sim)
         t1 = time.time()
-        print(f"Time of dop: {t1 - t0}")
         self.state_statistics = sim.state_statistics
         # Calculate rs
         self.rs = []

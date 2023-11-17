@@ -86,17 +86,17 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
 
     # Duration parameters: time for disease progression
     pars['dur'] = {}
-    pars['dur']['exp2inf']  = dict(dist='lognormal_int', par1=4.5, par2=1.5) # Duration from exposed to infectious; see Lauer et al., https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7081172/, appendix table S2, subtracting inf2sym duration
-    pars['dur']['inf2sym']  = dict(dist='lognormal_int', par1=1.1, par2=0.9) # Duration from infectious to symptomatic; see Linton et al., https://doi.org/10.3390/jcm9020538, from Table 2, 5.6 day incubation period - 4.5 day exp2inf from Lauer et al.
-    pars['dur']['sym2sev']  = dict(dist='lognormal_int', par1=6.6, par2=4.9) # Duration from symptomatic to severe symptoms; see Linton et al., https://doi.org/10.3390/jcm9020538, from Table 2, 6.6 day onset to hospital admission (deceased); see also Wang et al., https://jamanetwork.com/journals/jama/fullarticle/2761044, 7 days (Table 1)
-    pars['dur']['sev2crit'] = dict(dist='lognormal_int', par1=1.5, par2=2.0) # Duration from severe symptoms to requiring ICU; average of 1.9 and 1.0; see Chen et al., https://www.sciencedirect.com/science/article/pii/S0163445320301195, 8.5 days total - 6.6 days sym2sev = 1.9 days; see also Wang et al., https://jamanetwork.com/journals/jama/fullarticle/2761044, Table 3, 1 day, IQR 0-3 days; std=2.0 is an estimate
+    pars['dur_exp2inf']  = dict(dist='lognormal_int', par1=4.5, par2=1.5) # Duration from exposed to infectious; see Lauer et al., https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7081172/, appendix table S2, subtracting inf2sym duration
+    pars['dur_inf2sym']  = dict(dist='lognormal_int', par1=1.1, par2=0.9) # Duration from infectious to symptomatic; see Linton et al., https://doi.org/10.3390/jcm9020538, from Table 2, 5.6 day incubation period - 4.5 day exp2inf from Lauer et al.
+    pars['dur_sym2sev']  = dict(dist='lognormal_int', par1=6.6, par2=4.9) # Duration from symptomatic to severe symptoms; see Linton et al., https://doi.org/10.3390/jcm9020538, from Table 2, 6.6 day onset to hospital admission (deceased); see also Wang et al., https://jamanetwork.com/journals/jama/fullarticle/2761044, 7 days (Table 1)
+    pars['dur_sev2crit'] = dict(dist='lognormal_int', par1=1.5, par2=2.0) # Duration from severe symptoms to requiring ICU; average of 1.9 and 1.0; see Chen et al., https://www.sciencedirect.com/science/article/pii/S0163445320301195, 8.5 days total - 6.6 days sym2sev = 1.9 days; see also Wang et al., https://jamanetwork.com/journals/jama/fullarticle/2761044, Table 3, 1 day, IQR 0-3 days; std=2.0 is an estimate
 
     # Duration parameters: time for disease recovery
-    pars['dur']['asym2rec'] = dict(dist='lognormal_int', par1=8.0,  par2=2.0) # Duration for asymptomatic people to recover; see Wölfel et al., https://www.nature.com/articles/s41586-020-2196-x
-    pars['dur']['mild2rec'] = dict(dist='lognormal_int', par1=8.0,  par2=2.0) # Duration for people with mild symptoms to recover; see Wölfel et al., https://www.nature.com/articles/s41586-020-2196-x
-    pars['dur']['sev2rec']  = dict(dist='lognormal_int', par1=18.1, par2=6.3) # Duration for people with severe symptoms to recover, 24.7 days total; see Verity et al., https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30243-7/fulltext; 18.1 days = 24.7 onset-to-recovery - 6.6 sym2sev; 6.3 = 0.35 coefficient of variation * 18.1; see also https://doi.org/10.1017/S0950268820001259 (22 days) and https://doi.org/10.3390/ijerph17207560 (3-10 days)
-    pars['dur']['crit2rec'] = dict(dist='lognormal_int', par1=18.1, par2=6.3) # Duration for people with critical symptoms to recover; as above (Verity et al.)
-    pars['dur']['crit2die'] = dict(dist='lognormal_int', par1=10.7, par2=4.8) # Duration from critical symptoms to death, 18.8 days total; see Verity et al., https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30243-7/fulltext; 10.7 = 18.8 onset-to-death - 6.6 sym2sev - 1.5 sev2crit; 4.8 = 0.45 coefficient of variation * 10.7
+    pars['dur_asym2rec'] = dict(dist='lognormal_int', par1=8.0,  par2=2.0) # Duration for asymptomatic people to recover; see Wölfel et al., https://www.nature.com/articles/s41586-020-2196-x
+    pars['dur_mild2rec'] = dict(dist='lognormal_int', par1=8.0,  par2=2.0) # Duration for people with mild symptoms to recover; see Wölfel et al., https://www.nature.com/articles/s41586-020-2196-x
+    pars['dur_sev2rec']  = dict(dist='lognormal_int', par1=18.1, par2=6.3) # Duration for people with severe symptoms to recover, 24.7 days total; see Verity et al., https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30243-7/fulltext; 18.1 days = 24.7 onset-to-recovery - 6.6 sym2sev; 6.3 = 0.35 coefficient of variation * 18.1; see also https://doi.org/10.1017/S0950268820001259 (22 days) and https://doi.org/10.3390/ijerph17207560 (3-10 days)
+    pars['dur_crit2rec'] = dict(dist='lognormal_int', par1=18.1, par2=6.3) # Duration for people with critical symptoms to recover; as above (Verity et al.)
+    pars['dur_crit2die'] = dict(dist='lognormal_int', par1=10.7, par2=4.8) # Duration from critical symptoms to death, 18.8 days total; see Verity et al., https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30243-7/fulltext; 10.7 = 18.8 onset-to-death - 6.6 sym2sev - 1.5 sev2crit; 4.8 = 0.45 coefficient of variation * 10.7
 
     # Severity parameters: probabilities of symptom progression
     pars['rel_symp_prob']   = 1.0  # Scale factor for proportion of symptomatic cases
@@ -129,11 +129,11 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
     pars['vaccine_pars'] = {} # Vaccines that are being used; populated during initialization
     pars['vaccine_map']  = {} #Reverse mapping from number to vaccine key
     pars['variants']     = [] # Additional variants of the virus; populated by the user, see immunity.py
-    pars['variant_map']  = {0:'wild'} # Reverse mapping from number to variant key
-    pars['variant_pars'] = dict(wild={}) # Populated just below
-    for sp in cvd.variant_pars:
-        if sp in pars.keys():
-            pars['variant_pars']['wild'][sp] = pars[sp]
+    pars['variant_map']  = {} # Reverse mapping from number to variant key
+    pars['variant_pars'] = dict() # Populated just below
+    #for sp in cvd.variant_pars:
+    #    if sp in pars.keys():
+    #        pars['variant_pars']['wild'][sp] = pars[sp]
 
     # Update with any supplied parameter values and generate things that need to be generated
     pars.update(kwargs)
@@ -387,6 +387,15 @@ def get_variant_pars(default=False, variant=None):
             rel_severe_prob = 1.0, # Default values
             rel_crit_prob   = 1.0, # Default values
             rel_death_prob  = 1.0, # Default values
+            dur_exp2inf     = dict(dist='lognormal_int', par1=4.5, par2=1.5),
+            dur_inf2sym     = dict(dist='lognormal_int', par1=1.1, par2=0.9),
+            dur_sym2sev     = dict(dist='lognormal_int', par1=6.6, par2=4.9),
+            dur_sev2crit    = dict(dist='lognormal_int', par1=1.5, par2=2.0),
+            dur_asym2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_mild2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
         ),
 
         alpha = dict(
@@ -395,6 +404,15 @@ def get_variant_pars(default=False, variant=None):
             rel_severe_prob = 1.64, # From https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3792894, and consistent with https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2021.26.16.2100348 and https://assets.publishing.service.gov.uk/government/uploads/system/uploads/attachment_data/file/961042/S1095_NERVTAG_update_note_on_B.1.1.7_severity_20210211.pdf
             rel_crit_prob   = 1.0,  # Various studies have found increased mortality for B117 (summary here: https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(21)00201-2/fulltext#tbl1), but not necessarily when conditioned on having developed severe disease
             rel_death_prob  = 1.0,  # See comment above
+            dur_exp2inf     = dict(dist='lognormal_int', par1=4.5, par2=1.5),
+            dur_inf2sym     = dict(dist='lognormal_int', par1=1.1, par2=0.9),
+            dur_sym2sev     = dict(dist='lognormal_int', par1=6.6, par2=4.9),
+            dur_sev2crit    = dict(dist='lognormal_int', par1=1.5, par2=2.0),
+            dur_asym2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_mild2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
         ),
 
         beta = dict(
@@ -403,6 +421,15 @@ def get_variant_pars(default=False, variant=None):
             rel_severe_prob = 3.6, # From https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2021.26.16.2100348
             rel_crit_prob   = 1.0,
             rel_death_prob  = 1.0,
+            dur_exp2inf     = dict(dist='lognormal_int', par1=4.5, par2=1.5),
+            dur_inf2sym     = dict(dist='lognormal_int', par1=1.1, par2=0.9),
+            dur_sym2sev     = dict(dist='lognormal_int', par1=6.6, par2=4.9),
+            dur_sev2crit    = dict(dist='lognormal_int', par1=1.5, par2=2.0),
+            dur_asym2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_mild2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
         ),
 
         gamma = dict(
@@ -411,6 +438,15 @@ def get_variant_pars(default=False, variant=None):
             rel_severe_prob = 2.6, # From https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2021.26.16.2100348
             rel_crit_prob   = 1.0,
             rel_death_prob  = 1.0,
+            dur_exp2inf     = dict(dist='lognormal_int', par1=4.5, par2=1.5),
+            dur_inf2sym     = dict(dist='lognormal_int', par1=1.1, par2=0.9),
+            dur_sym2sev     = dict(dist='lognormal_int', par1=6.6, par2=4.9),
+            dur_sev2crit    = dict(dist='lognormal_int', par1=1.5, par2=2.0),
+            dur_asym2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_mild2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
         ),
 
         delta = dict(
@@ -419,6 +455,15 @@ def get_variant_pars(default=False, variant=None):
             rel_severe_prob = 3.2, # 2x more transmissible than alpha from https://mobile.twitter.com/dgurdasani1/status/1403293582279294983
             rel_crit_prob   = 1.0,
             rel_death_prob  = 1.0,
+            dur_exp2inf     = dict(dist='lognormal_int', par1=4.5, par2=1.5),
+            dur_inf2sym     = dict(dist='lognormal_int', par1=1.1, par2=0.9),
+            dur_sym2sev     = dict(dist='lognormal_int', par1=6.6, par2=4.9),
+            dur_sev2crit    = dict(dist='lognormal_int', par1=1.5, par2=2.0),
+            dur_asym2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_mild2rec    = dict(dist='lognormal_int', par1=8.0,  par2=2.0),
+            dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
+            dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
         )
     )
 

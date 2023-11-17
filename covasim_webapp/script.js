@@ -388,14 +388,139 @@ var vm = new Vue({
                 'delta'
             ],
             variant_choice_list: Array.from({ length: 20 }, () => ('wild')),
-            rel_beta_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            rel_symp_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            rel_severe_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            rel_crit_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            rel_death_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            start_day_by_variant_list: Array.from({ length: 20 }, () => (0)),
-            n_import_by_variant_list: Array.from({ length: 20 }, () => (10)),
-            introduced_variants_list: Array.from({ length: 20 }, () => ([['wild', 10, 0, 1.0, 1.0, 1.0, 1.0, 1.0]])),
+            //rel_beta_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            //rel_symp_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            //rel_severe_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            //rel_crit_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            //rel_death_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
+            //dur_exp2inf_by_variant_list: Array.from({length: 20}, () => (4.5)),
+            //dur_inf2sym_by_variant_list: Array.from({length: 20}, () => (1.1)),
+            //dur_sym2sev_by_variant_list: Array.from({length: 20}, () => (6.6)),
+            //dur_sev2crit_by_variant_list: Array.from({length: 20}, () => (1.5)),
+            //dur_asym2rec_by_variant_list: Array.from({length: 20}, () => (8.0)),
+            //dur_mild2rec_by_variant_list: Array.from({length: 20}, () => (8.0)),
+            //dur_sev2rec_by_variant_list: Array.from({length: 20}, () => (18.1)),
+            //dur_crit2rec_by_variant_list: Array.from({length: 20}, () => (18.1)),
+            //dur_crit2die_by_variant_list: Array.from({length: 20}, () => (10.7)),
+            //start_day_by_variant_list: Array.from({ length: 20 }, () => (0.0)),
+            //n_import_by_variant_list: Array.from({ length: 20 }, () => (10.0)),
+            parameters_by_variant: {
+                "rel_beta": 
+                {
+                    'description': 'Relative transmissibility varies by variant',
+                    'name': 'Transmisibilty:',
+                    'data': Array.from({ length: 20 }, () => (1.0))
+                },
+                "rel_symp_prob": 
+                {
+                    'description': 'Scale factor for proportion of symptomatic cases',
+                    'name': 'Symptomatic factor:',
+                    'data': Array.from({ length: 20 }, () => (1.0))
+                },
+                "rel_severe_prob": 
+                {
+                    'description': 'Scale factor for proportion of symptomatic cases that become severe',
+                    'name': 'Severe factor:',
+                    'data': Array.from({ length: 20 }, () => (1.0))
+                },
+                "rel_crit_prob": 
+                {
+                    'description': 'Scale factor for proportion of severe cases that become critical',
+                    'name': 'Critical factor',
+                    'data': Array.from({ length: 20 }, () => (1.0))
+                },
+                "rel_death_prob": 
+                {
+                    'description': 'Scale factor for proportion of critical cases that result in death',
+                    'name': 'Death factor',
+                    'data': Array.from({ length: 20 }, () => (1.0))
+                },
+                "dur_exp2inf": 
+                {
+                    'description': 'Duration from exposed to infectious',
+                    'name': 'Latent period(days)',
+                    'data': Array.from({length: 20}, () => (4.5))
+                },
+                "dur_inf2sym": 
+                {
+                    'description': 'Duration from infectious to symptomatic',
+                    'name': 'Asymptomatic period (days):',
+                    'data': Array.from({length: 20}, () => (1.1))
+                },
+                "dur_sym2sev": 
+                {
+                    'description': 'Duration from symptomatic to severe symptoms',
+                    'name': 'From symp to severe (days)',
+                    'data': Array.from({length: 20}, () => (6.6))
+                },
+                "dur_sev2crit": 
+                {
+                    'description': 'Duration from severe symptoms to requiring ICU; average of 1.9 and 1.0',
+                    'name': 'From severe to critical (days)',
+                    'data': Array.from({length: 20}, () => (1.5))
+                },
+                "dur_asym2rec": 
+                {
+                    'description': 'Duration for asymptomatic people to recover',
+                    'name': 'Recovery of asymp (days)',
+                    'data': Array.from({length: 20}, () => (8.0))
+                },
+                "dur_mild2rec": 
+                {
+                    'description': 'Duration for people with mild symptoms to recover',
+                    'name': 'Recovery of mild (days)',
+                    'data': Array.from({length: 20}, () => (8.0))
+                },
+                "dur_sev2rec": 
+                {
+                    'description': 'Duration for people with severe symptoms to recover',
+                    'name': 'Recovery of severe (days)',
+                    'data': Array.from({length: 20}, () => (18.1))
+                },
+                "dur_crit2rec": 
+                {
+                    'description': 'Duration for people with critical symptoms to recover',
+                    'name': 'Recovery of critical (days)',
+                    'data': Array.from({length: 20}, () => (18.1))
+                },
+                "dur_crit2die": 
+                {
+                    'description': 'Duration from critical symptoms to death',
+                    'name': 'Time until death (days):',
+                    'data': Array.from({length: 20}, () => (10.7))
+                },
+                "start_day": 
+                {
+                    'description': 'Start day of introducing virus',
+                    'name': 'Start day:',
+                    'data': Array.from({ length: 20 }, () => (0))
+                },
+                "n_import": 
+                {
+                    'description': 'The number of imports of the variant to be added',
+                    'name': 'Number of imported:',
+                    'data': Array.from({ length: 20 }, () => (10))
+                },
+            },
+            introduced_variants_list: Array.from({ length: 20 }, () => ([{
+                'variant_name': 'wild',
+                "rel_beta": 1.0,
+                "rel_symp_prob": 1.0,
+                "rel_severe_prob": 1.0,
+                "rel_crit_prob": 1.0,
+                "rel_death_prob": 1.0,
+                "dur_exp2inf": 4.5,
+                "dur_inf2sym": 1.1,
+                "dur_sym2sev": 6.6,
+                "dur_sev2crit": 1.5,
+                "dur_asym2rec": 8.0,
+                "dur_mild2rec": 8.0,
+                "dur_sev2rec": 18.1,
+                "dur_crit2rec": 18.1,
+                "dur_crit2die": 10.7,
+                "start_day": 0,
+                "n_import": 10,
+            }])),
             variant_figs: Array(20).fill({ }),
 
             rel_trans_options: ['Dependent(sus)', 'Independent(sus)'],
@@ -493,26 +618,32 @@ var vm = new Vue({
         async handleChangeVariant(city_ind) {
             const city_ind_int = parseInt(city_ind);
             const response = await sciris.rpc('get_variant_pars', undefined, {variant_choice: this.variant_choice_list[parseInt(city_ind)]});
-            this.rel_beta_by_variant_list = changeOnlyOne(this.rel_beta_by_variant_list, city_ind_int, response.data['rel_beta']);
-            this.rel_symp_prob_by_variant_list = changeOnlyOne(this.rel_symp_prob_by_variant_list, city_ind_int, response.data['rel_symp_prob']);
-            this.rel_severe_prob_by_variant_list = changeOnlyOne(this.rel_severe_prob_by_variant_list, city_ind_int, response.data['rel_severe_prob']);
-            this.rel_crit_prob_by_variant_list = changeOnlyOne(this.rel_crit_prob_by_variant_list, city_ind_int, response.data['rel_crit_prob']);
-            this.rel_death_prob_by_variant_list = changeOnlyOne(this.rel_death_prob_by_variant_list, city_ind_int, response.data['rel_death_prob']);
-            this.start_day_by_variant_list = changeOnlyOne(this.start_day_by_variant_list, city_ind_int, 0);
-            this.n_import_by_variant_list = changeOnlyOne(this.n_import_by_variant_list, city_ind_int, 10);
+            for (var key in this.parameters_by_variant) {
+                var new_val;
+                switch (key) {
+                    case "start_day": new_val = 0; break;
+                    case "n_import": new_val = 10; break;
+                    default: new_val = response.data[key]; break;
+                }
+                console.log(key);
+                console.log(this.parameters_by_variant[key]);
+                console.log(this.parameters_by_variant[key]['data']);
+                console.log(this.parameters_by_variant[key].data);
+                this.parameters_by_variant[key].data = changeOnlyOne(this.parameters_by_variant[key].data, city_ind_int, new_val);
+            }        
         },
 
         async addVariant(city_ind) {
             const city_ind_int = parseInt(city_ind);
-            variant_name = this.variant_choice_list[city_ind_int];
-            start_day = this.start_day_by_variant_list[city_ind_int];
-            n_import = this.n_import_by_variant_list[city_ind_int];
-            rel_beta = this.rel_beta_by_variant_list[city_ind_int];
-            rel_symp_prob = this.rel_symp_prob_by_variant_list[city_ind_int];
-            rel_severe_prob = this.rel_severe_prob_by_variant_list[city_ind_int];
-            rel_crit_prob = this.rel_crit_prob_by_variant_list[city_ind_int];
-            rel_death_prob = this.rel_death_prob_by_variant_list[city_ind_int];
-            this.introduced_variants_list[city_ind_int].push([variant_name, n_import, start_day, rel_beta, rel_symp_prob, rel_severe_prob, rel_crit_prob, rel_death_prob]);
+            var slice_of_variant_par = {}
+            slice_of_variant_par['variant_name'] = this.variant_choice_list[city_ind_int];
+            for (var key in this.parameters_by_variant) {
+                console.log(key);
+                console.log(this.parameters_by_variant);
+
+                slice_of_variant_par[key] = this.parameters_by_variant[key].data[city_ind_int];
+            }
+            this.introduced_variants_list[city_ind_int].push(slice_of_variant_par);
             const response_variant = await sciris.rpc('get_gantt_variant', undefined, {introduced_variants_list: this.introduced_variants_list, n_days: this.sim_length.best, tabs: this.tabs});
             this.variant_figs = response_variant.data;
         },
@@ -759,11 +890,21 @@ var vm = new Vue({
             this.rel_sus_choice_list = Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
             this.vaccine_choice_list = Array.from({ length: 20 }, () => ('pfizer')),
             this.variant_choice_list = Array.from({ length: 20 }, () => ('wild')),
-            this.rel_beta_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
-            this.rel_symp_prob_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
-            this.rel_severe_prob_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
-            this.rel_crit_prob_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
-            this.rel_death_prob_by_variant_list = Array.from({ length: 20 }, () => (1.0)),
+            this.parameters_by_variant['rel_beta'].data = Array.from({ length: 20 }, () => (1.0)),
+            this.parameters_by_variant['rel_symp_prob'].data = Array.from({ length: 20 }, () => (1.0)),
+            this.parameters_by_variant['rel_severe_prob'].data = Array.from({ length: 20 }, () => (1.0)),
+            this.parameters_by_variant['rel_crit_prob'].data = Array.from({ length: 20 }, () => (1.0)),
+            this.parameters_by_variant['rel_death_prob'].data = Array.from({ length: 20 }, () => (1.0)),
+            this.parameters_by_variant['dur_exp2inf'].data = Array.from({length: 20}, () => (4.5));
+            this.parameters_by_variant['dur_inf2sym'].data = Array.from({length: 20}, () => (1.1));
+            this.parameters_by_variant['dur_sym2sev'].data = Array.from({length: 20}, () => (6.6));
+            this.parameters_by_variant['dur_sev2crit'].data = Array.from({length: 20}, () => (1.5));
+            this.parameters_by_variant['dur_asym2rec'].data = Array.from({length: 20}, () => (8.0));
+            this.parameters_by_variant['dur_mild2rec'].data = Array.from({length: 20}, () => (8.0));
+            this.parameters_by_variant['dur_sev2rec'].data = Array.from({length: 20}, () => (18.1));
+            this.parameters_by_variant['dur_crit2rec'].data = Array.from({length: 20}, () => (18.1));
+            this.parameters_by_variant['dur_crit2die'].data = Array.from({length: 20}, () => (10.7));
+            
             this.start_day_by_variant_list = Array.from({ length: 20 }, () => (0)),
             this.n_import_by_variant_list = Array.from({ length: 20 }, () => (10)),
             this.rel_trans_choice_list = Array.from({ length: 20 }, () => ('Independent(sus)')),

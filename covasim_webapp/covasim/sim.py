@@ -750,7 +750,7 @@ class Sim(cvb.BaseSim):
 
 
     def select_people_from_inds(self, inds):
-        selected_people = People({'pop_size': inds.size, 'tourist_ratio': 0.0, 'own_ind_city': self.pars['own_ind_city']})
+        selected_people = People({'pop_size': inds.size, 'n_variants': self.pars['n_variants'] , 'tourist_ratio': 0.0, 'own_ind_city': self.pars['own_ind_city']})
         selected_people.initialize_tourist_cells()
         # assign other fields
         for array_member in self.people.array_members:
@@ -1099,7 +1099,7 @@ class Sim(cvb.BaseSim):
         self.compute_states()
         self.compute_yield()
         self.compute_doubling()
-        self.compute_r_eff()
+        #self.compute_r_eff()
         self.compute_summary()
         return
 

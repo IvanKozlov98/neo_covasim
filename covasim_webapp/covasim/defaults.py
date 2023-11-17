@@ -208,6 +208,16 @@ variant_pars = [
     'rel_severe_prob',
     'rel_crit_prob',
     'rel_death_prob',
+    'dur_exp2inf',
+    'dur_inf2sym',
+    'dur_sym2sev',
+    'dur_sev2crit',
+    'dur_disease',
+    'dur_asym2rec',
+    'dur_mild2rec',
+    'dur_sev2rec',
+    'dur_crit2rec',
+    'dur_crit2die'
 ]
 
 # Immunity is broken down according to 3 axes, as listed here
