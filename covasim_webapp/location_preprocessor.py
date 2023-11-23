@@ -93,14 +93,6 @@ def main_education_place(df):
 
 
 def main_education_common(df):
-    def treat_school_size_dist():
-        key = "School size distribution"
-        tmp_df = treat_common(df=df, key=key, num_rows=14, num_columns=1)
-        tmp_res = get_distribution(tmp_df)
-        res = []
-        for _, _, r in tmp_res:
-            res.append(r)
-        return res
 
     def treat_enrollment_by_age():
         key = "Enrollment by age"
@@ -118,7 +110,6 @@ def main_education_common(df):
         write_contact_matrix(tmp_df, "school_contact_matrix")
 
     result_dict = dict()
-    result_dict['school_size_distribution'] = treat_school_size_dist()
     result_dict['enrollment_rates_by_age'] = treat_enrollment_by_age()
     result_dict['employment_rates_by_age'] = treat_employment_rates_by_age()
     treat_school_contact_matrix()
@@ -320,7 +311,6 @@ class SchoolParameters:
         average_additional_staff_degree=None,
         staff_age_min=None,
         staff_age_max=None,
-        school_size_distribution=None,
         enrollment_rates_by_age=None,
         employment_rates_by_age=None,
         school_size_distribution_by_type=None,
@@ -347,7 +337,6 @@ class SchoolParameters:
         self.average_additional_staff_degree = average_additional_staff_degree
         self.staff_age_min = staff_age_min
         self.staff_age_max = staff_age_max
-        self.school_size_distribution = school_size_distribution
         self.enrollment_rates_by_age = enrollment_rates_by_age
         self.employment_rates_by_age = employment_rates_by_age
         self.school_size_distribution_by_type = school_size_distribution_by_type
@@ -371,7 +360,6 @@ class SchoolParameters:
                 staff_age_min=default_data_school['staff_age_min'],
                 staff_age_max=default_data_school['staff_age_max'],
                 school_size_brackets=default_data['school_size_brackets'],
-                school_size_distribution=default_data['school_size_distribution'],
                 enrollment_rates_by_age=default_data['enrollment_rates_by_age'],
                 employment_rates_by_age=default_data['employment_rates_by_age'],
                 school_size_distribution_by_type=default_data['school_size_distribution_by_type'],
