@@ -2,6 +2,8 @@ import pandas as pd
 import json
 import synthpops as sp
 import sciris as sc
+import numpy as np
+
 
 
 
@@ -89,7 +91,9 @@ def main_education_place(df):
     result_list = []
     for d in dist:
         result_list.append(d[2])
-    return result_list
+    tmp_res = np.array(result_list)
+    tmp_res = tmp_res / np.sum(tmp_res)
+    return list(tmp_res)
 
 
 def main_education_common(df):
