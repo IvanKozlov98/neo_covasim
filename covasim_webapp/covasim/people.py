@@ -244,6 +244,8 @@ class People(cvb.BasePeople):
         self.initialize_tourist_cells()
         # and otherwise
         self._test_delay = cvu.sample(dist='special_test_delay', size=len(self))
+        self.will_symptomatic = np.zeros(shape=sim_pars['pop_size'], dtype=bool)
+        self.wont_symptomatic = np.zeros(shape=sim_pars['pop_size'], dtype=bool)
         self.inds_new_infections = []
         self.validate(sim_pars=sim_pars) # First, check that essential-to-match parameters match
         self.set_pars(sim_pars) # Replace the saved parameters with this simulation's
@@ -465,6 +467,8 @@ class People(cvb.BasePeople):
         # Now reset all disease states
         self.exposed[inds]          = False
         self.infectious[inds]       = False
+        self.will_symptomatic[inds] = False
+        self.wont_symptomatic[inds] = False
         self.symptomatic[inds]      = False
         self.severe[inds]           = False
         self.critical[inds]         = False
@@ -494,6 +498,8 @@ class People(cvb.BasePeople):
         self.known_dead[diag_inds]  = True
         self.susceptible[inds]      = False
         self.exposed[inds]          = False
+        self.will_symptomatic[inds] = False
+        self.wont_symptomatic[inds] = False
         self.infectious[inds]       = False
         self.symptomatic[inds]      = False
         self.severe[inds]           = False
@@ -738,6 +744,8 @@ class People(cvb.BasePeople):
         is_symp = cvu.binomial_arr(symp_probs) # Determine if they develop symptoms
         symp_inds = inds[is_symp]
         asymp_inds = inds[~is_symp] # Asymptomatic
+        self.will_symptomatic[symp_inds] = True
+        self.wont_symptomatic[asymp_inds] = True
         self.flows_variant['new_symptomatic_by_variant'][variant] += len(symp_inds)
 
         # CASE 1: Asymptomatic: may infect others, but have no symptoms and do not die

@@ -553,6 +553,9 @@ def parseInfectiousConfig(infectiousConfig, city_ind):
 
 def get_description(key):
     descriptions = {
+        "variant_proportion": """
+Пропорции количества инфицированных каждым вариантом
+""",
         "rs": """
 График R - Наблюдаемое репродуктивное число по динамике регистрации случаев. 
 В динамике.
@@ -743,7 +746,9 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_sim([cur_sim]), get_description('common_sim'))
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_people(cur_sim), get_description('people'))
     graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant([cur_sim]), get_description('common_sim')[:2])
-   
+    graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_states_people(cur_sim), get_description('people'))
+    graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant_rel(cur_sim), get_description('variant_proportion'))
+
     # Basic 2
     #graphs[General_spread_parameters] += process_graphs(cv.plotly_rs([cur_sim]), get_description('rs'))
     graphs[General_spread_parameters] += process_graphs(cv.plotly_ars([cur_sim]), get_description('ars'))
@@ -1065,7 +1070,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8220
+        app.config['SERVER_PORT'] = 8221
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

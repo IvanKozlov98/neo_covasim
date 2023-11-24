@@ -18,8 +18,8 @@ from .settings import options as cvo
 __all__ = ['plot_sim', 'plot_scens', 'plot_result', 'plot_compare', 'plot_people', 'plotly_sim', 'plotly_people',
            'plotly_hist_sus', 'plotly_hist_number_source_per_day', 'plotly_hist_nab_per_day', 'plotly_nabs', 'plot_by_variant',
            'plotly_not_infected_people_by_sus_norm', 'plotly_hist_number_source_cum', 'plotly_sars', 'plotly_hist_immunity_per_day',
-           'plotly_not_infected_people_by_sus', 'plotly_animate', 'plotly_part_80', 'plotly_rs', 'plotly_ars',
-           'plotly_viral_load_per_day', 'plotly_viral_load_cum', 'plotly_risk_infected_by_age_group_per_day',
+           'plotly_not_infected_people_by_sus', 'plotly_animate', 'plotly_part_80', 'plotly_rs', 'plotly_ars', 'plotly_states_people',
+           'plotly_viral_load_per_day', 'plotly_viral_load_cum', 'plotly_risk_infected_by_age_group_per_day', 'plot_by_variant_rel',
            'plotly_risk_infected_by_age_group_cum', 'plotly_infected_non_infected_group', 'plotly_contact_to_sus_trans']
 
 
@@ -891,6 +891,36 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
     return plots
 
 
+def plot_by_variant_rel(sim, do_show=False): # pragma: no cover
+    go = import_plotly() # Load Plotly
+    fig = go.Figure()
+    variant_names = [variant.label for variant in sim.pars['variants']]
+    x = np.arange(sim.results['date'][:].size)
+    v_map = dict([(v,k) for k,v in sim.pars['variant_map'].items()])
+    new_infections_by_variant_sum = np.zeros(shape=x.size)
+    for variant_name in variant_names:
+        new_infections_by_variant_sum += sim.results['variant']['new_infections_by_variant'][v_map[variant_name]]
+    new_infections_by_variant_sum = np.clip(new_infections_by_variant_sum, 1, np.max(new_infections_by_variant_sum))
+    for variant_name in variant_names:
+        y = sim.results['variant']['new_infections_by_variant'][v_map[variant_name]] / new_infections_by_variant_sum
+        fig.add_trace(go.Scatter(
+            x=x, y=y,
+            stackgroup='one',
+            line=dict(width=0.5),
+            hoverinfo='y+name',
+            name=variant_name
+        ))
+
+    fig.update_layout(yaxis_range=(0, 1))
+    fig.update_layout(title={'text': 'Variant proportion'}, xaxis_title='Day', yaxis_title='Infections', autosize=True, **plotly_legend)
+
+    if do_show:
+        fig.show()
+
+    return fig
+
+
+
 def plot_by_variant(sims, do_show=False): # pragma: no cover
     import random
     go = import_plotly() # Load Plotly
@@ -911,7 +941,7 @@ def plot_by_variant(sims, do_show=False): # pragma: no cover
                 y = sim.results['variant']['new_infections_by_variant'][v_map[variant_name]]
                 y = np.cumsum(y) if is_cum else y
                 max_y = np.max(y) if np.max(y) > max_y else max_y 
-                name = sim.results['variant']['new_infections_by_variant'].name + ' ' + variant_name
+                name = f"{sim.label}: " + sim.results['variant']['new_infections_by_variant'].name + ' ' + variant_name
                 _r, _g, _b = tuples_list[j]
                 fig.add_trace(go.Scatter(x=x, y=y,
                     hovertext=list(map(lambda t: str(t)+ '; ' + sim.label + '; ' + name, zip(x, y.astype(int)))),
@@ -964,6 +994,44 @@ def plotly_people(sim, do_show=False): # pragma: no cover
         fig.show()
 
     return fig
+
+
+def plotly_states_people(sim, do_show=False): # pragma: no cover
+    ''' Plot a "cascade" of people moving through different states '''
+
+    go = import_plotly() # Load Plotly
+    fig = go.Figure()
+    cur_analyzer = sim.get_analyzer('seir')
+    state_history = cur_analyzer.state_history
+    state_names = [
+        'exposed (in latent period)',
+        'asymptomatic (before recovering)',
+        'psesymptomatic (in asymp period)',
+        'mild',
+        'severe',
+        'critical',
+    ]
+
+    for i in range(state_history.shape[0]):  # Reverse order for plotting
+        x = np.arange(state_history[i].size)
+        y = state_history[i]
+        fig.add_trace(go.Scatter(
+            x=x, y=y,
+            stackgroup='one',
+            line=dict(width=0.5),
+            hoverinfo='y+name',
+            name=state_names[i]
+        ))
+
+    plotly_interventions(sim, fig, max_y=sim.n)
+    fig.update_layout(yaxis_range=(0, sim.n))
+    fig.update_layout(title={'text': 'Health status'}, xaxis_title='Day', yaxis_title='Agents', autosize=True, **plotly_legend)
+
+    if do_show:
+        fig.show()
+
+    return fig
+
 
 def plotly_hist_sus(sim, do_show=False):
     go = import_plotly() # Load Plotly

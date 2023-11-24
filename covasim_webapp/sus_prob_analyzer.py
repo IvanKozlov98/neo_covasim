@@ -73,6 +73,15 @@ class store_seir(cv.Analyzer):
                         (self.bounds[i] <= ppl.rel_sus) * (ppl.rel_sus < self.bounds[i + 1]) * (self.ages_bounds[j] <= ppl.age) * (ppl.age < self.ages_bounds[j + 1]))
             self.sizes_of_box_by_ages[j] += 1
 
+    def init_stats(self, sim):
+        # exposed (in latent period)
+        # asymptomatic (before recovering)
+        # psesymptomatic (in asymp period)
+        # mild
+        # severe
+        # critical
+        self.state_history = np.zeros(shape=(6, sim.pars['n_days'] + 1))
+
     def initialize(self, sim=None):
         if sim is None:
             raise RuntimeError("Sim in initialize is None!")
@@ -81,6 +90,7 @@ class store_seir(cv.Analyzer):
         self.people2contact_count = ppl.get_contact_statistics()
         self.viral_load_by_layers = sim.viral_load_by_layers
         self._init_sizes_of_box(ppl)
+        self.init_stats(sim)
         #
         self.initialized = True
         self.finalized = False
@@ -105,6 +115,16 @@ class store_seir(cv.Analyzer):
             return (y, 0.5 * (bins[:-1] + bins[1:]))
         immunity_histogram = make_hist(sim.people.sus_imm * sim.people.rel_sus)
         self.immunity_histograms.append(immunity_histogram)
+
+    def update_state_history(self, sim):
+        self.state_history[0][sim.t] = np.count_nonzero(sim.people.exposed * (~sim.people.infectious))
+        asymp_flag = sim.people.infectious * (~sim.people.symptomatic)
+        self.state_history[1][sim.t] = np.count_nonzero(asymp_flag * sim.people.wont_symptomatic)
+        self.state_history[2][sim.t] = np.count_nonzero(asymp_flag * sim.people.will_symptomatic)
+        self.state_history[3][sim.t] = np.count_nonzero(sim.people.symptomatic * (~sim.people.severe) * (~sim.people.critical))
+        self.state_history[4][sim.t] = np.count_nonzero(sim.people.severe * (~sim.people.critical))
+        self.state_history[5][sim.t] = np.count_nonzero(sim.people.critical)
+
 
     def apply(self, sim):
         ppl = sim.people
@@ -154,6 +174,8 @@ class store_seir(cv.Analyzer):
         # work with immunity histograms
         self.work_immunity_histograms(sim=sim)
 
+        # work with health status
+        self.update_state_history(sim=sim)
         return
 
     def right_hist(self, arr):
