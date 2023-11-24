@@ -750,7 +750,7 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant_rel(cur_sim), get_description('variant_proportion'))
 
     # Basic 2
-    #graphs[General_spread_parameters] += process_graphs(cv.plotly_rs([cur_sim]), get_description('rs'))
+    graphs[General_spread_parameters] += process_graphs(cv.plotly_rs([cur_sim]), get_description('rs'))
     graphs[General_spread_parameters] += process_graphs(cv.plotly_ars([cur_sim]), get_description('ars'))
     # Immunity
     graphs[Immunity] += process_graphs(cv.plotly_hist_nab_per_day(cur_sim), get_description('nabs'))
@@ -787,7 +787,7 @@ def plot_comparing(sims, show_contact_stat):
     graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant(sims), get_description('common_sim')[:2])
 
     graphs[General_spread_parameters] = []
-    #graphs[General_spread_parameters] += process_graphs(cv.plotly_rs(sims), get_description('rs'))
+    graphs[General_spread_parameters] += process_graphs(cv.plotly_rs(sims), get_description('rs'))
     graphs[General_spread_parameters] += process_graphs(cv.plotly_ars(sims), get_description('ars'))
     if show_contact_stat:
         graphs[General_spread_parameters] += process_graphs(cv.plotly_part_80(sims), get_description('part_80'))

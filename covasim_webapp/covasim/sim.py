@@ -1099,7 +1099,7 @@ class Sim(cvb.BaseSim):
         self.compute_states()
         self.compute_yield()
         self.compute_doubling()
-        #self.compute_r_eff()
+        self.compute_r_eff()
         self.compute_summary()
         return
 
@@ -1217,9 +1217,9 @@ class Sim(cvb.BaseSim):
 
             # Handle smoothing, including with too-short arrays
             len_raw = len(raw_values) # Calculate the number of raw values
-            dur_pars = self['dur'][0] if isinstance(self['dur'], list) else self['dur'] # Note: does not take variants into account
+            dur_pars = self['variant_pars'][self['variant_map'][0]] # Note: does not take variants into account
             if len_raw >= 3: # Can't smooth arrays shorter than this since the default smoothing kernel has length 3
-                initial_period = dur_pars['exp2inf']['par1'] + dur_pars['asym2rec']['par1'] # Approximate the duration of the seed infections for averaging
+                initial_period = dur_pars['dur_exp2inf']['par1'] + dur_pars['dur_asym2rec']['par1'] # Approximate the duration of the seed infections for averaging
                 initial_period = int(min(len_raw, initial_period)) # Ensure we don't have too many points
                 for ind in range(initial_period): # Loop over each of the initial inds
                     raw_values[ind] = raw_values[ind:initial_period].mean() # Replace these values with their average
