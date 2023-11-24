@@ -1819,11 +1819,15 @@ def plotly_viral_load_per_day(sims, do_show=False):
     go = import_plotly() # Load Plotly
     sims_count = len(sims)
     brightnesses = np.linspace(0, 1, sims_count + 1)[1:]
-    ind2key = ['home', 'school', 'work', 'random', 'l', 'all']
-    ind2color = ["255, 255, 0", "255, 0, 255", "0, 0, 255", "0, 255, 255", "0, 127, 255", '255, 0, 0']
     fig = go.Figure()
 
     for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
+        ind2key = ['home', 'school', 'work', 'random']
+        ind2color = ["255, 255, 0", "255, 0, 255", "0, 0, 255", "0, 255, 255", "0, 127, 255"]
+        if sim.pars['pop_type'] == 'random':
+            ind2key.append('all')
+            ind2color.append("0, 127, 127")
+        
         cur_analyzer= sim.get_analyzer('seir')
         days = sim.tvec
         day_count = len(days)
@@ -1932,12 +1936,15 @@ def plotly_viral_load_per_day(sims, do_show=False):
 
 def plotly_sars(sims, do_show=False):
     go = import_plotly() # Load Plotly
-    ind2key = ['home', 'school', 'work', 'random', 'l', 'all'] 
-    ind2color = ["255, 255, 0", "255, 0, 255", "0, 0, 255", "0, 255, 255", "255, 0, 0", "255, 127, 0"]
     fig = go.Figure()
     sims_count = len(sims)
     brightnesses = np.linspace(0, 1, sims_count + 1)[1:]
     for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
+        ind2key = ['home', 'school', 'work', 'random']
+        ind2color = ["255, 255, 0", "255, 0, 255", "0, 0, 255", "0, 255, 255", "0, 127, 255"]
+        if sim.pars['pop_type'] == 'random':
+            ind2key.append('all')
+            ind2color.append("0, 127, 127")
         days = sim.tvec
         day_count = len(days)
         x_time = np.arange(day_count)
@@ -2013,14 +2020,15 @@ def plotly_sars(sims, do_show=False):
 
 def plotly_viral_load_cum(sims, do_show=False):
     go = import_plotly() # Load Plotly
-    
-    ind2key = ['home', 'school', 'work', 'random', 'l', 'all'] 
     fig = go.Figure()
-
     sims_count = len(sims)
     brightnesses = np.linspace(0, 1, sims_count + 1)[1:]
-    ind2color = ["255, 255, 0", "255, 0, 255", "0, 0, 255", "0, 255, 255", "0, 127, 255", "127, 127, 255"]
     for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
+        ind2key = ['home', 'school', 'work', 'random']
+        ind2color = ["255, 255, 0", "255, 0, 255", "0, 0, 255", "0, 255, 255", "0, 127, 255"]
+        if sim.pars['pop_type'] == 'random':
+            ind2key.append('all')
+            ind2color.append("0, 127, 127")
         base_name = "Pathogen fraction" if sim.pars['is_additive_formula'] else "Agents"
         cur_analyzer= sim.get_analyzer('seir')
         days = sim.tvec
