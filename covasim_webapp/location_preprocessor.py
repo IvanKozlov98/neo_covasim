@@ -46,7 +46,21 @@ def main_households(df):
     def treat_household_dist():
         key = "Distribution of household sizes"
         tmp_df = treat_common(df=df, key=key, num_rows=7, num_columns=1)
-        return get_distribution_2(tmp_df)
+        tmp_res = get_distribution_2(tmp_df)
+        sum = 0
+        for (_, num_f) in tmp_res:
+            sum += num_f
+        for i in range(len(tmp_res)):
+            tmp_res[i][1] = tmp_res[i][1] / float(sum)
+        print("***********")
+        print("***********")
+        print("***********")
+        print(tmp_res)
+        print("***********")
+        print("***********")
+        print("***********")
+        return tmp_res
+        
 
     def treat_family_size_dist():
         key = "Age distribution of the reference person for each household size"
