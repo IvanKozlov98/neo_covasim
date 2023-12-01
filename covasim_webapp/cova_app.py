@@ -245,6 +245,10 @@ def get_variant_pars(variant_choice):
             tmp_res[k] = tmp_res[k]['par1']  
     return tmp_res
 
+@app.register_RPC()
+def get_default_cross_immunity():
+    from covasim import parameters as cvpar
+    return cvpar.get_cross_immunity()
 
 @app.register_RPC()
 def get_dist_figs(rel_sus_choice_list=None, tabs=None):

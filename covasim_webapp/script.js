@@ -374,6 +374,7 @@ var vm = new Vue({
             ],
             rel_sus_choice_list: Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
             
+            default_cross_immunity: null,
             vaccine_options: [
                 'pfizer',
                 'moderna',
@@ -676,13 +677,17 @@ var vm = new Vue({
             var newEntry = {};
             newEntry['id'] = variant_name; 
             for (let i = 1; i < this.fields[city_ind_int].length; i++) {
-                newEntry[this.fields[city_ind_int][i]['key']] = "0";
+                const variant_name_op = this.fields[city_ind_int][i]['key'];
+                newEntry[variant_name_op] = this.default_cross_immunity[variant_name_op][variant_name];
             }
             newEntry[variant_name] = "1";
             this.filtered[city_ind_int].push(newEntry);
+            console.log(this.default_cross_immunity);
             for (let i = 0; i < this.filtered[city_ind_int].length; i++) {
-                if (this.filtered[city_ind_int][i]['id'] !== variant_name)
-                    this.filtered[city_ind_int][i][variant_name] = "0";
+                if (this.filtered[city_ind_int][i]['id'] !== variant_name){
+                    const variant_name_op = this.filtered[city_ind_int][i]['id'];  
+                    this.filtered[city_ind_int][i][variant_name] = this.default_cross_immunity[variant_name][variant_name_op];
+                }
             }
             this.fields[city_ind_int].push({ key: variant_name, label: variant_name, editable: true });
             //
@@ -695,6 +700,14 @@ var vm = new Vue({
             slice_of_variant_par['variant_name'] = variant_name;
             for (var key in this.parameters_by_variant) {
                 slice_of_variant_par[key] = this.parameters_by_variant[key].data[city_ind_int];
+            }
+            if (this.default_cross_immunity === null) {
+                console.log("Here");
+                default_cross_immunity_resp = await sciris.rpc('get_default_cross_immunity', undefined, {}); 
+                this.default_cross_immunity = default_cross_immunity_resp.data; 
+                console.log(this.default_cross_immunity);
+                console.log("After");
+                
             }
             this.addVariantToTable(city_ind_int, variant_name);
             this.introduced_variants_list[city_ind_int].push(slice_of_variant_par);
