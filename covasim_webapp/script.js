@@ -284,6 +284,16 @@ var vm = new Vue({
 
     data() {
         return {
+            filtered: Array.from({ length: 20 }, () => ([
+                { 
+                  "id": "wild",
+                  "wild": "1",
+                }
+            ])),
+            fields: Array.from({ length: 20 }, () => ([
+                { key: 'id', label: '' },
+                { key: 'wild', label: 'wild', editable: true },
+            ])),
             currentTime: 0,
             activeTabInd: 0,
             groupHides: {
@@ -554,7 +564,14 @@ var vm = new Vue({
             return this.paramError && Object.keys(this.paramError).length > 0;
         },
         is_debug: function () {
-            return this.debug || /debug=true/i.test(window.location.search)
+            return this.debug || /debug=true/i.test(window.location.search);
+        },
+        editableFields() {
+            var res = [];
+            for(var i = 0; i < 20; i++) {
+                res.push(this.fields[i].filter(field => field.editable))
+            }
+            return res;
         }
     },
 
@@ -573,9 +590,30 @@ var vm = new Vue({
               }
             }
           },
+        
+        updateVariantTable(newInd, oldInd) {
+            this.deleteVariantFromTable(newInd, 'wild');
+            console.log(this.introduced_variants_list[oldInd]);
+            for(var i in this.introduced_variants_list[oldInd]) {
+                const variant_name = this.introduced_variants_list[oldInd][parseInt(i)]['variant_name'];
+                this.addVariantToTable(newInd, variant_name);
+                
+            }
+            // then copy values
+            for(let i = 0; i < this.filtered[newInd].length; i++) {
+                for(var k in this.filtered[oldInd][i]) {
+                    this.filtered[newInd][i][k] = this.filtered[oldInd][i][k];
+                }
+            }
+            console.log("update variant table finish");
+        },
 
-          async copyTab(oldInd, newInd) {
-            this.int_pars[newInd] = clone(this.int_pars[oldInd]); 
+        async copyTab(oldInd, newInd) {
+            this.int_pars[newInd] = clone(this.int_pars[oldInd]);
+            if (newInd !== oldInd) {
+                this.updateVariantTable(newInd, oldInd);                
+            }
+
             this.cur_rel_sus_fig[newInd] = clone(this.cur_rel_sus_fig[oldInd]);
             this.introduced_variants_list[newInd] = clone(this.introduced_variants_list[oldInd]);
             this.variant_figs[newInd] = clone(this.variant_figs[oldInd]); 
@@ -597,7 +635,7 @@ var vm = new Vue({
             }
           },
 
-          async newTab() {
+        async newTab() {
             const city_ind = this.tabCounter;
             this.city_options.push('City ' + city_ind);
             this.copyTab(this.activeTabInd, city_ind);
@@ -610,7 +648,7 @@ var vm = new Vue({
             this.tabCounter = this.tabCounter + 1;
           },
 
-          async handleSimpleCase() {
+        async handleSimpleCase() {
             const response = await sciris.rpc('get_dist_figs', undefined, {rel_sus_choice_list: this.rel_sus_choice_list, tabs: this.tabs});
             this.cur_rel_sus_fig = response.data;
         },
@@ -633,23 +671,68 @@ var vm = new Vue({
             }        
         },
 
+        async addVariantToTable(city_ind_int, variant_name) {
+            // edit table
+            var newEntry = {};
+            newEntry['id'] = variant_name; 
+            for (let i = 1; i < this.fields[city_ind_int].length; i++) {
+                newEntry[this.fields[city_ind_int][i]['key']] = "0";
+            }
+            newEntry[variant_name] = "1";
+            this.filtered[city_ind_int].push(newEntry);
+            for (let i = 0; i < this.filtered[city_ind_int].length; i++) {
+                if (this.filtered[city_ind_int][i]['id'] !== variant_name)
+                    this.filtered[city_ind_int][i][variant_name] = "0";
+            }
+            this.fields[city_ind_int].push({ key: variant_name, label: variant_name, editable: true });
+            //
+        },
+
         async addVariant(city_ind) {
             const city_ind_int = parseInt(city_ind);
-            var slice_of_variant_par = {}
-            slice_of_variant_par['variant_name'] = this.variant_choice_list[city_ind_int];
+            var slice_of_variant_par = {};
+            variant_name = this.variant_choice_list[city_ind_int];
+            slice_of_variant_par['variant_name'] = variant_name;
             for (var key in this.parameters_by_variant) {
-                console.log(key);
-                console.log(this.parameters_by_variant);
-
                 slice_of_variant_par[key] = this.parameters_by_variant[key].data[city_ind_int];
             }
+            this.addVariantToTable(city_ind_int, variant_name);
             this.introduced_variants_list[city_ind_int].push(slice_of_variant_par);
             const response_variant = await sciris.rpc('get_gantt_variant', undefined, {introduced_variants_list: this.introduced_variants_list, n_days: this.sim_length.best, tabs: this.tabs});
             this.variant_figs = response_variant.data;
         },
 
+        async deleteVariantFromTable(city_ind_int, variant_name) {
+            // remove variant from table
+            var index_removing = 0;
+            for (let i = 0; i < this.fields[city_ind_int].length; i++) {
+                if (this.fields[city_ind_int][i]['key'] === variant_name) {
+                    index_removing = i;
+                    console.log("find");
+                    break;
+                } else {
+                    console.log("------");
+                    console.log(this.fields[city_ind_int][i]['key']);
+                    console.log(variant_name);
+                    console.log("------");
+                }
+            }
+            console.log(this.filtered[city_ind_int]);
+            this.fields[city_ind_int].splice(index_removing, 1);
+            this.filtered[city_ind_int].splice(index_removing - 1, 1);
+            for (let i = 0; i < this.filtered[city_ind_int].length; i++) {
+                delete this.filtered[city_ind_int][i][variant_name];
+            }
+            console.log(index_removing);
+            console.log(this.filtered);
+            //
+        },
+
+
         async deleteVariant(city_ind, index) {
             const city_ind_int = parseInt(city_ind);
+            const variant_name = this.introduced_variants_list[city_ind_int][index]['variant_name'];
+            this.deleteVariantFromTable(city_ind_int, variant_name);
             this.introduced_variants_list[city_ind_int].splice(index, 1);
             const response_variant = await sciris.rpc('get_gantt_variant', undefined, {introduced_variants_list: this.introduced_variants_list, n_days: this.sim_length.best, tabs: this.tabs});
             this.variant_figs = response_variant.data;
