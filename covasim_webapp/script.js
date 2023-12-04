@@ -945,6 +945,7 @@ var vm = new Vue({
                     population_volume_list: this.population_volume_choice_list,
                     infectiousTableConfig: this.infectiousTableConfig,
                     introduced_variants_list: this.introduced_variants_list,
+                    cross_immunity_data: this.filtered,
                     tabs: this.tabs,
                     timeH: this.timeH
                 }

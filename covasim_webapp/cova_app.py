@@ -663,7 +663,7 @@ def parse_interaction_records(interaction_records, tabs):
     return adjacency_matrix
 
 
-def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list):
+def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, cross_immunity_data):
     def filter_inds(ll):
         return list(ll[i] for i in tabs)
     sim_pars_list = []
@@ -693,7 +693,8 @@ def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_
     rel_trans_type_list = filter_inds(rel_trans_type_list) 
     population_volume_list = filter_inds(population_volume_list)
     introduced_variants_list = filter_inds(introduced_variants_list)
-    return sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list
+    cross_immunity_data = filter_inds(cross_immunity_data)
+    return sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, cross_immunity_data
 
 msim_with = None
 prev_time = []
@@ -847,9 +848,11 @@ def var_d_raw2var_d(variant_dict_raw):
                 }
             )
 
-def get_variant_for_not_multi(introduced_variants_list):
+def get_variant_and_cross_for_not_multi(introduced_variants_list, cross_immunity_data):
     variants_list = []
-    for introduced_variants in introduced_variants_list:
+    cross_list = []
+    for introduced_variants, cross_rows in zip(introduced_variants_list, cross_immunity_data):
+        # make variants
         variants = []
         for variant_dict_raw in introduced_variants:
             variant_dict = var_d_raw2var_d(variant_dict_raw)
@@ -862,7 +865,15 @@ def get_variant_for_not_multi(introduced_variants_list):
                 )
             )
         variants_list.append(variants)
-    return variants_list
+        # make cross matrix
+        variants_count = len(introduced_variants)
+        immunity = np.ones((variants_count, variants_count), dtype=float) 
+        print(f"cross_rows = {cross_rows}")
+        for (j_v, cross_row) in enumerate(cross_rows):
+            for (i_v, variant_dict_raw) in enumerate(introduced_variants):
+                immunity[j_v, i_v] = float(cross_row[variant_dict_raw['variant_name']])
+        cross_list.append(immunity)
+    return variants_list, cross_list
 
 
 def is_equal_var_dicts(d1, d2):
@@ -880,7 +891,7 @@ def hasnt_list_this_variant(var_list, var_dict):
             return False
     return True
 
-def get_variant_for_multi(introduced_variants_list, tabs):
+def get_variant_and_cross_for_multi(introduced_variants_list, tabs):
     # preprocessing
     for (i, introduced_variants) in enumerate(introduced_variants_list):
         for variant_dict_raw in introduced_variants:
@@ -910,22 +921,23 @@ def get_variant_for_multi(introduced_variants_list, tabs):
                 )
             )
         variants_list.append(variants)
-    return variants_list
+    return variants_list, None
 
 
-def get_variants(introduced_variants_list, is_multi, tabs):
+def get_variants_and_cross(introduced_variants_list, cross_immunity_data, is_multi, tabs):
     if is_multi:
-        return get_variant_for_multi(introduced_variants_list, tabs)
-    return get_variant_for_not_multi(introduced_variants_list)
+        return get_variant_and_cross_for_multi(introduced_variants_list, tabs)
+    return get_variant_and_cross_for_not_multi(introduced_variants_list, cross_immunity_data)
+
 
 
 @app.register_RPC()
-def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, interaction_records=None, verbose=True, die=die):
+def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, verbose=True, die=die):
     ''' Create, run, and plot everything '''
     global msim_with
     errs = []
     sim_pars_out, epi_pars_out, int_pars_out = copy.deepcopy(sim_pars), copy.deepcopy(epi_pars), copy.deepcopy(int_pars)
-    (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list)
+    (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, cross_immunity_data) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, cross_immunity_data)
     try:
         web_pars_list = []
 
@@ -943,17 +955,20 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
         if die: raise
 
     predefined_pops = ['100K', '100K(Random)', '500K', '1M', '3M']
-    variants_list = get_variants(introduced_variants_list, multiple_cities, tabs)
+    variants_list, cross_list = get_variants_and_cross(introduced_variants_list, cross_immunity_data, multiple_cities, tabs)
     print("_______|)))))))))")
     print(variants_list)
+    print(cross_list)
+    print("ddd")
     # Create the sim and update the parameters
     try:
         sims = []
-        for pars, population_volume, variants, city_ind in zip(web_pars_list, population_volume_list, variants_list, tabs):
+        for pars, population_volume, variants, cross_matrix, city_ind in zip(web_pars_list, population_volume_list, variants_list, cross_list, tabs):
             new_pop_size = parse_population_size(population_volume)
             pars['pop_size'] = new_pop_size
             pars['pop_type'] = 'synthpops' if population_volume != "100K(Random)" else 'random'
             pars['n_variants'] = len(variants)
+            pars['immunity'] = cross_matrix
             popfile = f"synthpops_files/synth_pop_{population_volume}.ppl"
             analyzer = store_seir(show_contact_stat=show_contact_stat, label='seir')
             pars['pop_infected'] = 0
@@ -1074,7 +1089,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8227
+        app.config['SERVER_PORT'] = 8229
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:
