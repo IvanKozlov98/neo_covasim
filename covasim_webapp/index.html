@@ -371,7 +371,11 @@
                 </tbody>
               </table>
             </div>
-
+            <legend id="cross_immunity_id"> Cross immunity</legend>
+            <b-tooltip target="cross_immunity_id">
+              Virus's column determine immunity to other viruses after recovery.
+              Values must be in range [0, 1].
+            </b-tooltip>
             <div id='table_app'>
               <b-table :items="filtered[i]" :fields="fields[i]">
                 <template v-for="field in editableFields[i]" v-slot:[`cell(${field.key})`]="{ item }">
