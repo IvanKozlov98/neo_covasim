@@ -189,7 +189,7 @@ def reset_layer_pars(pars, layer_keys=None, force=False):
     layer_defaults['hybrid'] = dict(
         beta_layer  = dict(h=3.0, s=0.6, w=0.6, c=0.3),  # Per-population beta weights; relative; in part based on Table S14 of https://science.sciencemag.org/content/sci/suppl/2020/04/28/science.abb8001.DC1/abb8001_Zhang_SM.pdf
         contacts    = dict(h=2.0, s=20,  w=16,  c=20),   # Number of contacts per person per day, estimated
-        dynam_layer = dict(h=0,   s=0,   w=0,   c=0),    # Which layers are dynamic -- none by default
+        dynam_layer = dict(h=0,   s=0,   w=0,   c=1),    # Which layers are dynamic -- none by default
         iso_factor  = dict(h=0.3, s=0.1, w=0.1, c=0.1),  # Multiply beta by this factor for people in isolation
         quar_factor = dict(h=0.6, s=0.2, w=0.2, c=0.2),  # Multiply beta by this factor for people in quarantine
     )
@@ -396,6 +396,8 @@ def get_variant_pars(default=False, variant=None):
             dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
+            oral_microbiota_percent = 0.0,
+            oral_microbiota_factor = 1.0,
         ),
 
         alpha = dict(
@@ -413,6 +415,8 @@ def get_variant_pars(default=False, variant=None):
             dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
+            oral_microbiota_percent = 0.0,
+            oral_microbiota_factor = 1.0,
         ),
 
         beta = dict(
@@ -430,6 +434,8 @@ def get_variant_pars(default=False, variant=None):
             dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
+            oral_microbiota_percent = 0.0,
+            oral_microbiota_factor = 1.0,
         ),
 
         gamma = dict(
@@ -447,6 +453,8 @@ def get_variant_pars(default=False, variant=None):
             dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
+            oral_microbiota_percent = 0.0,
+            oral_microbiota_factor = 1.0,
         ),
 
         delta = dict(
@@ -464,6 +472,8 @@ def get_variant_pars(default=False, variant=None):
             dur_sev2rec     = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2rec    = dict(dist='lognormal_int', par1=18.1, par2=6.3),
             dur_crit2die    = dict(dist='lognormal_int', par1=10.7, par2=4.8),
+            oral_microbiota_percent = 0.0,
+            oral_microbiota_factor = 1.0,
         )
     )
 

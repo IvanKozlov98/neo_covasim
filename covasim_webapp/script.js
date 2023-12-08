@@ -399,22 +399,6 @@ var vm = new Vue({
                 'delta'
             ],
             variant_choice_list: Array.from({ length: 20 }, () => ('wild')),
-            //rel_beta_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            //rel_symp_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            //rel_severe_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            //rel_crit_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            //rel_death_prob_by_variant_list: Array.from({ length: 20 }, () => (1.0)),
-            //dur_exp2inf_by_variant_list: Array.from({length: 20}, () => (4.5)),
-            //dur_inf2sym_by_variant_list: Array.from({length: 20}, () => (1.1)),
-            //dur_sym2sev_by_variant_list: Array.from({length: 20}, () => (6.6)),
-            //dur_sev2crit_by_variant_list: Array.from({length: 20}, () => (1.5)),
-            //dur_asym2rec_by_variant_list: Array.from({length: 20}, () => (8.0)),
-            //dur_mild2rec_by_variant_list: Array.from({length: 20}, () => (8.0)),
-            //dur_sev2rec_by_variant_list: Array.from({length: 20}, () => (18.1)),
-            //dur_crit2rec_by_variant_list: Array.from({length: 20}, () => (18.1)),
-            //dur_crit2die_by_variant_list: Array.from({length: 20}, () => (10.7)),
-            //start_day_by_variant_list: Array.from({ length: 20 }, () => (0.0)),
-            //n_import_by_variant_list: Array.from({ length: 20 }, () => (10.0)),
             parameters_by_variant: {
                 "rel_beta": 
                 {
@@ -512,6 +496,16 @@ var vm = new Vue({
                     'name': 'Number of imported:',
                     'data': Array.from({ length: 20 }, () => (10))
                 },
+                "oral_microbiota_percent": {
+                    'description': "TODO",
+                    "name": "Oral microbiota percent",
+                    'data': Array.from({ length: 20 }, () => (0.0))
+                },
+                "oral_microbiota_factor": {
+                    'description': "TODO",
+                    "name": "Oral microbiota severe factor",
+                    'data': Array.from({ length: 20 }, () => (1.0))
+                },
             },
             introduced_variants_list: Array.from({ length: 20 }, () => ([{
                 'variant_name': 'wild',
@@ -531,6 +525,8 @@ var vm = new Vue({
                 "dur_crit2die": 10.7,
                 "start_day": 0,
                 "n_import": 10,
+                "oral_microbiota_percent": 0.0,
+                "oral_microbiota_factor": 1.0
             }])),
             variant_figs: Array(20).fill({ }),
 
@@ -662,6 +658,8 @@ var vm = new Vue({
                 switch (key) {
                     case "start_day": new_val = 0; break;
                     case "n_import": new_val = 10; break;
+                    case "oral_microbiota_percent": new_val = 0.0; break;
+                    case "oral_microbiota_factor": new_val = 1.0; break;
                     default: new_val = response.data[key]; break;
                 }
                 console.log(key);
@@ -1001,9 +999,11 @@ var vm = new Vue({
             this.parameters_by_variant['dur_sev2rec'].data = Array.from({length: 20}, () => (18.1));
             this.parameters_by_variant['dur_crit2rec'].data = Array.from({length: 20}, () => (18.1));
             this.parameters_by_variant['dur_crit2die'].data = Array.from({length: 20}, () => (10.7));
+            this.parameters_by_variant['n_import'].data = Array.from({length: 20}, () => (10));
+            this.parameters_by_variant['start_day'].data = Array.from({length: 20}, () => (0));
+            this.parameters_by_variant['oral_microbiota_percent'].data = Array.from({length: 20}, () => (0.0));
+            this.parameters_by_variant['oral_microbiota_factor'].data = Array.from({length: 20}, () => (1.0));
             
-            this.start_day_by_variant_list = Array.from({ length: 20 }, () => (0)),
-            this.n_import_by_variant_list = Array.from({ length: 20 }, () => (10)),
             this.rel_trans_choice_list = Array.from({ length: 20 }, () => ('Independent(sus)')),
             this.population_volume_choice_list = Array.from({ length: 20 }, () => ('100K')),
 

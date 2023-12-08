@@ -297,16 +297,42 @@ def get_new_matrix():
 
 if __name__ == '__main__':
 
-    experiment_count = 1000
-    for _ in range(experiment_count):
-        lp.make_people_from_pars()
-        pass
+    #experiment_count = 1000
+    #for _ in range(experiment_count):
+    #    lp.make_people_from_pars()
+    #    pass
 
 
-    sim = cv.Sim()
-    sim.run(verbose=False)
-    res = sim.results['new_infections']
-    print({'pars': 'classic', 'results': res})
+    synthpop_pars = dict(n_agents=100000, pop_type='synthpops')
+    synthpop_popfile = 'synthpops_files/synth_pop_100K.ppl'
+    oral_microbiota_factor = 3.0
+    #
+    msims = []
+    #for (i, oral_microbiota_percent) in enumerate([0.0, 0.4, 0.8]):
+    oral_microbiota_percent = 0.5
+    for oral_microbiota_factor in [2.0, 4.0]:
+        sims = []
+        for rand_seed in range(50):
+            variant_dict = {
+                "oral_microbiota_percent": oral_microbiota_percent,
+                "oral_microbiota_factor": oral_microbiota_factor,
+                }
+            variants = [
+                cv.variant(
+                        variant=variant_dict, 
+                        n_imports=10, 
+                        days=0, 
+                        label=f"oral_microbiota_percent={oral_microbiota_percent}, oral_microbiota_factor={oral_microbiota_factor}"
+                )
+            ]
+            pars = {"pop_type": 'synthpops'}
+             
+            sims.append(cv.Sim(pars=pars, rand_seed=rand_seed, popfile=synthpop_popfile, pop_size=100000, n_days=150, variants=variants, label=f"oral_microbiota_percent={oral_microbiota_percent}, oral_microbiota_factor={oral_microbiota_factor}"))
+        msim = cv.MultiSim(sims)
+        msim.run()
+        msim.mean()
+        msims.append(msim)
 
-
-    
+    merged = cv.MultiSim.merge(msims, base=True)
+    fig = merged.plot(to_plot=['cum_severe', 'cum_infections', 'new_infections'], color_by_sim=True)
+    fig.savefig(f"oral_microbiota_percent_rand_exp.pdf", format='pdf')

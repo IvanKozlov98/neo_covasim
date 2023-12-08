@@ -468,9 +468,11 @@ class MultiSim(cvb.FlexPretty):
             msim.reduce()
             msim.plot() # Plots the combined sim
         '''
+        print(f"{self.which} mmmmmm")
 
         # Plot a single curve, possibly with a range
         if not plot_sims and self.which in ['combined', 'reduced']:
+            print(f"{self.which} mmmmmm")
             fig = self.base_sim.plot(to_plot=to_plot, colors=colors, **kwargs)
 
         # PLot individual sims on top of each other
@@ -545,7 +547,7 @@ class MultiSim(cvb.FlexPretty):
                     merged_labels = labels
                 else:
                     merged_labels = ''
-
+                print(f"merged_labels = {merged_labels}")
                 # Actually plot
                 merged_plot_args = sc.mergedicts({'alpha':alphas[s]}, plot_args) # Need a new variable to avoid overwriting
                 fig = sim.plot(fig=fig, to_plot=('scens', to_plot), colors=colors[s], labels=merged_labels, plot_args=merged_plot_args, show_args=merged_show_args, **kwargs)

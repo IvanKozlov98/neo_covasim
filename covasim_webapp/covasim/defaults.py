@@ -217,7 +217,9 @@ variant_pars = [
     'dur_mild2rec',
     'dur_sev2rec',
     'dur_crit2rec',
-    'dur_crit2die'
+    'dur_crit2die',
+    'oral_microbiota_percent',
+    'oral_microbiota_factor'
 ]
 
 # Immunity is broken down according to 3 axes, as listed here

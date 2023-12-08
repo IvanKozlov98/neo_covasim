@@ -845,6 +845,8 @@ def var_d_raw2var_d(variant_dict_raw):
                 'dur_sev2rec': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_sev2rec']), par2=6.3),
                 'dur_crit2rec': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_crit2rec']), par2=6.3),
                 'dur_crit2die': dict(dist='lognormal_int', par1=float(variant_dict_raw['dur_crit2die']), par2=4.8),
+                "oral_microbiota_percent": float(variant_dict_raw['oral_microbiota_percent']),
+                "oral_microbiota_factor": float(variant_dict_raw['oral_microbiota_factor']),
                 }
             )
 
@@ -1089,7 +1091,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8229
+        app.config['SERVER_PORT'] = 8231
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

@@ -245,11 +245,25 @@ class People(cvb.BasePeople):
         # and otherwise
         self._test_delay = cvu.sample(dist='special_test_delay', size=len(self))
         self.will_symptomatic = np.zeros(shape=sim_pars['pop_size'], dtype=bool)
-        self.wont_symptomatic = np.zeros(shape=sim_pars['pop_size'], dtype=bool)
+        self.wont_symptomatic = np.zeros(shape=sim_pars['pop_size'], dtype=bool)  
         self.inds_new_infections = []
         self.validate(sim_pars=sim_pars) # First, check that essential-to-match parameters match
         self.set_pars(sim_pars) # Replace the saved parameters with this simulation's
         self.set_prognoses()
+
+        self.rel_crit_prob_indiv = np.full((sim_pars['n_variants'], sim_pars['pop_size']), 1.0, dtype=cvd.default_float)
+        for i in range(sim_pars['n_variants']):
+            variant_label = self.pars['variant_map'][i]
+            oral_microbiota_percent = self.pars['variant_pars'][variant_label]['oral_microbiota_percent']
+            oral_microbiota_factor = self.pars['variant_pars'][variant_label]['oral_microbiota_factor']
+            rel_crit_prob_probs = np.full(sim_pars['pop_size'], oral_microbiota_percent, dtype=cvd.default_float)
+            is_severe_incr = cvu.binomial_arr(rel_crit_prob_probs)
+            inds_severe_incr = np.arange(sim_pars['pop_size'])[is_severe_incr]
+            print("oral_microbiota_percent")
+            print(len(inds_severe_incr), oral_microbiota_percent)
+            self.rel_crit_prob_indiv[i, inds_severe_incr] = oral_microbiota_factor
+            print(f"...: {sim_pars['pop_infected']}", np.unique(self.rel_crit_prob_indiv[0], return_counts=True))
+      
         self.initialized = True
         return
 
@@ -757,7 +771,7 @@ class People(cvb.BasePeople):
         n_symp_inds = len(symp_inds)
         self.dur_inf2sym[symp_inds] = cvu.sample(**infect_pars['dur_inf2sym'], size=n_symp_inds) # Store how long this person took to develop symptoms
         self.date_symptomatic[symp_inds] = self.date_infectious[symp_inds] + self.dur_inf2sym[symp_inds] # Date they become symptomatic
-        sev_probs = infect_pars['rel_severe_prob'] * self.severe_prob[symp_inds]*(1-self.sev_imm[variant, symp_inds]) # Probability of these people being severe
+        sev_probs = self.rel_crit_prob_indiv[variant, symp_inds] * infect_pars['rel_severe_prob'] * self.severe_prob[symp_inds]*(1-self.sev_imm[variant, symp_inds]) # Probability of these people being severe
         is_sev = cvu.binomial_arr(sev_probs) # See if they're a severe or mild case
         sev_inds = symp_inds[is_sev]
         mild_inds = symp_inds[~is_sev] # Not severe
