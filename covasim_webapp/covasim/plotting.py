@@ -16,7 +16,7 @@ from .settings import options as cvo
 
 
 __all__ = ['plot_sim', 'plot_scens', 'plot_result', 'plot_compare', 'plot_people', 'plotly_sim', 'plotly_people',
-           'plotly_hist_sus', 'plotly_hist_number_source_per_day', 'plotly_hist_nab_per_day', 'plotly_nabs', 'plot_by_variant',
+           'plotly_hist_sus', 'plotly_hist_number_source_per_day', 'plotly_hist_nab_per_day', 'plotly_nabs', 'plot_by_variant', 'plotly_states_of_recovered_people',
            'plotly_not_infected_people_by_sus_norm', 'plotly_hist_number_source_cum', 'plotly_sars', 'plotly_hist_immunity_per_day',
            'plotly_not_infected_people_by_sus', 'plotly_animate', 'plotly_part_80', 'plotly_rs', 'plotly_ars', 'plotly_states_people',
            'plotly_viral_load_per_day', 'plotly_viral_load_cum', 'plotly_risk_infected_by_age_group_per_day', 'plot_by_variant_rel',
@@ -996,13 +996,12 @@ def plotly_people(sim, do_show=False): # pragma: no cover
     return fig
 
 
-def plotly_states_people(sim, do_show=False): # pragma: no cover
+def plotly_states_people_impl(sim, state_history, title, do_show=False): # pragma: no cover
     ''' Plot a "cascade" of people moving through different states '''
 
     go = import_plotly() # Load Plotly
     fig = go.Figure()
-    cur_analyzer = sim.get_analyzer('seir')
-    state_history = cur_analyzer.state_history
+
     state_names = [
         'exposed (in latent period)',
         'asymptomatic (before recovering)',
@@ -1012,6 +1011,7 @@ def plotly_states_people(sim, do_show=False): # pragma: no cover
         'critical',
     ]
 
+    y_max = np.max(np.sum(state_history, axis=0))
     for i in range(state_history.shape[0]):  # Reverse order for plotting
         x = np.arange(state_history[i].size)
         y = state_history[i]
@@ -1022,16 +1022,31 @@ def plotly_states_people(sim, do_show=False): # pragma: no cover
             hoverinfo='y+name',
             name=state_names[i]
         ))
-
-    plotly_interventions(sim, fig, max_y=sim.n)
-    fig.update_layout(yaxis_range=(0, sim.n))
-    fig.update_layout(title={'text': 'Health status'}, xaxis_title='Day', yaxis_title='Agents', autosize=True, **plotly_legend)
+    y_bound = y_max + int(0.25 * y_max)
+    plotly_interventions(sim, fig, max_y=y_bound)
+    fig.update_layout(yaxis_range=(0, y_bound))
+    fig.update_layout(title={'text': title}, xaxis_title='Day', yaxis_title='Agents', autosize=True, **plotly_legend)
 
     if do_show:
         fig.show()
 
     return fig
 
+
+
+def plotly_states_people(sim, do_show=False): # pragma: no cover
+    ''' Plot a "cascade" of people moving through different states '''
+
+    cur_analyzer = sim.get_analyzer('seir')
+    return plotly_states_people_impl(sim, cur_analyzer.state_history, 'Health status of all people', do_show)
+
+
+
+def plotly_states_of_recovered_people(sim, do_show=False): # pragma: no cover
+    ''' Plot a "cascade" of people moving through different states '''
+
+    cur_analyzer = sim.get_analyzer('seir')
+    return plotly_states_people_impl(sim, cur_analyzer.state_history_recovered, 'Health status of recovered people', do_show)
 
 def plotly_hist_sus(sim, do_show=False):
     go = import_plotly() # Load Plotly

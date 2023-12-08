@@ -752,6 +752,7 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_people(cur_sim), get_description('people'))
     graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant([cur_sim]), get_description('common_sim')[:2])
     graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_states_people(cur_sim), get_description('people'))
+    graphs[Incidence_and_outcomes] += process_graphs(cv.plotly_states_of_recovered_people(cur_sim), get_description('people'))
     graphs[Incidence_and_outcomes] += process_graphs(cv.plot_by_variant_rel(cur_sim), get_description('variant_proportion'))
 
     # Basic 2

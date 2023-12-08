@@ -246,6 +246,7 @@ class People(cvb.BasePeople):
         self._test_delay = cvu.sample(dist='special_test_delay', size=len(self))
         self.will_symptomatic = np.zeros(shape=sim_pars['pop_size'], dtype=bool)
         self.wont_symptomatic = np.zeros(shape=sim_pars['pop_size'], dtype=bool)  
+        self.was_recovered = np.zeros(shape=sim_pars['pop_size'], dtype=bool)  
         self.inds_new_infections = []
         self.validate(sim_pars=sim_pars) # First, check that essential-to-match parameters match
         self.set_pars(sim_pars) # Replace the saved parameters with this simulation's
@@ -487,6 +488,7 @@ class People(cvb.BasePeople):
         self.severe[inds]           = False
         self.critical[inds]         = False
         self.recovered[inds]        = True
+        self.was_recovered[inds]    = True
         self.recovered_variant[inds] = self.exposed_variant[inds]
         self.infectious_variant[inds] = np.nan
         self.exposed_variant[inds]    = np.nan
