@@ -244,26 +244,23 @@ class People(cvb.BasePeople):
         self.initialize_tourist_cells()
         # and otherwise
         self._test_delay = cvu.sample(dist='special_test_delay', size=len(self))
-        self.will_symptomatic = np.zeros(shape=sim_pars['pop_size'], dtype=bool)
-        self.wont_symptomatic = np.zeros(shape=sim_pars['pop_size'], dtype=bool)  
-        self.was_recovered = np.zeros(shape=sim_pars['pop_size'], dtype=bool)  
+        self.will_symptomatic = np.zeros(shape=len(self), dtype=bool)
+        self.wont_symptomatic = np.zeros(shape=len(self), dtype=bool)  
+        self.was_recovered = np.zeros(shape=len(self), dtype=bool)  
         self.inds_new_infections = []
         self.validate(sim_pars=sim_pars) # First, check that essential-to-match parameters match
         self.set_pars(sim_pars) # Replace the saved parameters with this simulation's
         self.set_prognoses()
 
-        self.rel_crit_prob_indiv = np.full((sim_pars['n_variants'], sim_pars['pop_size']), 1.0, dtype=cvd.default_float)
+        self.rel_crit_prob_indiv = np.full((sim_pars['n_variants'], len(self)), 1.0, dtype=cvd.default_float)
         for i in range(sim_pars['n_variants']):
             variant_label = self.pars['variant_map'][i]
             oral_microbiota_percent = self.pars['variant_pars'][variant_label]['oral_microbiota_percent']
             oral_microbiota_factor = self.pars['variant_pars'][variant_label]['oral_microbiota_factor']
-            rel_crit_prob_probs = np.full(sim_pars['pop_size'], oral_microbiota_percent, dtype=cvd.default_float)
+            rel_crit_prob_probs = np.full(len(self), oral_microbiota_percent, dtype=cvd.default_float)
             is_severe_incr = cvu.binomial_arr(rel_crit_prob_probs)
-            inds_severe_incr = np.arange(sim_pars['pop_size'])[is_severe_incr]
-            print("oral_microbiota_percent")
-            print(len(inds_severe_incr), oral_microbiota_percent)
+            inds_severe_incr = np.arange(len(self))[is_severe_incr]
             self.rel_crit_prob_indiv[i, inds_severe_incr] = oral_microbiota_factor
-            print(f"...: {sim_pars['pop_infected']}", np.unique(self.rel_crit_prob_indiv[0], return_counts=True))
       
         self.initialized = True
         return

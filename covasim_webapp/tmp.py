@@ -8,6 +8,7 @@ import location_preprocessor as lp
 from covasim import utils as cvu
 from sus_prob_analyzer import store_seir
 from scipy import optimize
+import sys
 
 
 
@@ -295,14 +296,7 @@ def get_new_matrix():
     pass
 
 
-if __name__ == '__main__':
-
-    #experiment_count = 1000
-    #for _ in range(experiment_count):
-    #    lp.make_people_from_pars()
-    #    pass
-
-
+def oral_par_exp():
     synthpop_pars = dict(n_agents=100000, pop_type='synthpops')
     synthpop_popfile = 'synthpops_files/synth_pop_100K.ppl'
     oral_microbiota_factor = 3.0
@@ -336,3 +330,22 @@ if __name__ == '__main__':
     merged = cv.MultiSim.merge(msims, base=True)
     fig = merged.plot(to_plot=['cum_severe', 'cum_infections', 'new_infections'], color_by_sim=True)
     fig.savefig(f"oral_microbiota_percent_rand_exp.pdf", format='pdf')
+
+
+if __name__ == '__main__':
+    rand_seed = int(sys.argv[1])
+    print(f"random_seed = {rand_seed}") 
+    sims = []
+    cites_count = 5
+    pars = {"pop_type": 'hybrid'}
+    for i in range(cites_count):
+        sim = cv.Sim(pars=pars, rand_seed=rand_seed, variants=cv.variant('wild', days=0))
+        sims.append(sim)
+    adjacency_matrix = np.full((cites_count, cites_count), 0.0)
+    for i in range(cites_count):
+        adjacency_matrix[i, i:] = 0.00001
+        adjacency_matrix[i, :i] = 0.00001
+    print(adjacency_matrix)
+    msim = cv.MultiSim(sims)
+    msim.run(n_cpus=cites_count, mulitple_cities=True, adjacency_matrix=adjacency_matrix)
+    print("ready")
