@@ -9,7 +9,7 @@ from covasim import utils as cvu
 from sus_prob_analyzer import store_seir
 from scipy import optimize
 import sys
-
+from scipy.stats import f_oneway
 
 
 def create_population(pop_size, filename):
@@ -299,12 +299,15 @@ def get_new_matrix():
 def oral_par_exp():
     synthpop_pars = dict(n_agents=100000, pop_type='synthpops')
     synthpop_popfile = 'synthpops_files/synth_pop_100K.ppl'
-    oral_microbiota_factor = 3.0
     #
     msims = []
-    #for (i, oral_microbiota_percent) in enumerate([0.0, 0.4, 0.8]):
+    #
+    #
+    means = [[], []]
+    #oral_microbiota_factor = 3.0
+    #for (m_i, oral_microbiota_percent) in enumerate([0.0,0.4,0.8]):
     oral_microbiota_percent = 0.5
-    for oral_microbiota_factor in [2.0, 4.0]:
+    for m_i, oral_microbiota_factor in enumerate([2.0, 4.0]):
         sims = []
         for rand_seed in range(50):
             variant_dict = {
@@ -324,15 +327,21 @@ def oral_par_exp():
             sims.append(cv.Sim(pars=pars, rand_seed=rand_seed, popfile=synthpop_popfile, pop_size=100000, n_days=150, variants=variants, label=f"oral_microbiota_percent={oral_microbiota_percent}, oral_microbiota_factor={oral_microbiota_factor}"))
         msim = cv.MultiSim(sims)
         msim.run()
+        for ss in msim.sims:
+            means[m_i].append(ss.results['cum_infections'][-1])
         msim.mean()
         msims.append(msim)
 
     merged = cv.MultiSim.merge(msims, base=True)
+
+    print(f_oneway(*means))
+    
+
     fig = merged.plot(to_plot=['cum_severe', 'cum_infections', 'new_infections'], color_by_sim=True)
     fig.savefig(f"oral_microbiota_percent_rand_exp.pdf", format='pdf')
 
 
-if __name__ == '__main__':
+def snakemake_exp():
     rand_seed = int(sys.argv[1])
     print(f"random_seed = {rand_seed}") 
     sims = []
@@ -345,7 +354,10 @@ if __name__ == '__main__':
     for i in range(cites_count):
         adjacency_matrix[i, i:] = 0.00001
         adjacency_matrix[i, :i] = 0.00001
-    print(adjacency_matrix)
+
     msim = cv.MultiSim(sims)
     msim.run(n_cpus=cites_count, mulitple_cities=True, adjacency_matrix=adjacency_matrix)
     print("ready")
+
+if __name__ == '__main__':
+    oral_par_exp()

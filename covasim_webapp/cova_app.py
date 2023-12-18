@@ -1092,7 +1092,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8231
+        app.config['SERVER_PORT'] = 8232
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

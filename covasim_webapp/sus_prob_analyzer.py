@@ -74,14 +74,15 @@ class store_seir(cv.Analyzer):
             self.sizes_of_box_by_ages[j] += 1
 
     def init_stats(self, sim):
+        # never sick
         # exposed (in latent period)
         # asymptomatic (before recovering)
         # psesymptomatic (in asymp period)
         # mild
         # severe
         # critical
-        self.state_history = np.zeros(shape=(6, sim.pars['n_days'] + 1))
-        self.state_history_recovered = np.zeros(shape=(6, sim.pars['n_days'] + 1))
+        self.state_history = np.zeros(shape=(7, sim.pars['n_days'] + 1))
+        self.state_history_recovered = np.zeros(shape=(7, sim.pars['n_days'] + 1))
 
     def initialize(self, sim=None):
         if sim is None:
@@ -118,24 +119,26 @@ class store_seir(cv.Analyzer):
         self.immunity_histograms.append(immunity_histogram)
 
     def update_state_history(self, sim):
-        self.state_history[0][sim.t] = np.count_nonzero(sim.people.exposed * (~sim.people.infectious))
+        self.state_history[0][sim.t] = int(np.count_nonzero(sim.people.never_sick))
+        self.state_history[1][sim.t] = np.count_nonzero(sim.people.exposed * (~sim.people.infectious))
         asymp_flag = sim.people.infectious * (~sim.people.symptomatic)
-        self.state_history[1][sim.t] = np.count_nonzero(asymp_flag * sim.people.wont_symptomatic)
-        self.state_history[2][sim.t] = np.count_nonzero(asymp_flag * sim.people.will_symptomatic)
-        self.state_history[3][sim.t] = np.count_nonzero(sim.people.symptomatic * (~sim.people.severe) * (~sim.people.critical))
-        self.state_history[4][sim.t] = np.count_nonzero(sim.people.severe * (~sim.people.critical))
-        self.state_history[5][sim.t] = np.count_nonzero(sim.people.critical)
+        self.state_history[2][sim.t] = np.count_nonzero(asymp_flag * sim.people.wont_symptomatic)
+        self.state_history[3][sim.t] = np.count_nonzero(asymp_flag * sim.people.will_symptomatic)
+        self.state_history[4][sim.t] = np.count_nonzero(sim.people.symptomatic * (~sim.people.severe) * (~sim.people.critical))
+        self.state_history[5][sim.t] = np.count_nonzero(sim.people.severe * (~sim.people.critical))
+        self.state_history[6][sim.t] = np.count_nonzero(sim.people.critical)
 
 
     def update_state_history_of_recovered(self, sim):
         inds_rec = sim.people.was_recovered
-        self.state_history_recovered[0][sim.t] = np.count_nonzero(sim.people.exposed[inds_rec] * (~sim.people.infectious[inds_rec]))
+        self.state_history_recovered[0][sim.t] = np.count_nonzero(sim.people.never_sick[inds_rec])
+        self.state_history_recovered[1][sim.t] = np.count_nonzero(sim.people.exposed[inds_rec] * (~sim.people.infectious[inds_rec]))
         asymp_flag = sim.people.infectious[inds_rec] * (~sim.people.symptomatic[inds_rec])
-        self.state_history_recovered[1][sim.t] = np.count_nonzero(asymp_flag * sim.people.wont_symptomatic[inds_rec])
-        self.state_history_recovered[2][sim.t] = np.count_nonzero(asymp_flag * sim.people.will_symptomatic[inds_rec])
-        self.state_history_recovered[3][sim.t] = np.count_nonzero(sim.people.symptomatic[inds_rec] * (~sim.people.severe[inds_rec]) * (~sim.people.critical[inds_rec]))
-        self.state_history_recovered[4][sim.t] = np.count_nonzero(sim.people.severe[inds_rec] * (~sim.people.critical[inds_rec]))
-        self.state_history_recovered[5][sim.t] = np.count_nonzero(sim.people.critical[inds_rec])
+        self.state_history_recovered[2][sim.t] = np.count_nonzero(asymp_flag * sim.people.wont_symptomatic[inds_rec])
+        self.state_history_recovered[3][sim.t] = np.count_nonzero(asymp_flag * sim.people.will_symptomatic[inds_rec])
+        self.state_history_recovered[4][sim.t] = np.count_nonzero(sim.people.symptomatic[inds_rec] * (~sim.people.severe[inds_rec]) * (~sim.people.critical[inds_rec]))
+        self.state_history_recovered[5][sim.t] = np.count_nonzero(sim.people.severe[inds_rec] * (~sim.people.critical[inds_rec]))
+        self.state_history_recovered[6][sim.t] = np.count_nonzero(sim.people.critical[inds_rec])
 
     def apply(self, sim):
         ppl = sim.people

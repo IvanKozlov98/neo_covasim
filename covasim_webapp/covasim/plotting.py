@@ -1003,6 +1003,7 @@ def plotly_states_people_impl(sim, state_history, title, do_show=False): # pragm
     fig = go.Figure()
 
     state_names = [
+        'never sick',
         'exposed (in latent period)',
         'asymptomatic (before recovering)',
         'psesymptomatic (in asymp period)',

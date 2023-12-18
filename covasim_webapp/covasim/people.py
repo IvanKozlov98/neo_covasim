@@ -247,6 +247,7 @@ class People(cvb.BasePeople):
         self.will_symptomatic = np.zeros(shape=len(self), dtype=bool)
         self.wont_symptomatic = np.zeros(shape=len(self), dtype=bool)  
         self.was_recovered = np.zeros(shape=len(self), dtype=bool)  
+        self.never_sick = np.ones(shape=len(self), dtype=bool)
         self.inds_new_infections = []
         self.validate(sim_pars=sim_pars) # First, check that essential-to-match parameters match
         self.set_pars(sim_pars) # Replace the saved parameters with this simulation's
@@ -751,6 +752,10 @@ class People(cvb.BasePeople):
         # Reset all other dates
         for key in ['date_symptomatic', 'date_severe', 'date_critical', 'date_diagnosed', 'date_recovered']:
             self[key][inds] = np.nan
+
+        # Update information about sick
+        print(f"Len of inds: {len(inds)}")
+        self.never_sick[inds] = False
 
         # Use prognosis probabilities to determine what happens to them
         symp_probs = infect_pars['rel_symp_prob']*self.symp_prob[inds]*(1-self.symp_imm[variant, inds]) # Calculate their actual probability of being symptomatic
