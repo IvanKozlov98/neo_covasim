@@ -396,15 +396,21 @@ var vm = new Vue({
                 'alpha',
                 'beta',
                 'gamma',
-                'delta'
+                'delta',
+                'custom'
             ],
             variant_choice_list: Array.from({ length: 20 }, () => ('wild')),
             parameters_by_variant: {
+                "possible_name": {
+                    'description': 'Name of variant',
+                    'name': 'Name:',
+                    'data': Array.from({ length: 20 }, () => ('grp')),
+                },
                 "rel_beta": 
                 {
                     'description': 'Relative transmissibility varies by variant',
                     'name': 'Transmisibilty:',
-                    'data': Array.from({ length: 20 }, () => (1.0))
+                    'data': Array.from({ length: 20 }, () => (1.0)),
                 },
                 "rel_symp_prob": 
                 {
@@ -652,7 +658,11 @@ var vm = new Vue({
 
         async handleChangeVariant(city_ind) {
             const city_ind_int = parseInt(city_ind);
-            const response = await sciris.rpc('get_variant_pars', undefined, {variant_choice: this.variant_choice_list[parseInt(city_ind)]});
+            var variant_name = this.variant_choice_list[parseInt(city_ind)];
+            if (variant_name === 'custom') {
+                variant_name = 'wild';
+            }
+            const response = await sciris.rpc('get_variant_pars', undefined, {variant_choice: variant_name});
             for (var key in this.parameters_by_variant) {
                 var new_val;
                 switch (key) {
@@ -676,15 +686,21 @@ var vm = new Vue({
             newEntry['id'] = variant_name; 
             for (let i = 1; i < this.fields[city_ind_int].length; i++) {
                 const variant_name_op = this.fields[city_ind_int][i]['key'];
-                newEntry[variant_name_op] = this.default_cross_immunity[variant_name_op][variant_name];
+                if (variant_name_op in this.default_cross_immunity && variant_name in this.default_cross_immunity)
+                    newEntry[variant_name_op] = this.default_cross_immunity[variant_name_op][variant_name];
+                else
+                    newEntry[variant_name_op] = 0.0;
             }
             newEntry[variant_name] = "1";
             this.filtered[city_ind_int].push(newEntry);
-            console.log(this.default_cross_immunity);
             for (let i = 0; i < this.filtered[city_ind_int].length; i++) {
                 if (this.filtered[city_ind_int][i]['id'] !== variant_name){
-                    const variant_name_op = this.filtered[city_ind_int][i]['id'];  
-                    this.filtered[city_ind_int][i][variant_name] = this.default_cross_immunity[variant_name][variant_name_op];
+                    const variant_name_op = this.filtered[city_ind_int][i]['id'];
+                    if (variant_name in this.default_cross_immunity && variant_name_op in this.default_cross_immunity) {
+                        this.filtered[city_ind_int][i][variant_name] = this.default_cross_immunity[variant_name][variant_name_op];
+                    } else {
+                        this.filtered[city_ind_int][i][variant_name] = 0.0;
+                    }
                 }
             }
             this.fields[city_ind_int].push({ key: variant_name, label: variant_name, editable: true });
@@ -694,7 +710,12 @@ var vm = new Vue({
         async addVariant(city_ind) {
             const city_ind_int = parseInt(city_ind);
             var slice_of_variant_par = {};
-            variant_name = this.variant_choice_list[city_ind_int];
+            var variant_name = "";
+            if (this.variant_choice_list[city_ind_int] === "custom") {
+                variant_name = this.parameters_by_variant['possible_name'].data[city_ind_int]
+            } else {
+                variant_name = this.variant_choice_list[city_ind_int];
+            }
             slice_of_variant_par['variant_name'] = variant_name;
             for (var key in this.parameters_by_variant) {
                 slice_of_variant_par[key] = this.parameters_by_variant[key].data[city_ind_int];
@@ -704,8 +725,7 @@ var vm = new Vue({
                 default_cross_immunity_resp = await sciris.rpc('get_default_cross_immunity', undefined, {}); 
                 this.default_cross_immunity = default_cross_immunity_resp.data; 
                 console.log(this.default_cross_immunity);
-                console.log("After");
-                
+                console.log("After");      
             }
             this.addVariantToTable(city_ind_int, variant_name);
             this.introduced_variants_list[city_ind_int].push(slice_of_variant_par);

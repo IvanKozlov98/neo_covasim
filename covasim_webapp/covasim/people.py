@@ -754,7 +754,6 @@ class People(cvb.BasePeople):
             self[key][inds] = np.nan
 
         # Update information about sick
-        print(f"Len of inds: {len(inds)}")
         self.never_sick[inds] = False
 
         # Use prognosis probabilities to determine what happens to them

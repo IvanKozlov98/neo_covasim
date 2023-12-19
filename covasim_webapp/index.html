@@ -331,6 +331,11 @@
                     <label>{{info_variant.name}}</label>
                     <input :id="info_variant.name + '_id'" type="number" :disabled="running" class="form-control" v-model="info_variant.data[i]">
                   </div>
+                  <div v-if="name === 'possible_name' && variant_choice_list[i] === 'custom'" v-b-tooltip.hover :title="info_variant.description">
+                    <label>{{info_variant.name}}</label>
+                    <input :id="info_variant.name + '_id'" :disabled="running" class="form-control" v-model="info_variant.data[i]" placeholder="edit me">
+                  </div>
+                  
                 </div>
                 <legend>Severe parameters</legend>
                 <div v-for="(info_variant, name, index) in parameters_by_variant"  class="form-group">
@@ -344,7 +349,7 @@
               <fieldset class="col-md-6">
                 <legend>Duration parameters</legend>
                 <div v-for="(info_variant, name, index) in parameters_by_variant"  class="form-group">
-                  <div v-if="name.substring(0, 3) !== 'rel' && name !== 'n_import' && name !== 'start_day' && name !== 'oral_microbiota_percent' && name !== 'oral_microbiota_factor'" v-b-tooltip.hover :title="info_variant.description">
+                  <div v-if="name.substring(0, 3) !== 'rel' && name !== 'n_import' && name !== 'start_day' && name !== 'oral_microbiota_percent' && name !== 'oral_microbiota_factor' && name !== 'possible_name'" v-b-tooltip.hover :title="info_variant.description">
                     <label>{{info_variant.name}}</label>
                     <input :id="info_variant.name + '_id'" type="number" :disabled="running" class="form-control" v-model="info_variant.data[i]">
                   </div>
