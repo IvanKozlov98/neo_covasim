@@ -1626,6 +1626,16 @@ def plotly_nabs(sims, do_show=False):
     title = 'Protection'
     keylabels = to_plot[title]
     fig = go.Figure()
+
+    def plot_local_sim(x, y, this_color, sim_label, label, brightness):
+        _r, _g, _b = _hsv2rgb(this_color)
+        fig.add_trace(go.Scatter(x=x, y=y, mode='lines',
+            line=dict(
+                    color=f'rgba({_r}, {_g}, {_b}, {brightness})',
+                    width=2  # Ширина линии
+            ), showlegend=True, 
+            name=f"{sim_label}: {label}", hovertext=list(map(lambda t: str(t)+ '; ' + sim_label + '; ' + label, zip(x, y.astype(float)))), hoverinfo="text"))
+
     # plot several sims
     for key in keylabels:
         max_y = 0
@@ -1635,24 +1645,16 @@ def plotly_nabs(sims, do_show=False):
             x = np.arange(sim.results['date'][:].size)
             y = sim.results[key][:]
             max_y = np.max(sim.results[key][:]) if np.max(sim.results[key][:]) > max_y else max_y 
-
             new_label = label2new_label[label] if label in label2new_label else label
-            _r, _g, _b = _hsv2rgb(this_color)
-            fig.add_trace(go.Scatter(x=x, y=y, mode='lines',
-                line=dict(
-                        color=f'rgba({_r}, {_g}, {_b}, {brightness})',
-                        width=2  # Ширина линии
-                ), showlegend=True, 
-                name=f"{sim.label}: {new_label}", hovertext=list(map(lambda t: str(t)+ '; ' + sim.label + '; ' + new_label, zip(x, y.astype(int)))), hoverinfo="text"))
-            if sim.data is not None and key in sim.data:
-                xdata = sim.data['date']
-                ydata = sim.data[key]
-                fig.add_trace(go.Scatter(x=xdata, y=ydata, mode='markers',
-                    line=dict(
-                        color=f'rgba({_r}, {_g}, {_b}, {brightness})',
-                        width=2  # Ширина линии
-                    ), showlegend=True,
-                    name=f"{sim.label}: {new_label} (data)", hovertemplate=f'{ydata}: {new_label}'))
+            if key == 'pop_protection':
+                import random
+                for (__i, y_v) in enumerate(y):
+                    new_color = "#{:02x}{:02x}{:02x}".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+                    plot_local_sim(x, y_v, new_color, sim.label, new_label + " " + sim.pars['variant_map'][__i], brightness)
+            else:
+                plot_local_sim(x, y, this_color, sim.label, new_label, brightness)
+            
+           
         for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
             plotly_interventions(sim, fig, basename=sim.label,
                                     max_y=max_y, add_to_legend=True) # Only add the intervention label to the legend for the first plot

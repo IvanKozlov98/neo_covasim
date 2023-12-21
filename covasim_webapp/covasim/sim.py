@@ -347,11 +347,12 @@ class Sim(cvb.BaseSim):
         self.results['rel_test_yield']      = init_res('Relative testing yield', scale=False)
         self.results['frac_vaccinated']     = init_res('Proportion vaccinated', scale=False)
         self.results['pop_nabs']            = init_res('Population nab levels', scale=False, color=dcols.pop_nabs)
-        self.results['pop_protection']      = init_res('Population immunity protection', scale=False, color=dcols.pop_protection)
         self.results['pop_symp_protection'] = init_res('Population symptomatic protection', scale=False, color=dcols.pop_symp_protection)
 
         # Handle variants
         nv = self['n_variants']
+        self.results['pop_protection']      = init_res('Population immunity protection', scale=False, n_variants=nv, color=dcols.pop_protection)
+
         self.results['variant'] = {}
         self.results['variant']['prevalence_by_variant'] = init_res('Prevalence by variant', scale=False, n_variants=nv)
         self.results['variant']['incidence_by_variant']  = init_res('Incidence by variant', scale=False, n_variants=nv)
@@ -709,7 +710,7 @@ class Sim(cvb.BaseSim):
 
         inds_alive = cvu.false(people.dead)
         self.results['pop_nabs'][t]            = np.sum(people.nab[inds_alive[cvu.true(people.nab[inds_alive])]])/len(inds_alive)
-        self.results['pop_protection'][t]      = np.nanmean(people.sus_imm)
+        self.results['pop_protection'][:, t]   = np.nanmean(people.sus_imm, axis=1)
         self.results['pop_symp_protection'][t] = np.nanmean(people.symp_imm)
 
         # Apply analyzers -- same syntax as interventions
@@ -1338,6 +1339,8 @@ class Sim(cvb.BaseSim):
 
         summary = sc.objdict()
         for key in self.result_keys():
+            if key == "pop_protection": # TODO(IvanKozlov98)
+                continue
             summary[key] = self.results[key][t]
 
         # Update the stored state
