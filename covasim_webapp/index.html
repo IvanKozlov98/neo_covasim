@@ -294,7 +294,7 @@
           </b-collapse>
         </b-card>
 
-    <!--  Intervention Parameters -->
+    <!--  Variant Parameters -->
     <b-card no-body>
       <b-card-header header-tag="header" class="p-0 rounded-0" role="tab" style="background-color:rgb(23,153,148)">
         <b-button style="color:rgb(255,255,255)" block v-b-toggle.parameters-varianta variant="link">Variants <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
@@ -624,7 +624,7 @@
                 </template>
               </b-tabs>
             </b-card>
-            <my-plotly-chart v-if="intervention_figs[i] && intervention_figs[i].id" :graph="intervention_figs[i]" :key="intervention_figs[i].id"></my-plotly-chart>
+            <my-plotly-chart v-if="intervention_figs[i] && intervention_figs[i].id" v-bind:graph="intervention_figs[i]" v-bind:key="intervention_figs[i].id"></my-plotly-chart>
           </b-collapse>
         </b-card>
 
@@ -673,7 +673,6 @@
                 </template>
               </b-tabs>
             </b-card>
-            <my-plotly-chart :id="'my-plotly-chart-' + intervention_figs[i].id" v-if="intervention_figs[i] && intervention_figs[i].id" :graph="intervention_figs[i]" :key="intervention_figs[i].id" ></my-plotly-chart>
           </b-collapse>
         </b-card>
 

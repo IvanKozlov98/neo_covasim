@@ -642,7 +642,7 @@ var vm = new Vue({
             const city_ind = this.tabCounter;
             this.city_options.push('City ' + city_ind);
             this.copyTab(this.activeTabInd, city_ind);
-            this.handleSimpleCase(city_ind);
+            this.handleSimpleCase();
             this.tabs.push(city_ind);
             const response = await sciris.rpc('get_gantt', undefined, {int_pars_list: this.int_pars, intervention_config: this.interventionTableConfig, n_days: this.sim_length.best, tabs: this.tabs});
             this.intervention_figs = response.data;
@@ -721,11 +721,8 @@ var vm = new Vue({
                 slice_of_variant_par[key] = this.parameters_by_variant[key].data[city_ind_int];
             }
             if (this.default_cross_immunity === null) {
-                console.log("Here");
                 default_cross_immunity_resp = await sciris.rpc('get_default_cross_immunity', undefined, {}); 
                 this.default_cross_immunity = default_cross_immunity_resp.data; 
-                console.log(this.default_cross_immunity);
-                console.log("After");      
             }
             this.addVariantToTable(city_ind_int, variant_name);
             this.introduced_variants_list[city_ind_int].push(slice_of_variant_par);
@@ -964,8 +961,7 @@ var vm = new Vue({
                     infectiousTableConfig: this.infectiousTableConfig,
                     introduced_variants_list: this.introduced_variants_list,
                     cross_immunity_data: this.filtered,
-                    tabs: this.tabs,
-                    timeH: this.timeH
+                    tabs: this.tabs
                 }
                 this.observeTime();
                 console.log('run_sim: ', kwargs);
@@ -1065,7 +1061,22 @@ var vm = new Vue({
             const data = {
                 sim_pars: this.sim_pars,
                 epi_pars: this.epi_pars,
-                int_pars: this.int_pars
+                int_pars: this.int_pars,
+                datafile_server_path: this.datafile.server_path,
+                multiple_cities: this.multiple_cities,
+                show_contact_stat: this.show_contact_stat,
+                sim_length_best: this.sim_length.best,
+                reset_choice: this.reset_choice,
+                infection_step_choice_list: this.infection_step_choice_list,
+                rel_sus_choice_list: this.rel_sus_choice_list,
+                rel_trans_choice_list: this.rel_trans_choice_list,
+                interactionRecords: this.interactionRecords,
+                population_volume_choice_list: this.population_volume_choice_list,
+                infectiousTableConfig: this.infectiousTableConfig,
+                introduced_variants_list: this.introduced_variants_list,
+                filtered: this.filtered,
+                fields: this.fields,
+                tabs: this.tabs
             };
             const fileToSave = new Blob([JSON.stringify(data, null, 4)], {
                 type: 'application/json',
@@ -1089,12 +1100,63 @@ var vm = new Vue({
                 this.sim_pars = response.data.sim_pars;
                 this.epi_pars = response.data.epi_pars;
                 this.int_pars = response.data.int_pars;
+                this.datafile.server_path = response.data.datafile_server_path;
+                
+                this.multiple_cities = response.data.multiple_cities;
+                console.log("this.datafile");
+                console.log(this.datafile);
+                this.show_contact_stat = response.data.show_contact_stat;
+                console.log("this.multiple_cities");
+                console.log(this.multiple_cities);
+                this.sim_length.best = response.data.sim_length_best;
+                console.log("this.show_contact_stat");
+                console.log(this.show_contact_stat);
+                this.infection_step_choice_list = response.data.infection_step_choice_list;
+                console.log("this.sim_length");
+                console.log(this.sim_length);
+                this.rel_sus_choice_list = response.data.rel_sus_choice_list;
+                console.log("this.infection_step_choice_list");
+                console.log(this.infection_step_choice_list);
+                this.rel_trans_choice_list = response.data.rel_trans_choice_list;
+                console.log("this.rel_sus_choice_list");
+                console.log(this.rel_sus_choice_list);
+                this.interactionRecords = response.data.interactionRecords;
+                console.log("this.rel_trans_choice_list");
+                console.log(this.rel_trans_choice_list);
+                this.population_volume_choice_list = response.data.population_volume_choice_list;
+                console.log("this.interactionRecords");
+                console.log(this.interactionRecords);
+                this.infectiousTableConfig = response.data.infectiousTableConfig;
+                console.log("this.population_volume_choice_list");
+                console.log(this.population_volume_choice_list);
+                this.introduced_variants_list = response.data.introduced_variants_list;
+                console.log("this.infectiousTableConfig");
+                console.log(this.infectiousTableConfig);
+                this.filtered = response.data.filtered;
+                this.fields = response.data.fields;
+                console.log("this.introduced_variants_list");
+                console.log(this.introduced_variants_list);
+                this.tabs = response.data.tabs;
+
+                
+
+                this.tabCounter = this.tabs.length + 1;
+                console.log(this.filtered);
+                console.log("this.filtered");
+
+                console.log("this.tabs");                
+                console.log(this.tabs);
+                
                 this.result.graphs = [];
                 this.intervention_figs = [{}, {}, {}, {}, {}];
+                this.handleSimpleCase();
 
+                console.log("succesful uploading");
                 if (this.int_pars){
-                    const gantt = await sciris.rpc('get_gantt', undefined, {int_pars_list: this.int_pars, intervention_config: this.interventionTableConfig, n_days: this.sim_length.best, tabs: this.tabs});
-                    this.intervention_figs = gantt.data;
+                    const response = await sciris.rpc('get_gantt', undefined, {int_pars_list: this.int_pars, intervention_config: this.interventionTableConfig, n_days: this.sim_length.best, tabs: this.tabs});
+                    this.intervention_figs = response.data;
+                    const response_variant = await sciris.rpc('get_gantt_variant', undefined, {introduced_variants_list: this.introduced_variants_list, n_days: this.sim_length.best, tabs: this.tabs});
+                    this.variant_figs = response_variant.data;
                 }
 
             } catch (error) {

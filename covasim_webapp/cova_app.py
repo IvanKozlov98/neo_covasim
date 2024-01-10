@@ -270,7 +270,7 @@ def get_gantt(int_pars_list=None, intervention_config=None, n_days=90, tabs=None
     intervention_figs = []
     for (city_ind, int_pars) in zip(tabs, int_pars_list):
         df = []
-        response = {'id': f'test: {city_ind}'}
+        response = {'id': f'intervention_test: {city_ind}'}
         for key,scenario in int_pars.items():
             for timeline in scenario:
                 task = intervention_config[key]['formTitle'] + '(' + str(timeline.get('intervention_choice', '')) + ')'
@@ -282,6 +282,9 @@ def get_gantt(int_pars_list=None, intervention_config=None, n_days=90, tabs=None
             fig.update_xaxes(type='linear', range=[0, n_days])
             response['json'] = fig.to_json()
         intervention_figs.append(response)
+    
+    print("GET_GANNT")
+    print(intervention_figs)
 
     return intervention_figs
 
@@ -293,7 +296,7 @@ def get_gantt_variant(introduced_variants_list=None, n_days=90, tabs=None):
 
     for (city_ind, introduced_variants) in zip(tabs, introduced_variants_list):
         df = []
-        response = {'id': f'test: {city_ind}'}
+        response = {'id': f'variant_test: {city_ind}'}
         for variant_dict in introduced_variants:
             variant = variant_dict['variant_name']
             n_import = variant_dict['n_import']
@@ -959,10 +962,6 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
 
     predefined_pops = ['100K', '100K(Random)', '500K', '1M', '3M']
     variants_list, cross_list = get_variants_and_cross(introduced_variants_list, cross_immunity_data, multiple_cities, tabs)
-    print("_______|)))))))))")
-    print(variants_list)
-    print(cross_list)
-    print("ddd")
     # Create the sim and update the parameters
     try:
         sims = []
@@ -1092,7 +1091,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8232
+        app.config['SERVER_PORT'] = 8235
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:
