@@ -1034,13 +1034,13 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
         if die: raise
 
     # Create and send output files (base64 encoded content)
-    #try:
-    #    files,summary = get_output_files(sim)
-    #except Exception as E:
-    #    files = {}
-    #    summary = {}
-    #    errs.append(log_err('Unable to save output files!', E))
-    #    if die: raise
+    try:
+        files_all,summary_all = get_output_files(msim_with.sims)
+    except Exception as E:
+        files = {}
+        summary = {}
+        errs.append(log_err('Unable to save output files!', E))
+        if die: raise
 
     output = {}
     output['errs']     = errs
@@ -1048,14 +1048,14 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
     output['epi_pars'] = epi_pars_out
     output['int_pars'] = int_pars_out
     output['graphs']   = graphs
-    output['files']    = None
-    output['summary']  = None
+    output['files_all']    = files_all
+    output['summary_all']  = summary_all
 
     return output
 
 
 
-def get_output_files(sim):
+def get_output_files_impl(sim):
     ''' Create output files for download '''
 
     datestamp = sc.getdate(dateformat='%Y-%b-%d_%H.%M.%S')
@@ -1063,13 +1063,13 @@ def get_output_files(sim):
 
     files = {}
     files['xlsx'] = {
-        'filename': f'covasim_results_{datestamp}.xlsx',
+        'filename': f'covasim_results_{sim.label}_{datestamp}.xlsx',
         'content': 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64.b64encode(ss.blob).decode("utf-8"),
     }
 
     json_string = sim.to_json(tostring=True, verbose=False)
     files['json'] = {
-        'filename': f'covasim_results_{datestamp}.json',
+        'filename': f'covasim_results_{sim.label}_{datestamp}.json',
         'content': 'data:application/text;base64,' + base64.b64encode(json_string.encode()).decode("utf-8"),
     }
 
@@ -1080,6 +1080,16 @@ def get_output_files(sim):
         'deaths': round(sim.results['cum_deaths'][-1]),
     }
     return files, summary
+
+
+def get_output_files(sims):
+    files_all = []
+    summary_all = []
+    for sim in sims:
+        files_sim, summary_sim = get_output_files_impl(sim)
+        files_all.append(files_sim)
+        summary_all.append(summary_sim)
+    return files_all, summary_all
 
 
 #%% Run the server using Flask

@@ -1151,6 +1151,7 @@ class Scenarios(cvb.ParsObj):
         spreadsheet.freshbytes()
         with pd.ExcelWriter(spreadsheet.bytes, engine='xlsxwriter') as writer:
             for key in self.result_keys('main'): # Multidimensional variant keys can't be exported
+                print(f"Key: {key}")
                 result_df = pd.DataFrame.from_dict(sc.flattendict(self.results[key], sep='_'))
                 result_df.to_excel(writer, sheet_name=key)
         spreadsheet.load()

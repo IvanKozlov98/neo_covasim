@@ -343,8 +343,8 @@ var vm = new Vue({
             progresss: 70,
             result: { // Store currently displayed results
                 graphs: [],
-                summary: {},
-                files: {},
+                summary_all: {},
+                files_all: {},
             },
             paramError: {},
             scenarioError: {},
@@ -967,8 +967,8 @@ var vm = new Vue({
                 console.log('run_sim: ', kwargs);
                 const response = await sciris.rpc('run_sim', undefined, kwargs);
                 this.result.graphs = response.data.graphs;
-                this.result.files = response.data.files;
-                this.result.summary = response.data.summary;
+                this.result.files_all = response.data.files_all;
+                this.result.summary_all = response.data.summary_all;
                 this.errs = response.data.errs;
                 // this.panel_open = this.errs.length > 0; // Better solution would be to have a pin button
                 this.sim_pars = response.data.sim_pars;
@@ -1191,15 +1191,20 @@ var vm = new Vue({
         },
 
         async downloadExcel() {
-            const res = await fetch(this.result.files.xlsx.content);
-            const blob = await res.blob();
-            saveAs(blob, this.result.files.xlsx.filename);
+            for (let i = 0; i < this.tabs.length; i++) {
+                const res = await fetch(this.result.files_all[i].xlsx.content);
+                const blob = await res.blob();
+                saveAs(blob, this.result.files_all[i].xlsx.filename);
+            }
         },
 
         async downloadJson() {
-            const res = await fetch(this.result.files.json.content);
-            const blob = await res.blob();
-            saveAs(blob, this.result.files.json.filename);
+            console.log(this.result.files_all);
+            for (let i = 0; i < this.tabs.length; i++) {
+                const res = await fetch(this.result.files_all[i].json.content);
+                const blob = await res.blob();
+                saveAs(blob, this.result.files_all[i].json.filename);
+            }
         },
 
         async downloadPlot(cityIndex, index, ssInd) {

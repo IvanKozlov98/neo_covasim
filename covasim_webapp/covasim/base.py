@@ -476,6 +476,10 @@ class BaseSim(ParsObj):
             resdict['timeseries_keys'] = self.result_keys()
         for key,res in self.results.items():
             if isinstance(res, Result):
+                if len(res.values.shape) > 1:
+                    for var_id in range(res.values.shape[0]):
+                        resdict[f"{key}_{var_id}"] = res.values[var_id]
+                    continue
                 resdict[key] = res.values
                 if res.low is not None:
                     resdict[key+'_low'] = res.low
@@ -583,6 +587,9 @@ class BaseSim(ParsObj):
             date_index  (bool): if True, use the date as the index
         '''
         resdict = self.export_results(for_json=False)
+        print("********************")
+        print(resdict)
+        print("********************")
         df = pd.DataFrame.from_dict(resdict)
         df['date'] = self.datevec
         new_columns = ['t','date'] + df.columns[1:-1].tolist() # Get column order
