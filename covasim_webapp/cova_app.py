@@ -874,7 +874,6 @@ def get_variant_and_cross_for_not_multi(introduced_variants_list, cross_immunity
         # make cross matrix
         variants_count = len(introduced_variants)
         immunity = np.ones((variants_count, variants_count), dtype=float) 
-        print(f"cross_rows = {cross_rows}")
         for (j_v, cross_row) in enumerate(cross_rows):
             for (i_v, variant_dict_raw) in enumerate(introduced_variants):
                 immunity[j_v, i_v] = float(cross_row[variant_dict_raw['variant_name']])
@@ -897,7 +896,7 @@ def hasnt_list_this_variant(var_list, var_dict):
             return False
     return True
 
-def get_variant_and_cross_for_multi(introduced_variants_list, tabs):
+def get_variant_and_cross_for_multi(introduced_variants_list, cross_immunity_data, tabs):
     # preprocessing
     for (i, introduced_variants) in enumerate(introduced_variants_list):
         for variant_dict_raw in introduced_variants:
@@ -914,6 +913,7 @@ def get_variant_and_cross_for_multi(introduced_variants_list, tabs):
                     if is_equal_var_dicts(vv, variant_dict_raw):
                         vv['variant_name'] = vv['variant_name'] + f', {tabs[i]}'
     variants_list = []
+    cross_list = []
     # make variant_list
     for i in range(len(tabs)):
         variants = []
@@ -926,13 +926,27 @@ def get_variant_and_cross_for_multi(introduced_variants_list, tabs):
                 label=variant_dict_raw['variant_name']
                 )
             )
+        # make cross matrix
+        variants_count = len(introduced_variants_set)
+        immunity = np.ones((variants_count, variants_count), dtype=float) 
+        for j_v in range(variants_count):
+            for (i_v, variant_dict_raw) in enumerate(introduced_variants_set):
+                before_ind = variant_dict_raw['variant_name'].find(' of')
+                # find value in cross_immunity_data
+                variant_name_ = variant_dict_raw['variant_name'][:before_ind]
+                for cross_row in cross_immunity_data:
+                    if variant_name_ in cross_row:
+                        immunity[j_v, i_v] = float(cross_row[variant_name_])
+                        
+        cross_list.append(immunity)
+
         variants_list.append(variants)
-    return variants_list, None
+    return variants_list, cross_list
 
 
 def get_variants_and_cross(introduced_variants_list, cross_immunity_data, is_multi, tabs):
     if is_multi:
-        return get_variant_and_cross_for_multi(introduced_variants_list, tabs)
+        return get_variant_and_cross_for_multi(introduced_variants_list, cross_immunity_data, tabs)
     return get_variant_and_cross_for_not_multi(introduced_variants_list, cross_immunity_data)
 
 
@@ -965,6 +979,7 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
     # Create the sim and update the parameters
     try:
         sims = []
+        print(web_pars_list, population_volume_list, variants_list, cross_list, tabs)
         for pars, population_volume, variants, cross_matrix, city_ind in zip(web_pars_list, population_volume_list, variants_list, cross_list, tabs):
             new_pop_size = parse_population_size(population_volume)
             pars['pop_size'] = new_pop_size
