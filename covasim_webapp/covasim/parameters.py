@@ -12,7 +12,139 @@ __all__ = ['make_pars', 'reset_layer_pars', 'get_prognoses', 'get_variant_choice
            'get_variant_pars', 'get_cross_immunity', 'get_vaccine_variant_pars', 'get_vaccine_dose_pars']
 
 
-def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
+def _check_prognoses(prognoses):
+    # Check that lengths match
+    expected_len = len(prognoses['age_cutoffs'])
+    for key,val in prognoses.items():
+        this_len = len(prognoses[key])
+        if this_len != expected_len: # pragma: no cover
+            errormsg = f'Lengths mismatch in prognoses: {expected_len} age bins specified, but key "{key}" has {this_len} entries'
+            raise ValueError(errormsg)
+
+
+class VirusParameters:
+    def __init__(self, 
+        nab_init        = dict(dist='normal', par1=0, par2=2),  # Parameters for the distribution of the initial level of log2(nab) following natural infection, taken from fig1b of https://doi.org/10.1101/2021.03.09.21252641
+        nab_decay       = dict(form='nab_growth_decay', growth_time=21, decay_rate1=np.log(2) / 50, decay_time1=150, decay_rate2=np.log(2) / 250, decay_time2=365),
+        trans_redux     = 0.59,  # Reduction in transmission for breakthrough infections, https://www.medrxiv.org/content/10.1101/2021.07.13.21260393v
+        nab_eff         = dict(alpha_inf=1.08, alpha_inf_diff=1.812, beta_inf=0.967, alpha_symp_inf=-0.739, beta_symp_inf=0.038, alpha_sev_symp=-0.014, beta_sev_symp=0.079), # Parameters to map nabs to efficacy
+        beta_dist       = dict(dist='neg_binomial', par1=1.0, par2=0.45, step=0.01), # Distribution to draw individual level transmissibility; dispersion from https://www.researchsquare.com/article/rs-29548/v1     
+        rel_sus_type = 'constants',
+        prognoses = dict(
+            age_cutoffs   = np.array([0,       10,      20,      30,      40,      50,      60,      70,      80,      90,]),     # Age cutoffs (lower limits)
+            sus_ORs       = np.array([0.34,    0.67,    1.00,    1.00,    1.00,    1.00,    1.24,    1.47,    1.47,    1.47]),    # Odds ratios for relative susceptibility -- from Zhang et al., https://science.sciencemag.org/content/early/2020/05/04/science.abb8001; 10-20 and 60-70 bins are the average across the ORs
+            trans_ORs     = np.array([1.00,    1.00,    1.00,    1.00,    1.00,    1.00,    1.00,    1.00,    1.00,    1.00]),    # Odds ratios for relative transmissibility -- no evidence of differences
+            comorbidities = np.array([1.00,    1.00,    1.00,    1.00,    1.00,    1.00,    1.00,    1.00,    1.00,    1.00]),    # Comorbidities by age -- set to 1 by default since already included in disease progression rates
+            symp_probs    = np.array([0.50,    0.55,    0.60,    0.65,    0.70,    0.75,    0.80,    0.85,    0.90,    0.90]),    # Overall probability of developing symptoms (based on https://www.medrxiv.org/content/10.1101/2020.03.24.20043018v1.full.pdf, scaled for overall symptomaticity)
+            severe_probs  = np.array([0.00050, 0.00165, 0.00720, 0.02080, 0.03430, 0.07650, 0.13280, 0.20655, 0.24570, 0.24570]), # Overall probability of developing severe symptoms (derived from Table 1 of https://www.imperial.ac.uk/media/imperial-college/medicine/mrc-gida/2020-03-16-COVID19-Report-9.pdf)
+            crit_probs    = np.array([0.00003, 0.00008, 0.00036, 0.00104, 0.00216, 0.00933, 0.03639, 0.08923, 0.17420, 0.17420]), # Overall probability of developing critical symptoms (derived from Table 1 of https://www.imperial.ac.uk/media/imperial-college/medicine/mrc-gida/2020-03-16-COVID19-Report-9.pdf)
+            death_probs   = np.array([0.00002, 0.00002, 0.00010, 0.00032, 0.00098, 0.00265, 0.00766, 0.02439, 0.08292, 0.16190]), # Overall probability of dying -- from O'Driscoll et al., https://www.nature.com/articles/s41586-020-2918-0; last data point from Brazeau et al., https://www.imperial.ac.uk/mrc-global-infectious-disease-analysis/covid-19/report-34-ifr/
+        )    
+    ):
+        self.nab_init = nab_init 
+        self.nab_decay = nab_decay 
+        self.trans_redux = trans_redux 
+        self.nab_eff = nab_eff 
+        self.beta_dist = beta_dist 
+        self.rel_sus_type = rel_sus_type
+        # set prognoses
+        self.prognoses = prognoses 
+        self.prognoses = relative_prognoses(prognoses) # Convert to conditional probabilities
+        _check_prognoses(prognoses)
+
+    def load(filename):
+        virus_pars = VirusParameters()
+        df = pd.read_excel(filename, header=None)
+        # set main parameters
+        # set nab_init searching by key
+        nab_init_str = df[df[0] == 'Initial NABs after infection distribution (in neutralization titre relative to convalescent plasma)'][1].values[0]
+        # parse string like {dist_name=normal, mean=0, std=2} to dict
+        def parse_str_to_dict(s):
+            s = s.replace('{', '').replace('}', '')
+            tmp_res = dict([tuple(x.split('=')) for x in s.split(',')])
+            # remove start and end spaces
+            res = dict()
+            for k, v in tmp_res.items():
+                res[k.strip()] = v.strip()
+            return res
+        
+        def parse_method_str_to_dict(s):
+            # parse string like {method=nab_growth_decay   parameters: growth_time=21, decay_rate1=log(2) / 50, decay_time1=150, decay_rate2=log(2) / 250, decay_time2=365} to dict
+            s = s.replace('{', '').replace('}', '')
+            # split by method and parameters
+            method, params = s.split('parameters:')
+            # parse method
+            method = method.split('=')[1].strip()
+            # parse parameters
+            params = params.split(',')
+            params = [x.split('=') for x in params]
+            params = [(x[0].strip(), x[1].strip()) for x in params]
+            params = dict(params)
+            return dict(method=method, params=params)
+        def str_to_float(s):
+            # convert string like log(2) / 50 to float
+            s = s.replace('log', 'math.log')
+            s = s.replace('exp', 'math.exp')
+            s = s.replace('^', '**')
+            result = eval(s)
+            return result
+
+
+        nab_init_dict = parse_str_to_dict(nab_init_str)
+        virus_pars.nab_init = dict()
+        virus_pars.nab_init['dist'] = nab_init_dict['dist_name']
+        virus_pars.nab_init['par1'] = str_to_float(nab_init_dict['mean'])
+        virus_pars.nab_init['par2'] = str_to_float(nab_init_dict['std'])
+        # set nab_decay
+        nab_decay_str = df[df[0] == 'Decay NABs function'][1].values[0]
+        nab_decay_dict = parse_method_str_to_dict(nab_decay_str)
+        virus_pars.nab_decay = dict()
+        virus_pars.nab_decay['form'] = nab_decay_dict['method']
+        virus_pars.nab_decay['growth_time'] = str_to_float(nab_decay_dict['params']['growth_time'])
+        virus_pars.nab_decay['decay_rate1'] = str_to_float(nab_decay_dict['params']['decay_rate1'])
+        virus_pars.nab_decay['decay_time1'] = str_to_float(nab_decay_dict['params']['decay_time1'])
+        virus_pars.nab_decay['decay_rate2'] = str_to_float(nab_decay_dict['params']['decay_rate2'])
+        virus_pars.nab_decay['decay_time2'] = str_to_float(nab_decay_dict['params']['decay_time2'])
+        # set trans_redux
+        virus_pars.trans_redux = str_to_float(df[df[0] == 'Reduction in transmission for breakthrough infections'][1].values[0])
+        # set nab_eff
+        nab_eff_succ_str = df[df[0] == 'Function that determine how many NABs person need to have to be susceptible'][1].values[0]
+        nab_eff_succ_dict = parse_method_str_to_dict(nab_eff_succ_str)
+        nab_eff_symp_str = df[df[0] == 'Function that determine how many NABs person need to have to be symptomatic'][1].values[0]
+        nab_eff_symp_dict = parse_method_str_to_dict(nab_eff_symp_str)
+        nab_eff_sev_str = df[df[0] == 'Function that determine how many NABs person need to have to be severe'][1].values[0]
+        nab_eff_sev_dict = parse_method_str_to_dict(nab_eff_sev_str)
+        virus_pars.nab_eff = dict()
+        virus_pars.nab_eff['alpha_inf'] = str_to_float(nab_eff_succ_dict['params']['a'])
+        virus_pars.nab_eff['beta_inf'] = str_to_float(nab_eff_succ_dict['params']['b'])
+        virus_pars.nab_eff['alpha_symp_inf'] = str_to_float(nab_eff_symp_dict['params']['a'])
+        virus_pars.nab_eff['beta_symp_inf'] = str_to_float(nab_eff_symp_dict['params']['b'])
+        virus_pars.nab_eff['alpha_sev_symp'] = str_to_float(nab_eff_sev_dict['params']['a'])
+        virus_pars.nab_eff['beta_sev_symp'] = str_to_float(nab_eff_sev_dict['params']['b'])
+        # set beta_dist
+        beta_dist_str = df[df[0] == 'Initial transmisibility distribution'][1].values[0]
+        beta_dist_dict = parse_str_to_dict(beta_dist_str)
+        virus_pars.beta_dist = dict()
+        virus_pars.beta_dist['dist'] = beta_dist_dict['dist_name']
+        virus_pars.beta_dist['par1'] = str_to_float(beta_dist_dict['mean'])
+        virus_pars.beta_dist['par2'] = str_to_float(beta_dist_dict['std'])
+        # set prognoses
+        prognoses = dict()
+        # convert list of strings like ['0-9' '10-19' '20-29' '30-39' '40-49' '50-59' '60-69' '70-79' '80-89' '90+'] to numpy like [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]
+        age_cutoffs_strs = df[df[0] == 'Age cutoffs'].values[0][1:]
+        age_cutoffs = [int(x.split('-')[0]) for x in age_cutoffs_strs[:-1]] + [age_cutoffs_strs[-1].replace('+', '')]
+        prognoses['age_cutoffs'] = np.array(age_cutoffs, dtype=float)
+        prognoses['symp_probs'] = np.array(df[df[0] == 'Probability of being symptomatic'].values[0][1:], dtype=float)
+        prognoses['severe_probs'] = np.array(df[df[0] == 'Probability of being severe'].values[0][1:], dtype=float)
+        prognoses['crit_probs'] = np.array(df[df[0] == 'Probability of being critical'].values[0][1:], dtype=float)
+        prognoses['death_probs'] = np.array(df[df[0] == 'Probability of being death'].values[0][1:], dtype=float)
+        prognoses['comorbidities'] = np.array(df[df[0] == 'Comorbidities'].values[0][1:], dtype=float)
+        virus_pars.prognoses = prognoses
+
+        return virus_pars
+
+
+def make_pars(set_prognoses=False, prog_by_age=True, version=None, virus_parameters=None, **kwargs):
     '''
     Create the parameters for the simulation. Typically, this function is used
     internally rather than called by the user; e.g. typical use would be to do
@@ -58,7 +190,6 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
 
     pars['tourist_contact_count'] = 4
     # Basic disease transmission parameters
-    pars['beta_dist']    = dict(dist='neg_binomial', par1=1.0, par2=0.45, step=0.01) # Distribution to draw individual level transmissibility; dispersion from https://www.researchsquare.com/article/rs-29548/v1
     pars['viral_dist']   = dict(frac_time=0.3, load_ratio=2, high_cap=4) # The time varying viral load (transmissibility); estimated from Lescure 2020, Lancet, https://doi.org/10.1016/S1473-3099(20)30200-0
     pars['beta']         = 0.016  # Beta per symptomatic contact; absolute value, calibrated
     pars['asymp_factor'] = 1.0  # Multiply beta by this factor for asymptomatic cases; no statistically significant difference in transmissibility: https://www.sciencedirect.com/science/article/pii/S1201971220302502
@@ -67,19 +198,14 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
     pars['n_imports']  = 0 # Average daily number of imported cases (actual number is drawn from Poisson distribution)
     pars['n_variants'] = 1 # The number of variants circulating in the population
 
-    pars['rel_sus_type'] = 'constants'
     pars['rel_trans_type'] = 'beta_dist'
 
     # Parameters used to calculate immunity
     pars['use_waning']   = True # Whether to use dynamically calculated immunity
-    pars['nab_init']     = dict(dist='normal', par1=0, par2=2)  # Parameters for the distribution of the initial level of log2(nab) following natural infection, taken from fig1b of https://doi.org/10.1101/2021.03.09.21252641
-    pars['nab_decay']    = dict(form='nab_growth_decay', growth_time=21, decay_rate1=np.log(2) / 50, decay_time1=150, decay_rate2=np.log(2) / 250, decay_time2=365)
     pars['nab_kin']      = None # Constructed during sim initialization using the nab_decay parameters
     pars['nab_boost']    = 1.5 # Multiplicative factor applied to a person's nab levels if they get reinfected. No data on this, assumption.
-    pars['nab_eff']      = dict(alpha_inf=1.08, alpha_inf_diff=1.812, beta_inf=0.967, alpha_symp_inf=-0.739, beta_symp_inf=0.038, alpha_sev_symp=-0.014, beta_sev_symp=0.079) # Parameters to map nabs to efficacy
     pars['rel_imm_symp'] = dict(asymp=0.85, mild=1, severe=1.5) # Relative immunity from natural infection varies by symptoms. Assumption.
     pars['immunity']     = None  # Matrix of immunity and cross-immunity factors, set by init_immunity() in immunity.py
-    pars['trans_redux']  = 0.59  # Reduction in transmission for breakthrough infections, https://www.medrxiv.org/content/10.1101/2021.07.13.21260393v
 
     # Variant-specific disease transmission parameters. By default, these are set up for a single variant, but can all be modified for multiple variants
     pars['rel_beta']        = 1.0 # Relative transmissibility varies by variant
@@ -104,7 +230,6 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
     pars['rel_crit_prob']   = 1.0  # Scale factor for proportion of severe cases that become critical
     pars['rel_death_prob']  = 1.0  # Scale factor for proportion of critical cases that result in death
     pars['prog_by_age']     = prog_by_age # Whether to set disease progression based on the person's age
-    pars['prognoses']       = None # The actual arrays of prognoses by age; this is populated later
 
     # Efficacy of protection measures
     pars['iso_factor']   = None # Multiply beta by this factor for diagnosed cases to represent isolation; set by reset_layer_pars() below
@@ -138,8 +263,42 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
     # Update with any supplied parameter values and generate things that need to be generated
     pars.update(kwargs)
     reset_layer_pars(pars)
-    if set_prognoses: # If not set here, gets set when the population is initialized
-        pars['prognoses'] = get_prognoses(pars['prog_by_age'], version=version) # Default to age-specific prognoses
+
+    if virus_parameters is None:
+        pars['nab_init']     = dict(dist='normal', par1=0, par2=2)  # Parameters for the distribution of the initial level of log2(nab) following natural infection, taken from fig1b of https://doi.org/10.1101/2021.03.09.21252641
+        pars['nab_decay']    = dict(form='nab_growth_decay', growth_time=21, decay_rate1=np.log(2) / 50, decay_time1=150, decay_rate2=np.log(2) / 250, decay_time2=365)
+        pars['trans_redux']  = 0.59  # Reduction in transmission for breakthrough infections, https://www.medrxiv.org/content/10.1101/2021.07.13.21260393v
+        pars['nab_eff']      = dict(alpha_inf=1.08, alpha_inf_diff=1.812, beta_inf=0.967, alpha_symp_inf=-0.739, beta_symp_inf=0.038, alpha_sev_symp=-0.014, beta_sev_symp=0.079) # Parameters to map nabs to efficacy
+        pars['beta_dist']    = dict(dist='neg_binomial', par1=1.0, par2=0.45, step=0.01) # Distribution to draw individual level transmissibility; dispersion from https://www.researchsquare.com/article/rs-29548/v1
+        pars['rel_sus_type'] = 'constants'
+        pars['prognoses']       = None # The actual arrays of prognoses by age; this is populated later
+        if set_prognoses: # If not set here, gets set when the population is initialized
+            pars['prognoses'] = get_prognoses(pars['prog_by_age'], version=version) # Default to age-specific prognoses
+    else:
+        pars['nab_init'] = virus_parameters.nab_init
+        pars['nab_decay'] = virus_parameters.nab_decay
+        pars['trans_redux'] = virus_parameters.trans_redux
+        pars['nab_eff'] = virus_parameters.nab_eff
+        pars['beta_dist'] = virus_parameters.beta_dist
+        pars['rel_sus_type'] = virus_parameters.rel_sus_type
+        pars['prognoses'] = virus_parameters.prognoses
+        print("_________________")
+        print(pars['nab_init'])
+        print("_________________")
+        print(pars['nab_decay'])
+        print("_________________")
+        print(pars['trans_redux'])
+        print("_________________")
+        print(pars['nab_eff'])
+        print("_________________")
+        print(pars['beta_dist'])
+        print("_________________")
+        print(pars['rel_sus_type'])
+        print("_________________")
+        print(pars['prognoses'])
+        print("_________________")
+
+
 
     # If version is specified, load old parameters
     if version is not None:
@@ -278,12 +437,7 @@ def get_prognoses(by_age=True, version=None):
                 prognoses[key] = np.array(version_prognoses[key])
 
     # Check that lengths match
-    expected_len = len(prognoses['age_cutoffs'])
-    for key,val in prognoses.items():
-        this_len = len(prognoses[key])
-        if this_len != expected_len: # pragma: no cover
-            errormsg = f'Lengths mismatch in prognoses: {expected_len} age bins specified, but key "{key}" has {this_len} entries'
-            raise ValueError(errormsg)
+    _check_prognoses(prognoses)
 
     return prognoses
 
