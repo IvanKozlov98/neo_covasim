@@ -2,6 +2,7 @@ import numpy as np
 import pylab as pl
 import sciris as sc
 import covasim as cv
+from covasim import utils as cvu
 
 
 class store_seir(cv.Analyzer):
@@ -106,7 +107,9 @@ class store_seir(cv.Analyzer):
         def make_hist(nab):
             y, _ = np.histogram(nab, bins=bins)
             return (y, list(map(str, bins[:-1])))
-        nab_histogram = make_hist(sim.people.nab)
+        inds_alive = cvu.false(sim.people.dead)
+        nab = sim.people.nab[inds_alive[cvu.true(sim.people.nab[inds_alive])]]
+        nab_histogram = make_hist(nab)
         self.nab_histograms.append(nab_histogram)
 
     def work_immunity_histograms(self, sim):
