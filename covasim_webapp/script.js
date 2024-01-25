@@ -356,6 +356,7 @@ var vm = new Vue({
             errs: [],
             reset_options: ['Default', 'Optimistic', 'Pessimistic'],
             reset_choice: 'Default',
+            virus_name_list: Array.from({ length: 20 }, () => ('COVID-19')),
             infection_step_options: ['Covasim', 'Cumulative'],
             infection_step_choice_list: Array.from({ length: 20 }, () => ('Covasim')),
             rel_sus_options: [
@@ -391,14 +392,24 @@ var vm = new Vue({
             interval_vaccine_list: Array.from({ length: 20 }, () => (28)),
             vaccine_choice_list: Array.from({ length: 20 }, () => ('pfizer')),
             
-            variant_options: [
-                'wild',
-                'alpha',
-                'beta',
-                'gamma',
-                'delta',
-                'custom'
-            ],
+            variant_options:{
+                "COVID-19": [
+                    'wild',
+                    'alpha',
+                    'beta',
+                    'gamma',
+                    'delta',
+                    'custom'
+                ],
+                "Morbilli": [
+                    "classic",
+                    "custom"
+                ],
+                "Influenza": [
+                    "classic",
+                    "custom"
+                ],
+            },
             variant_choice_list: Array.from({ length: 20 }, () => ('wild')),
             parameters_by_variant: {
                 "possible_name": {
@@ -624,6 +635,7 @@ var vm = new Vue({
             this.rel_sus_choice_list[newInd] = clone(this.rel_sus_choice_list[oldInd]); 
             this.vaccine_choice_list[newInd] = clone(this.vaccine_choice_list[oldInd]); 
             this.variant_choice_list[newInd] = clone(this.variant_choice_list[oldInd]); 
+            this.virus_name_list[newInd] = clone(this.virus_name_list[oldInd]); 
             this.rel_trans_choice_list[newInd] = clone(this.rel_trans_choice_list[oldInd]); 
             this.population_volume_choice_list[newInd] = clone(this.population_volume_choice_list[oldInd]);
             // copy sim_pars
@@ -659,7 +671,7 @@ var vm = new Vue({
         async handleChangeVariant(city_ind) {
             const city_ind_int = parseInt(city_ind);
             var variant_name = this.variant_choice_list[parseInt(city_ind)];
-            if (variant_name === 'custom') {
+            if (variant_name === 'custom' || variant_name == "classic") {
                 variant_name = 'wild';
             }
             const response = await sciris.rpc('get_variant_pars', undefined, {variant_choice: variant_name});
@@ -738,22 +750,13 @@ var vm = new Vue({
                     index_removing = i;
                     console.log("find");
                     break;
-                } else {
-                    console.log("------");
-                    console.log(this.fields[city_ind_int][i]['key']);
-                    console.log(variant_name);
-                    console.log("------");
                 }
             }
-            console.log(this.filtered[city_ind_int]);
             this.fields[city_ind_int].splice(index_removing, 1);
             this.filtered[city_ind_int].splice(index_removing - 1, 1);
             for (let i = 0; i < this.filtered[city_ind_int].length; i++) {
                 delete this.filtered[city_ind_int][i][variant_name];
             }
-            console.log(index_removing);
-            console.log(this.filtered);
-            //
         },
 
 
@@ -961,6 +964,7 @@ var vm = new Vue({
                     infectiousTableConfig: this.infectiousTableConfig,
                     introduced_variants_list: this.introduced_variants_list,
                     cross_immunity_data: this.filtered,
+                    virus_name_list: this.virus_name_list,
                     tabs: this.tabs
                 }
                 this.observeTime();
@@ -1188,6 +1192,24 @@ var vm = new Vue({
             this.groupHides[key] = !this.groupHides[key];
             console.log(this.groupHides[key]);
             console.log("here 2");
+        },
+
+        async uploadVirus(city_ind) {
+            try {
+                const response = await sciris.upload('upload_virus');
+                const city_ind_int = parseInt(city_ind);
+                const virus_name = response.data;
+                this.virus_name_list = changeOnlyOne(this.virus_name_list, city_ind_int, virus_name);
+                this.variant_choice_list = changeOnlyOne(this.variant_choice_list, city_ind_int, this.variant_options[virus_name][0]);
+                this.handleChangeVariant(city_ind);
+                const variants_count = this.introduced_variants_list[city_ind_int].length;
+                for (let i = 0; i < variants_count; i++) {
+                    this.deleteVariant(city_ind_int, 0);
+                }
+                this.addVariant(city_ind_int);
+            } catch (error) {
+                sciris.fail(this, 'Could not upload city', error);
+            }
         },
 
         async downloadExcel() {

@@ -50,7 +50,7 @@ class Sim(cvb.BaseSim):
     '''
 
     def __init__(self, pars=None, datafile=None, label=None, simfile=None,
-                 popfile=None, people=None, version=None, **kwargs):
+                 popfile=None, people=None, version=None, virus_parameters=None, **kwargs):
 
         # Set attributes
         self.label         = label    # The label/name of the simulation
@@ -77,11 +77,38 @@ class Sim(cvb.BaseSim):
 
         # Now update everything
         self.set_metadata(simfile)  # Set the simulation date and filename
+        if virus_parameters:
+            Sim.load_virus_parameters(pars, virus_parameters)
         self.update_pars(pars, **kwargs)   # Update the parameters, if provided
         self.load_data(datafile) # Load the data, if provided
         self.is_additive_formula = self.pars['is_additive_formula']
 
+        print("_________________")
+        print(self.pars['nab_init'])
+        print("_________________")
+        print(self.pars['nab_decay'])
+        print("_________________")
+        print(self.pars['trans_redux'])
+        print("_________________")
+        print(self.pars['nab_eff'])
+        print("_________________")
+        print(self.pars['beta_dist'])
+        print("_________________")
+        print(self.pars['rel_sus_type'])
+        print("_________________")
+        print(self.pars['prognoses'])
+        print("_________________")
+
         return
+
+    def load_virus_parameters(pars, virus_parameters):
+        pars['nab_init'] = virus_parameters.nab_init
+        pars['nab_decay'] = virus_parameters.nab_decay
+        pars['trans_redux'] = virus_parameters.trans_redux
+        pars['nab_eff'] = virus_parameters.nab_eff
+        pars['beta_dist'] = virus_parameters.beta_dist
+        pars['rel_sus_type'] = virus_parameters.rel_sus_type
+        pars['prognoses'] = virus_parameters.prognoses
 
 
     def load_data(self, datafile=None, verbose=None, **kwargs):

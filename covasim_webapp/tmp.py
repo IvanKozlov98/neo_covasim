@@ -10,6 +10,7 @@ from sus_prob_analyzer import store_seir
 from scipy import optimize
 import sys
 from scipy.stats import f_oneway
+from covasim.parameters import VirusParameters
 
 
 def create_population(pop_size, filename):
@@ -359,5 +360,23 @@ def snakemake_exp():
     msim.run(n_cpus=cites_count, mulitple_cities=True, adjacency_matrix=adjacency_matrix)
     print("ready")
 
+
+def get_virus_name(filename):
+    df = pd.read_excel(filename, header=None)
+    virus_name_ind = df[df[0] == 'Virus name'].index[0]
+    virus_name = df.iloc[virus_name_ind + 1][0]
+    return virus_name
+
+
+def run_simple_example():
+    pars = {
+        "pop_type": 'hybrid',
+    }
+    print(get_virus_name("Wild.xlsx"))
+    #virus_pars = VirusParameters.load("Wild.xlsx")
+    #sim = cv.Sim(pars=pars, rand_seed=0, variants=cv.variant('wild', days=0), 
+    #    virus_parameters=virus_pars)
+    #sim.run()
+
 if __name__ == '__main__':
-    oral_par_exp()
+    run_simple_example()

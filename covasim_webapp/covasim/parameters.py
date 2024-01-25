@@ -3,6 +3,8 @@ Set the parameters for Covasim.
 '''
 
 import numpy as np
+import pandas as pd
+import math
 import sciris as sc
 from .settings import options as cvo # For setting global options
 from . import misc as cvm
@@ -74,7 +76,7 @@ class VirusParameters:
             # split by method and parameters
             method, params = s.split('parameters:')
             # parse method
-            method = method.split('=')[1].strip()
+            method = method.split('=')[1].strip()[:-1]
             # parse parameters
             params = params.split(',')
             params = [x.split('=') for x in params]
@@ -91,22 +93,24 @@ class VirusParameters:
 
 
         nab_init_dict = parse_str_to_dict(nab_init_str)
-        virus_pars.nab_init = dict()
-        virus_pars.nab_init['dist'] = nab_init_dict['dist_name']
-        virus_pars.nab_init['par1'] = str_to_float(nab_init_dict['mean'])
-        virus_pars.nab_init['par2'] = str_to_float(nab_init_dict['std'])
+        nab_init = dict()
+        nab_init['dist'] = nab_init_dict['dist_name']
+        nab_init['par1'] = str_to_float(nab_init_dict['mean'])
+        nab_init['par2'] = str_to_float(nab_init_dict['std'])
         # set nab_decay
         nab_decay_str = df[df[0] == 'Decay NABs function'][1].values[0]
         nab_decay_dict = parse_method_str_to_dict(nab_decay_str)
-        virus_pars.nab_decay = dict()
-        virus_pars.nab_decay['form'] = nab_decay_dict['method']
-        virus_pars.nab_decay['growth_time'] = str_to_float(nab_decay_dict['params']['growth_time'])
-        virus_pars.nab_decay['decay_rate1'] = str_to_float(nab_decay_dict['params']['decay_rate1'])
-        virus_pars.nab_decay['decay_time1'] = str_to_float(nab_decay_dict['params']['decay_time1'])
-        virus_pars.nab_decay['decay_rate2'] = str_to_float(nab_decay_dict['params']['decay_rate2'])
-        virus_pars.nab_decay['decay_time2'] = str_to_float(nab_decay_dict['params']['decay_time2'])
+        nab_decay = dict()
+        nab_decay['form'] = nab_decay_dict['method']
+        nab_decay['growth_time'] = str_to_float(nab_decay_dict['params']['growth_time'])
+        nab_decay['decay_rate1'] = str_to_float(nab_decay_dict['params']['decay_rate1'])
+        nab_decay['decay_time1'] = str_to_float(nab_decay_dict['params']['decay_time1'])
+        nab_decay['decay_rate2'] = str_to_float(nab_decay_dict['params']['decay_rate2'])
+        nab_decay['decay_time2'] = str_to_float(nab_decay_dict['params']['decay_time2'])
+        # set rel_sus_type
+        #rel_sus_type = str_to_float(df[df[0] == 'Reduction in transmission for breakthrough infections'][1].values[0])
         # set trans_redux
-        virus_pars.trans_redux = str_to_float(df[df[0] == 'Reduction in transmission for breakthrough infections'][1].values[0])
+        trans_redux = str_to_float(df[df[0] == 'Reduction in transmission for breakthrough infections'][1].values[0])
         # set nab_eff
         nab_eff_succ_str = df[df[0] == 'Function that determine how many NABs person need to have to be susceptible'][1].values[0]
         nab_eff_succ_dict = parse_method_str_to_dict(nab_eff_succ_str)
@@ -114,20 +118,22 @@ class VirusParameters:
         nab_eff_symp_dict = parse_method_str_to_dict(nab_eff_symp_str)
         nab_eff_sev_str = df[df[0] == 'Function that determine how many NABs person need to have to be severe'][1].values[0]
         nab_eff_sev_dict = parse_method_str_to_dict(nab_eff_sev_str)
-        virus_pars.nab_eff = dict()
-        virus_pars.nab_eff['alpha_inf'] = str_to_float(nab_eff_succ_dict['params']['a'])
-        virus_pars.nab_eff['beta_inf'] = str_to_float(nab_eff_succ_dict['params']['b'])
-        virus_pars.nab_eff['alpha_symp_inf'] = str_to_float(nab_eff_symp_dict['params']['a'])
-        virus_pars.nab_eff['beta_symp_inf'] = str_to_float(nab_eff_symp_dict['params']['b'])
-        virus_pars.nab_eff['alpha_sev_symp'] = str_to_float(nab_eff_sev_dict['params']['a'])
-        virus_pars.nab_eff['beta_sev_symp'] = str_to_float(nab_eff_sev_dict['params']['b'])
+        nab_eff = dict()
+        nab_eff['alpha_inf_diff'] = 1.812 # TODO(IvanKozlov98) get know what does mean this parameter
+        nab_eff['alpha_inf'] = str_to_float(nab_eff_succ_dict['params']['a'])
+        nab_eff['beta_inf'] = str_to_float(nab_eff_succ_dict['params']['b'])
+        nab_eff['alpha_symp_inf'] = str_to_float(nab_eff_symp_dict['params']['a'])
+        nab_eff['beta_symp_inf'] = str_to_float(nab_eff_symp_dict['params']['b'])
+        nab_eff['alpha_sev_symp'] = str_to_float(nab_eff_sev_dict['params']['a'])
+        nab_eff['beta_sev_symp'] = str_to_float(nab_eff_sev_dict['params']['b'])
         # set beta_dist
         beta_dist_str = df[df[0] == 'Initial transmisibility distribution'][1].values[0]
         beta_dist_dict = parse_str_to_dict(beta_dist_str)
-        virus_pars.beta_dist = dict()
-        virus_pars.beta_dist['dist'] = beta_dist_dict['dist_name']
-        virus_pars.beta_dist['par1'] = str_to_float(beta_dist_dict['mean'])
-        virus_pars.beta_dist['par2'] = str_to_float(beta_dist_dict['std'])
+        beta_dist = dict()
+        beta_dist['dist'] = beta_dist_dict['dist_name']
+        beta_dist['par1'] = str_to_float(beta_dist_dict['mean'])
+        beta_dist['par2'] = str_to_float(beta_dist_dict['std'])
+        beta_dist['step'] = 0.01 # TODO (IvanKozlov98)
         # set prognoses
         prognoses = dict()
         # convert list of strings like ['0-9' '10-19' '20-29' '30-39' '40-49' '50-59' '60-69' '70-79' '80-89' '90+'] to numpy like [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]
@@ -136,15 +142,26 @@ class VirusParameters:
         prognoses['age_cutoffs'] = np.array(age_cutoffs, dtype=float)
         prognoses['symp_probs'] = np.array(df[df[0] == 'Probability of being symptomatic'].values[0][1:], dtype=float)
         prognoses['severe_probs'] = np.array(df[df[0] == 'Probability of being severe'].values[0][1:], dtype=float)
+        prognoses['sus_ORs'] = np.array(df[df[0] == 'Susceptibility by age'].values[0][1:], dtype=float)
+        prognoses['trans_ORs'] = np.array(df[df[0] == 'Transmisibility by age'].values[0][1:], dtype=float)
         prognoses['crit_probs'] = np.array(df[df[0] == 'Probability of being critical'].values[0][1:], dtype=float)
         prognoses['death_probs'] = np.array(df[df[0] == 'Probability of being death'].values[0][1:], dtype=float)
-        prognoses['comorbidities'] = np.array(df[df[0] == 'Comorbidities'].values[0][1:], dtype=float)
-        virus_pars.prognoses = prognoses
+        prognoses['comorbidities'] = np.array(df[df[0] == 'Comorbidities by age'].values[0][1:], dtype=float)
+        prognoses = prognoses
 
+        virus_pars = VirusParameters(
+            nab_init=nab_init,
+            nab_decay=nab_decay,
+            trans_redux=trans_redux,
+            nab_eff=nab_eff,
+            beta_dist=beta_dist,
+            rel_sus_type='constants',
+            prognoses=prognoses
+        )
         return virus_pars
 
 
-def make_pars(set_prognoses=False, prog_by_age=True, version=None, virus_parameters=None, **kwargs):
+def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
     '''
     Create the parameters for the simulation. Typically, this function is used
     internally rather than called by the user; e.g. typical use would be to do
@@ -264,39 +281,15 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, virus_paramet
     pars.update(kwargs)
     reset_layer_pars(pars)
 
-    if virus_parameters is None:
-        pars['nab_init']     = dict(dist='normal', par1=0, par2=2)  # Parameters for the distribution of the initial level of log2(nab) following natural infection, taken from fig1b of https://doi.org/10.1101/2021.03.09.21252641
-        pars['nab_decay']    = dict(form='nab_growth_decay', growth_time=21, decay_rate1=np.log(2) / 50, decay_time1=150, decay_rate2=np.log(2) / 250, decay_time2=365)
-        pars['trans_redux']  = 0.59  # Reduction in transmission for breakthrough infections, https://www.medrxiv.org/content/10.1101/2021.07.13.21260393v
-        pars['nab_eff']      = dict(alpha_inf=1.08, alpha_inf_diff=1.812, beta_inf=0.967, alpha_symp_inf=-0.739, beta_symp_inf=0.038, alpha_sev_symp=-0.014, beta_sev_symp=0.079) # Parameters to map nabs to efficacy
-        pars['beta_dist']    = dict(dist='neg_binomial', par1=1.0, par2=0.45, step=0.01) # Distribution to draw individual level transmissibility; dispersion from https://www.researchsquare.com/article/rs-29548/v1
-        pars['rel_sus_type'] = 'constants'
-        pars['prognoses']       = None # The actual arrays of prognoses by age; this is populated later
-        if set_prognoses: # If not set here, gets set when the population is initialized
-            pars['prognoses'] = get_prognoses(pars['prog_by_age'], version=version) # Default to age-specific prognoses
-    else:
-        pars['nab_init'] = virus_parameters.nab_init
-        pars['nab_decay'] = virus_parameters.nab_decay
-        pars['trans_redux'] = virus_parameters.trans_redux
-        pars['nab_eff'] = virus_parameters.nab_eff
-        pars['beta_dist'] = virus_parameters.beta_dist
-        pars['rel_sus_type'] = virus_parameters.rel_sus_type
-        pars['prognoses'] = virus_parameters.prognoses
-        print("_________________")
-        print(pars['nab_init'])
-        print("_________________")
-        print(pars['nab_decay'])
-        print("_________________")
-        print(pars['trans_redux'])
-        print("_________________")
-        print(pars['nab_eff'])
-        print("_________________")
-        print(pars['beta_dist'])
-        print("_________________")
-        print(pars['rel_sus_type'])
-        print("_________________")
-        print(pars['prognoses'])
-        print("_________________")
+    pars['nab_init']     = dict(dist='normal', par1=0, par2=2)  # Parameters for the distribution of the initial level of log2(nab) following natural infection, taken from fig1b of https://doi.org/10.1101/2021.03.09.21252641
+    pars['nab_decay']    = dict(form='nab_growth_decay', growth_time=21, decay_rate1=np.log(2) / 50, decay_time1=150, decay_rate2=np.log(2) / 250, decay_time2=365)
+    pars['trans_redux']  = 0.59  # Reduction in transmission for breakthrough infections, https://www.medrxiv.org/content/10.1101/2021.07.13.21260393v
+    pars['nab_eff']      = dict(alpha_inf=1.08, alpha_inf_diff=1.812, beta_inf=0.967, alpha_symp_inf=-0.739, beta_symp_inf=0.038, alpha_sev_symp=-0.014, beta_sev_symp=0.079) # Parameters to map nabs to efficacy
+    pars['beta_dist']    = dict(dist='neg_binomial', par1=1.0, par2=0.45, step=0.01) # Distribution to draw individual level transmissibility; dispersion from https://www.researchsquare.com/article/rs-29548/v1
+    pars['rel_sus_type'] = 'constants'
+    pars['prognoses']       = None # The actual arrays of prognoses by age; this is populated later
+    if set_prognoses: # If not set here, gets set when the population is initialized
+        pars['prognoses'] = get_prognoses(pars['prog_by_age'], version=version) # Default to age-specific prognoses
 
 
 

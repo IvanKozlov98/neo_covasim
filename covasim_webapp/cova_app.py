@@ -25,6 +25,7 @@ import pandas as pd
 import concurrent.futures
 from itertools import repeat
 import location_preprocessor as lp
+from covasim.parameters import VirusParameters
 import pickle
 
 # Create the app
@@ -41,6 +42,7 @@ die      = False  # Whether or not to raise exceptions instead of continuing
 bgcolor  = '#eee' # Background color for app
 plotbg   = '#dde'
 location2filename = dict()
+virus2filename = dict()
 
 Incidence_and_outcomes = 'Incidence and outcomes'
 General_spread_parameters = 'General spread parameters'
@@ -218,6 +220,23 @@ def upload_city(fname):
     location2filename[location_name] = new_filename
     return location_name
 
+def get_virus_name(filename):
+    df = pd.read_excel(filename, header=None)
+    virus_name_ind = df[df[0] == 'Virus name'].index[0]
+    virus_name = df.iloc[virus_name_ind + 1][0]
+    return virus_name
+
+@app.register_RPC(call_type='upload')
+def upload_virus(fname):
+    import pandas as pd
+    import os
+    import shutil
+    df_common = pd.read_excel(fname, header=None)
+    virus_name = get_virus_name(fname)
+    new_filename = f"tmp_excels/{os.path.basename(fname)}"
+    shutil.copy(fname, new_filename)
+    virus2filename[virus_name] = new_filename
+    return virus_name
 
 
 @app.register_RPC(call_type='upload')
@@ -666,7 +685,7 @@ def parse_interaction_records(interaction_records, tabs):
     return adjacency_matrix
 
 
-def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, cross_immunity_data):
+def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, virus_name_list, cross_immunity_data):
     def filter_inds(ll):
         return list(ll[i] for i in tabs)
     sim_pars_list = []
@@ -696,8 +715,9 @@ def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_
     rel_trans_type_list = filter_inds(rel_trans_type_list) 
     population_volume_list = filter_inds(population_volume_list)
     introduced_variants_list = filter_inds(introduced_variants_list)
+    virus_name_list = filter_inds(virus_name_list)
     cross_immunity_data = filter_inds(cross_immunity_data)
-    return sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, cross_immunity_data
+    return sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, virus_name_list, cross_immunity_data
 
 msim_with = None
 prev_time = []
@@ -883,7 +903,7 @@ def get_variant_and_cross_for_not_multi(introduced_variants_list, cross_immunity
 
 def is_equal_var_dicts(d1, d2):
     for k in d1.keys():
-        if k == "variant_name":
+        if k == "variant_name" or k == "possible_name":
             continue
         if d1[k] != d2[k]:
             return False
@@ -919,6 +939,7 @@ def get_variant_and_cross_for_multi(introduced_variants_list, cross_immunity_dat
         variants = []
         for variant_dict_raw in introduced_variants_set:
             variant_dict = var_d_raw2var_d(variant_dict_raw)
+            print(introduced_variants_list[i])
             variants.append(cv.variant(
                 variant=variant_dict, 
                 n_imports=( 0 if hasnt_list_this_variant(introduced_variants_list[i], variant_dict_raw) else variant_dict_raw['n_import']), 
@@ -952,12 +973,12 @@ def get_variants_and_cross(introduced_variants_list, cross_immunity_data, is_mul
 
 
 @app.register_RPC()
-def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, verbose=True, die=die):
+def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, verbose=True, die=die):
     ''' Create, run, and plot everything '''
     global msim_with
     errs = []
     sim_pars_out, epi_pars_out, int_pars_out = copy.deepcopy(sim_pars), copy.deepcopy(epi_pars), copy.deepcopy(int_pars)
-    (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, cross_immunity_data) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, cross_immunity_data)
+    (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, virus_name_list, cross_immunity_data) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, virus_name_list, cross_immunity_data)
     try:
         web_pars_list = []
 
@@ -980,7 +1001,7 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
     try:
         sims = []
         print(web_pars_list, population_volume_list, variants_list, cross_list, tabs)
-        for pars, population_volume, variants, cross_matrix, city_ind in zip(web_pars_list, population_volume_list, variants_list, cross_list, tabs):
+        for pars, population_volume, variants, cross_matrix, virus_name, city_ind in zip(web_pars_list, population_volume_list, variants_list, cross_list, virus_name_list, tabs):
             new_pop_size = parse_population_size(population_volume)
             pars['pop_size'] = new_pop_size
             pars['pop_type'] = 'synthpops' if population_volume != "100K(Random)" else 'random'
@@ -989,14 +1010,18 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
             popfile = f"synthpops_files/synth_pop_{population_volume}.ppl"
             analyzer = store_seir(show_contact_stat=show_contact_stat, label='seir')
             pars['pop_infected'] = 0
+            if virus_name in virus2filename:
+                virus_parameters = VirusParameters.load(virus2filename[virus_name])
+            else:
+                virus_parameters = VirusParameters()
             if population_volume not in predefined_pops:
-                sim = dict(pars=pars, datafile=datafile, analyzers=analyzer, variants=variants, label=population_volume, popfile=popfile)
+                sim = dict(pars=pars, datafile=datafile, analyzers=analyzer, virus_parameters=virus_parameters, variants=variants, label=population_volume, popfile=popfile)
             else:
                 lbl = f"City {city_ind}"
                 if pars['pop_type'] != 'random':
-                    sim = cv.Sim(pars=pars, datafile=datafile, variants=variants, popfile=popfile, analyzers=analyzer, label=lbl)
+                    sim = cv.Sim(pars=pars, datafile=datafile, variants=variants, virus_parameters=virus_parameters, popfile=popfile, analyzers=analyzer, label=lbl)
                 else:
-                    sim = cv.Sim(pars=pars, datafile=datafile, variants=variants, popfile=popfile, contacts=dict(a=35), beta_layer=dict(a=pars['beta_layer']['c']), analyzers=analyzer, label=lbl)
+                    sim = cv.Sim(pars=pars, datafile=datafile, variants=variants, virus_parameters=virus_parameters, popfile=popfile, contacts=dict(a=35), beta_layer=dict(a=pars['beta_layer']['c']), analyzers=analyzer, label=lbl)
             sims.append(sim)
         sims = build_parallel_cities(sims)
     except Exception as E:
