@@ -489,7 +489,7 @@ def parse_rel_sus_type(rel_sus_type):
         raise Exception(f"Unrecognised sus type: {rel_sus_type}")
 
 
-def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, errs, die, infection_step, rel_sus_type, rel_trans_type, infectiousTableConfig, population_volume, city_ind):
+def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, errs, die, infection_step, rel_sus_type, rel_trans_type, infectiousTableConfig, population_volume, month_choice, monthly_humidity, city_ind):
     ''' Sanitize web parameters into actual simulation ones '''
     orig_pars = cv.make_pars()
 
@@ -545,6 +545,8 @@ def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, er
     web_pars['is_additive_formula'] = (infection_step == "Cumulative")
     web_pars['rel_sus_type'] = parse_rel_sus_type(rel_sus_type)
     web_pars['rel_trans_type'] = 'beta_dist' if rel_trans_type == 'Independent(sus)' else 'eq_res_type'
+    web_pars['starting_month'] = month_choice if month_choice != "None" else None 
+    web_pars['monthly_humidity'] = np.array(list(map(float, monthly_humidity)))
 
     return web_pars
 
@@ -685,7 +687,7 @@ def parse_interaction_records(interaction_records, tabs):
     return adjacency_matrix
 
 
-def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, virus_name_list, cross_immunity_data):
+def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, virus_name_list, month_choice_list, monthly_humidity_list, cross_immunity_data):
     def filter_inds(ll):
         return list(ll[i] for i in tabs)
     sim_pars_list = []
@@ -717,7 +719,9 @@ def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_
     introduced_variants_list = filter_inds(introduced_variants_list)
     virus_name_list = filter_inds(virus_name_list)
     cross_immunity_data = filter_inds(cross_immunity_data)
-    return sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, virus_name_list, cross_immunity_data
+    month_choice_list = filter_inds(month_choice_list)
+    monthly_humidity_list = filter_inds(monthly_humidity_list) 
+    return sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, virus_name_list, month_choice_list, monthly_humidity_list, cross_immunity_data
 
 msim_with = None
 prev_time = []
@@ -978,13 +982,13 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
     global msim_with
     errs = []
     sim_pars_out, epi_pars_out, int_pars_out = copy.deepcopy(sim_pars), copy.deepcopy(epi_pars), copy.deepcopy(int_pars)
-    (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, virus_name_list, cross_immunity_data) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, virus_name_list, cross_immunity_data)
+    (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, virus_name_list, month_choice_list, monthly_humidity_list, cross_immunity_data) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, virus_name_list, month_choice_list, monthly_humidity_list, cross_immunity_data)
     try:
         web_pars_list = []
 
-        for (sim_pars, epi_pars, int_pars, infection_step, rel_sus_type, rel_trans_type, population_volume, city_ind) in \
-            zip(sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs):            
-            web_pars = parse_parameters(sim_pars=sim_pars, epi_pars=epi_pars, int_pars=int_pars, n_days=n_days, location=location, verbose=verbose, errs=errs, die=die, infection_step=infection_step, rel_sus_type=rel_sus_type, rel_trans_type=rel_trans_type, infectiousTableConfig=infectiousTableConfig, population_volume=population_volume, city_ind=city_ind)
+        for (sim_pars, epi_pars, int_pars, infection_step, rel_sus_type, rel_trans_type, population_volume, month_choice, monthly_humidity, city_ind) in \
+            zip(sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, month_choice_list, monthly_humidity_list, tabs):            
+            web_pars = parse_parameters(sim_pars=sim_pars, epi_pars=epi_pars, int_pars=int_pars, n_days=n_days, location=location, verbose=verbose, errs=errs, die=die, infection_step=infection_step, rel_sus_type=rel_sus_type, rel_trans_type=rel_trans_type, infectiousTableConfig=infectiousTableConfig, population_volume=population_volume, month_choice=month_choice, monthly_humidity=monthly_humidity, city_ind=city_ind)
             if False:
                 print(f'Input parameters for {city_ind}:')
                 print(web_pars)
@@ -1074,13 +1078,13 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
         if die: raise
 
     # Create and send output files (base64 encoded content)
-    try:
-        files_all,summary_all = get_output_files(msim_with.sims)
-    except Exception as E:
-        files = {}
-        summary = {}
-        errs.append(log_err('Unable to save output files!', E))
-        if die: raise
+    #try:
+    #    files_all,summary_all = get_output_files(msim_with.sims)
+    #except Exception as E:
+    #    files = {}
+    #    summary = {}
+    #    errs.append(log_err('Unable to save output files!', E))
+    #    if die: raise
 
     output = {}
     output['errs']     = errs
@@ -1088,8 +1092,8 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
     output['epi_pars'] = epi_pars_out
     output['int_pars'] = int_pars_out
     output['graphs']   = graphs
-    output['files_all']    = files_all
-    output['summary_all']  = summary_all
+    output['files_all']    = None #files_all
+    output['summary_all']  = None #summary_all
 
     return output
 
