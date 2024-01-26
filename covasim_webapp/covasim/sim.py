@@ -82,24 +82,60 @@ class Sim(cvb.BaseSim):
         self.update_pars(pars, **kwargs)   # Update the parameters, if provided
         self.load_data(datafile) # Load the data, if provided
         self.is_additive_formula = self.pars['is_additive_formula']
-
-        print("_________________")
-        print(self.pars['nab_init'])
-        print("_________________")
-        print(self.pars['nab_decay'])
-        print("_________________")
-        print(self.pars['trans_redux'])
-        print("_________________")
-        print(self.pars['nab_eff'])
-        print("_________________")
-        print(self.pars['beta_dist'])
-        print("_________________")
-        print(self.pars['rel_sus_type'])
-        print("_________________")
-        print(self.pars['prognoses'])
-        print("_________________")
+        self.init_humidity(pars)
 
         return
+
+    def generate_humidity_coefficients(self, start_month, num_days, coefficients, mult_coefs):
+        # Dictionary mapping months to their zero-based index and number of days
+        month2num_days = {
+            'January': (0, 31), 'February': (1, 28), 'March': (2, 31),
+            'April': (3, 30), 'May': (4, 31), 'June': (5, 30),
+            'July': (6, 31), 'August': (7, 31), 'September': (8, 30),
+            'October': (9, 31), 'November': (10, 30), 'December': (11, 31)
+        }
+
+        # Find the starting month index and days
+        start_month_index, start_month_days = month2num_days[start_month]
+
+        # Initialize the output array
+        output = []
+
+        # Current month index and days tracker
+        current_month_index = start_month_index
+        current_month_days = start_month_days
+
+        # Function to determine the multiplier based on coefficient
+        def get_multiplier(coef):
+            index = int(coef * 10)
+            index = min(index, 9)  # Ensure the index does not go beyond 9
+            return mult_coefs[index]
+
+        # Loop through the number of days and add multipliers
+        for _ in range(num_days):
+            coef = coefficients[current_month_index]
+            output.append(get_multiplier(coef))
+            
+            # Check if the month needs to change
+            current_month_days -= 1
+            if current_month_days == 0:
+                current_month_index = (current_month_index + 1) % 12
+                current_month_days = month2num_days[list(month2num_days.keys())[current_month_index]][1]
+
+        return output
+
+
+    def init_humidity(self, pars):
+        if "starting_month" in pars:
+            print(pars["starting_month"])
+            self.humidity_coef = self.generate_humidity_coefficients(
+                start_month="March", 
+                num_days=self.npts, 
+                coefficients=self.pars['monthly_humidity'],
+                mult_coefs=self.pars['multipleir_humidity_coef']
+            )
+            print(self.humidity_coef)
+
 
     def load_virus_parameters(pars, virus_parameters):
         pars['nab_init'] = virus_parameters.nab_init
@@ -679,7 +715,7 @@ class Sim(cvb.BaseSim):
             # Deal with variant parameters
             asymp_factor = self['asymp_factor']
             variant_label = self.pars['variant_map'][variant]
-            beta = cvd.default_float(self['beta'] * self['rel_beta'] * self['variant_pars'][variant_label]['rel_beta'])
+            beta = cvd.default_float(self['beta'] * self['rel_beta'] * self['variant_pars'][variant_label]['rel_beta'] * self.humidity_coef[t])
 
             inf_variant = people.infectious * (people.infectious_variant == variant)
             if ~inf_variant.any():

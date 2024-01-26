@@ -973,7 +973,7 @@ def get_variants_and_cross(introduced_variants_list, cross_immunity_data, is_mul
 
 
 @app.register_RPC()
-def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, verbose=True, die=die):
+def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
     ''' Create, run, and plot everything '''
     global msim_with
     errs = []
@@ -1141,7 +1141,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8235
+        app.config['SERVER_PORT'] = 8236
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

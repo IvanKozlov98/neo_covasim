@@ -371,12 +371,10 @@ def get_virus_name(filename):
 def run_simple_example():
     pars = {
         "pop_type": 'hybrid',
+        "starting_month": "March"
     }
-    print(get_virus_name("Wild.xlsx"))
-    #virus_pars = VirusParameters.load("Wild.xlsx")
-    #sim = cv.Sim(pars=pars, rand_seed=0, variants=cv.variant('wild', days=0), 
-    #    virus_parameters=virus_pars)
-    #sim.run()
+    sim = cv.Sim(pars=pars, rand_seed=0, variants=cv.variant('wild', days=0))
+    sim.run()
 
 if __name__ == '__main__':
     run_simple_example()

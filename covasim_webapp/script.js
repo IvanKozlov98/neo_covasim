@@ -357,6 +357,23 @@ var vm = new Vue({
             reset_options: ['Default', 'Optimistic', 'Pessimistic'],
             reset_choice: 'Default',
             virus_name_list: Array.from({ length: 20 }, () => ('COVID-19')),
+            month_options: [
+                'None',
+                'January',
+                'February',
+                'March',
+                'April',
+                'May',
+                'June',
+                'July',
+                'August',
+                'September',
+                'October',
+                'November',
+                'December'
+            ],
+            month_choice_list: Array.from({ length: 20 }, () => ('None')),
+            monthly_humidity_list: Array.from({ length: 20 }, () => ([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88])),
             infection_step_options: ['Covasim', 'Cumulative'],
             infection_step_choice_list: Array.from({ length: 20 }, () => ('Covasim')),
             rel_sus_options: [
@@ -631,7 +648,9 @@ var vm = new Vue({
             this.cur_rel_sus_fig[newInd] = clone(this.cur_rel_sus_fig[oldInd]);
             this.introduced_variants_list[newInd] = clone(this.introduced_variants_list[oldInd]);
             this.variant_figs[newInd] = clone(this.variant_figs[oldInd]); 
-            this.infection_step_choice_list[newInd] = clone(this.infection_step_choice_list[oldInd]); 
+            this.infection_step_choice_list[newInd] = clone(this.infection_step_choice_list[oldInd]);
+            this.month_choice_list[newInd] = clone(this.month_choice_list[oldInd]);
+            this.monthly_humidity_list[newInd] = clone(this.monthly_humidity_list[oldInd]);
             this.rel_sus_choice_list[newInd] = clone(this.rel_sus_choice_list[oldInd]); 
             this.vaccine_choice_list[newInd] = clone(this.vaccine_choice_list[oldInd]); 
             this.variant_choice_list[newInd] = clone(this.variant_choice_list[oldInd]); 
@@ -957,6 +976,8 @@ var vm = new Vue({
                     n_days: this.sim_length.best,
                     location: this.reset_choice,
                     infection_step_list: this.infection_step_choice_list,
+                    month_choice_list: this.month_choice_list,
+                    monthly_humidity_list: this.monthly_humidity_list,
                     rel_sus_type_list: this.rel_sus_choice_list,
                     rel_trans_type_list: this.rel_trans_choice_list,
                     interaction_records: this.interactionRecords,
@@ -1002,6 +1023,8 @@ var vm = new Vue({
             this.cur_rel_sus_fig = Array.from({ length: 20 }, () => ({}));
             this.variant_figs = Array.from({ length: 20 }, () => ({}));
             this.infection_step_choice_list = Array.from({ length: 20 }, () => ('Covasim'));
+            this.month_choice_list = Array.from({ length: 20 }, () => ('None'));
+            this.monthly_humidity_list = Array.from({ length: 20 }, () => ([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88]));
             this.rel_sus_choice_list = Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
             this.vaccine_choice_list = Array.from({ length: 20 }, () => ('pfizer')),
             this.variant_choice_list = Array.from({ length: 20 }, () => ('wild')),
@@ -1072,6 +1095,8 @@ var vm = new Vue({
                 sim_length_best: this.sim_length.best,
                 reset_choice: this.reset_choice,
                 infection_step_choice_list: this.infection_step_choice_list,
+                month_choice_list: this.month_choice_list,
+                monthly_humidity_list: this.monthly_humidity_list,
                 rel_sus_choice_list: this.rel_sus_choice_list,
                 rel_trans_choice_list: this.rel_trans_choice_list,
                 interactionRecords: this.interactionRecords,
@@ -1107,55 +1132,30 @@ var vm = new Vue({
                 this.datafile.server_path = response.data.datafile_server_path;
                 
                 this.multiple_cities = response.data.multiple_cities;
-                console.log("this.datafile");
-                console.log(this.datafile);
                 this.show_contact_stat = response.data.show_contact_stat;
-                console.log("this.multiple_cities");
-                console.log(this.multiple_cities);
                 this.sim_length.best = response.data.sim_length_best;
-                console.log("this.show_contact_stat");
-                console.log(this.show_contact_stat);
                 this.infection_step_choice_list = response.data.infection_step_choice_list;
-                console.log("this.sim_length");
-                console.log(this.sim_length);
                 this.rel_sus_choice_list = response.data.rel_sus_choice_list;
-                console.log("this.infection_step_choice_list");
-                console.log(this.infection_step_choice_list);
+                this.month_choice_list = response.data.month_choice_list;
+                this.monthly_humidity_list = response.data.monthly_humidity_list;
                 this.rel_trans_choice_list = response.data.rel_trans_choice_list;
-                console.log("this.rel_sus_choice_list");
-                console.log(this.rel_sus_choice_list);
                 this.interactionRecords = response.data.interactionRecords;
-                console.log("this.rel_trans_choice_list");
-                console.log(this.rel_trans_choice_list);
                 this.population_volume_choice_list = response.data.population_volume_choice_list;
-                console.log("this.interactionRecords");
-                console.log(this.interactionRecords);
                 this.infectiousTableConfig = response.data.infectiousTableConfig;
-                console.log("this.population_volume_choice_list");
-                console.log(this.population_volume_choice_list);
                 this.introduced_variants_list = response.data.introduced_variants_list;
-                console.log("this.infectiousTableConfig");
-                console.log(this.infectiousTableConfig);
                 this.filtered = response.data.filtered;
                 this.fields = response.data.fields;
-                console.log("this.introduced_variants_list");
-                console.log(this.introduced_variants_list);
                 this.tabs = response.data.tabs;
 
                 
 
                 this.tabCounter = this.tabs.length + 1;
-                console.log(this.filtered);
-                console.log("this.filtered");
 
-                console.log("this.tabs");                
-                console.log(this.tabs);
                 
                 this.result.graphs = [];
                 this.intervention_figs = [{}, {}, {}, {}, {}];
                 this.handleSimpleCase();
 
-                console.log("succesful uploading");
                 if (this.int_pars){
                     const response = await sciris.rpc('get_gantt', undefined, {int_pars_list: this.int_pars, intervention_config: this.interventionTableConfig, n_days: this.sim_length.best, tabs: this.tabs});
                     this.intervention_figs = response.data;

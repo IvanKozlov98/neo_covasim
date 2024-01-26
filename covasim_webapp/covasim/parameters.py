@@ -179,6 +179,11 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
     '''
     pars = {}
 
+    # Weather parameters
+    pars['monthly_humidity'] = np.array([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88])
+    pars['starting_month'] = None
+    pars['multipleir_humidity_coef'] = np.array([1.0, 1.222, 1.44, 1.66, 1.8, 1.8, 1.66, 1.44, 1.222, 1.0])
+
     # Population parameters
     pars['pop_size']     = 20e3     # Number of agents, i.e., people susceptible to SARS-CoV-2
     pars['pop_infected'] = 20       # Number of initial infections

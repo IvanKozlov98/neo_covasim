@@ -686,6 +686,51 @@
         </b-card>
 
 
+
+
+    <!--  Weather Parameters -->
+    <b-card no-body>
+      <b-card-header header-tag="header" class="p-0 rounded-0" role="tab" style="background-color:rgb(23,153,148)">
+        <b-button style="color:rgb(255,255,255)" block v-b-toggle.parameters-weathera variant="link">The weather parameters <span class="ti-angle-up"></span> <span class="ti-angle-down"></span></b-button>
+      </b-card-header>
+      <b-collapse id="parameters-weathera" role="tabpanel">
+        <b-card no-body class="border-0 rounded-0">
+          <b-tabs fill card>
+
+            <legend for="'montha' + i" class="col-12">Starting month</legend>
+              
+              <select :disabled="running" id="'montha' + i" v-model="month_choice_list[i]" class="form-control" aria-label="Month">
+                <option v-for="(item, index) in month_options" :value="item">
+                  {{ item }}
+                </option>
+              </select>
+              
+
+              <legend>Monthly humidity</legend>
+              <div class="row">
+                <fieldset class="col-md-6">
+                  <div v-for="(item, index) in month_options" class="form-group">
+                    <div v-if="item !== 'None' && index < 7">
+                      <label>{{item}}</label>
+                      <input :id="item + '_id' + i" :disabled="running" class="form-control" v-model="monthly_humidity_list[i][index - 1]">
+                    </div>
+                  </div>
+                </fieldset>
+                <fieldset class="col-md-6">
+                  <div v-for="(item, index) in month_options" class="form-group">
+                    <div v-if="item !== 'None' && index > 6">
+                      <label>{{item}}</label>
+                      <input :id="item + '_id' + i" :disabled="running" class="form-control" v-model="monthly_humidity_list[i][index - 1]">
+                    </div>
+                  </div>
+                </fieldset>
+              </div>
+
+          </b-tabs>
+        </b-card>
+      </b-collapse>
+    </b-card>
+
         <!--  Advanced Parameters -->
         <b-card no-body>
           <b-card-header header-tag="header" role="tab" class="p-0 rounded-0" style="background-color:rgb(23,153,148)">
