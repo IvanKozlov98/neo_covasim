@@ -807,6 +807,46 @@ def _hsv2rgb(color_hex):
     blue = int(color_hex[4:6], 16)
     return red, green, blue
 
+def change_starting_month(dates, new_start_month):
+    import datetime
+    month2num = {
+        'January': 1,
+        'February': 2,
+        'March': 3,
+        'April': 4,
+        'May': 5,
+        'June': 6,
+        'July': 7,
+        'August': 8,
+        'September': 9,
+        'October': 10,
+        'November': 11,
+        'December': 12
+    }
+
+    new_start_month = month2num[new_start_month]
+    # Calculate the start date with the new month
+    # This assumes the year from the first date is to be used
+    new_start_date = datetime.date(dates[0].year, new_start_month, 1)
+
+    new_dates = []
+    for date in dates:
+        # Calculate the difference in days from the first date
+        day_difference = (date - dates[0]).days
+
+        # Add this difference to the new start date
+        new_date = new_start_date + datetime.timedelta(days=day_difference)
+
+        new_dates.append(new_date)
+
+    return new_dates
+
+def get_time_axis(sim):
+    if sim.with_month:
+        return change_starting_month(sim.results['date'], sim.pars['starting_month'])
+    else:
+        return np.arange(sim.results['date'][:].size)
+
 def plotly_sim(sims, do_show=False): # pragma: no cover
     ''' Main simulation results -- parallel of sim.plot() '''
 
@@ -853,7 +893,7 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
             for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
                 label = sim.results[key].name
                 this_color = sim.results[key].color
-                x = np.arange(sim.results['date'][:].size)
+                x = get_time_axis(sim)
                 y = sim.results[key][:]
                 max_y = np.max(sim.results[key][:]) if np.max(sim.results[key][:]) > max_y else max_y 
                 has_testing = any(list(map(lambda x: 'testing' in x.label, sim['interventions'])))
@@ -868,7 +908,7 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
                             color=f'rgba({_r}, {_g}, {_b}, {brightness})',
                             width=2  # Ширина линии
                     ), showlegend=is_show_legend, 
-                    name=f"{sim.label}: {new_label}", hovertext=list(map(lambda t: str(t)+ '; ' + sim.label + '; ' + new_label, zip(x, y.astype(int)))), hoverinfo="text"))
+                    name=f"{sim.label}: {new_label}", hovertext=list(map(lambda t: str(t) + '; ' + sim.label + '; ' + new_label, zip(x, y.astype(int)))), hoverinfo="text"))
                 if sim.data is not None and key in sim.data:
                     xdata = sim.data['date']
                     ydata = sim.data[key]
@@ -895,9 +935,9 @@ def plot_by_variant_rel(sim, do_show=False): # pragma: no cover
     go = import_plotly() # Load Plotly
     fig = go.Figure()
     variant_names = [variant.label for variant in sim.pars['variants']]
-    x = np.arange(sim.results['date'][:].size)
+    x = get_time_axis(sim)
     v_map = dict([(v,k) for k,v in sim.pars['variant_map'].items()])
-    new_infections_by_variant_sum = np.zeros(shape=x.size)
+    new_infections_by_variant_sum = np.zeros(shape=len(x))
     for variant_name in variant_names:
         new_infections_by_variant_sum += sim.results['variant']['new_infections_by_variant'][v_map[variant_name]]
     new_infections_by_variant_sum = np.clip(new_infections_by_variant_sum, 1, np.max(new_infections_by_variant_sum))
@@ -933,7 +973,7 @@ def plot_by_variant(sims, do_show=False): # pragma: no cover
         fig = go.Figure()
         for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
             variant_names = [variant.label for variant in sim.pars['variants']]
-            x = np.arange(sim.results['date'][:].size)
+            x = get_time_axis(sim)
             max_y = 0
             is_showlegend = (i == sims_count - 1)
             for (j, variant_name) in enumerate(variant_names):
@@ -975,7 +1015,7 @@ def plotly_people(sim, do_show=False): # pragma: no cover
     fig = go.Figure()
 
     for state in states[::-1]:  # Reverse order for plotting
-        x = np.arange(sim.results['date'][:].size)
+        x = get_time_axis(sim)
         y = (z == state['value']).sum(axis=0)
         fig.add_trace(go.Scatter(
             x=x, y=y,
@@ -1014,7 +1054,7 @@ def plotly_states_people_impl(sim, state_history, title, do_show=False): # pragm
 
     y_max = np.max(np.sum(state_history, axis=0))
     for i in range(state_history.shape[0]):  # Reverse order for plotting
-        x = np.arange(state_history[i].size)
+        x = get_time_axis(sim)
         y = state_history[i]
         fig.add_trace(go.Scatter(
             x=x, y=y,
@@ -1340,7 +1380,7 @@ def plotly_part_80(sims, do_show=False):
     for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
         cur_analyzer= sim.get_analyzer('seir')
         y = cur_analyzer.spread_count_stat
-        x = 1 + np.arange(y.size)
+        x = get_time_axis(sim)
         fig.add_trace(
             go.Scatter(x=x, y=y, 
                 name=sim.label,
@@ -1642,7 +1682,7 @@ def plotly_nabs(sims, do_show=False):
         for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
             label = sim.results[key].name
             this_color = sim.results[key].color
-            x = np.arange(sim.results['date'][:].size)
+            x = get_time_axis(sim)
             y = sim.results[key][:]
             max_y = np.max(sim.results[key][:]) if np.max(sim.results[key][:]) > max_y else max_y 
             new_label = label2new_label[label] if label in label2new_label else label

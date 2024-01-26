@@ -368,6 +368,12 @@ def get_virus_name(filename):
     return virus_name
 
 
+def get_humidity(filename):
+    df = pd.read_excel(filename, header=None)
+    virus_name_ind = df[df[0] == 'Humidity table'].index[0]
+    return np.array(list(map(float, df.iloc[virus_name_ind + 2].values[1:])))
+
+
 def run_simple_example():
     pars = {
         "pop_type": 'hybrid',
@@ -375,6 +381,7 @@ def run_simple_example():
     }
     sim = cv.Sim(pars=pars, rand_seed=0, variants=cv.variant('wild', days=0))
     sim.run()
+    cv.plotly_sim([sim])
 
 if __name__ == '__main__':
-    run_simple_example()
+    get_humidity("Wild.xlsx")

@@ -87,11 +87,6 @@ class Sim(cvb.BaseSim):
         return
 
     def generate_humidity_coefficients(self, start_month, num_days, coefficients, mult_coefs):
-        print(")))))))))))))))))))")
-        print(")))))))))))))))))))")
-        print(start_month, num_days, coefficients, mult_coefs)
-        print(")))))))))))))))))))")
-        print(")))))))))))))))))))")
         # Dictionary mapping months to their zero-based index and number of days
         month2num_days = {
             'January': (0, 31), 'February': (1, 28), 'March': (2, 31),
@@ -117,7 +112,6 @@ class Sim(cvb.BaseSim):
             return mult_coefs[index]
 
         # Loop through the number of days and add multipliers
-        print("0-0-0--0-0-0-0-0-0--00--0-0-0")
         for _ in range(num_days):
             coef = coefficients[current_month_index]
             print(current_month_index, coef)
@@ -133,7 +127,8 @@ class Sim(cvb.BaseSim):
 
 
     def init_humidity(self, pars):
-        if "starting_month" in pars and pars["starting_month"]:
+        self.with_month = "starting_month" in pars and pars["starting_month"]
+        if self.with_month:
             print(pars["starting_month"])
             self.humidity_coef = self.generate_humidity_coefficients(
                 start_month=pars['starting_month'], 
@@ -154,6 +149,7 @@ class Sim(cvb.BaseSim):
         pars['beta_dist'] = virus_parameters.beta_dist
         pars['rel_sus_type'] = virus_parameters.rel_sus_type
         pars['prognoses'] = virus_parameters.prognoses
+        pars['multipleir_humidity_coef'] = virus_parameters.multipleir_humidity_coef
 
 
     def load_data(self, datafile=None, verbose=None, **kwargs):

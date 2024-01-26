@@ -24,6 +24,11 @@ def _check_prognoses(prognoses):
             raise ValueError(errormsg)
 
 
+def get_humidity(filename):
+    df = pd.read_excel(filename, header=None)
+    virus_name_ind = df[df[0] == 'Humidity table'].index[0]
+    return np.array(list(map(float, df.iloc[virus_name_ind + 2].values[1:])))
+
 class VirusParameters:
     def __init__(self, 
         nab_init        = dict(dist='normal', par1=0, par2=2),  # Parameters for the distribution of the initial level of log2(nab) following natural infection, taken from fig1b of https://doi.org/10.1101/2021.03.09.21252641
@@ -32,6 +37,7 @@ class VirusParameters:
         nab_eff         = dict(alpha_inf=1.08, alpha_inf_diff=1.812, beta_inf=0.967, alpha_symp_inf=-0.739, beta_symp_inf=0.038, alpha_sev_symp=-0.014, beta_sev_symp=0.079), # Parameters to map nabs to efficacy
         beta_dist       = dict(dist='neg_binomial', par1=1.0, par2=0.45, step=0.01), # Distribution to draw individual level transmissibility; dispersion from https://www.researchsquare.com/article/rs-29548/v1     
         rel_sus_type = 'constants',
+        multipleir_humidity_coef = np.array([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88]),
         prognoses = dict(
             age_cutoffs   = np.array([0,       10,      20,      30,      40,      50,      60,      70,      80,      90,]),     # Age cutoffs (lower limits)
             sus_ORs       = np.array([0.34,    0.67,    1.00,    1.00,    1.00,    1.00,    1.24,    1.47,    1.47,    1.47]),    # Odds ratios for relative susceptibility -- from Zhang et al., https://science.sciencemag.org/content/early/2020/05/04/science.abb8001; 10-20 and 60-70 bins are the average across the ORs
@@ -49,13 +55,13 @@ class VirusParameters:
         self.nab_eff = nab_eff 
         self.beta_dist = beta_dist 
         self.rel_sus_type = rel_sus_type
+        self.multipleir_humidity_coef = multipleir_humidity_coef
         # set prognoses
         self.prognoses = prognoses 
         self.prognoses = relative_prognoses(prognoses) # Convert to conditional probabilities
         _check_prognoses(prognoses)
 
     def load(filename):
-        virus_pars = VirusParameters()
         df = pd.read_excel(filename, header=None)
         # set main parameters
         # set nab_init searching by key
@@ -149,6 +155,8 @@ class VirusParameters:
         prognoses['comorbidities'] = np.array(df[df[0] == 'Comorbidities by age'].values[0][1:], dtype=float)
         prognoses = prognoses
 
+        multipleir_humidity_coef = get_humidity(filename)
+
         virus_pars = VirusParameters(
             nab_init=nab_init,
             nab_decay=nab_decay,
@@ -156,6 +164,7 @@ class VirusParameters:
             nab_eff=nab_eff,
             beta_dist=beta_dist,
             rel_sus_type='constants',
+            multipleir_humidity_coef=multipleir_humidity_coef,
             prognoses=prognoses
         )
         return virus_pars
