@@ -545,7 +545,7 @@ def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, er
     web_pars['is_additive_formula'] = (infection_step == "Cumulative")
     web_pars['rel_sus_type'] = parse_rel_sus_type(rel_sus_type)
     web_pars['rel_trans_type'] = 'beta_dist' if rel_trans_type == 'Independent(sus)' else 'eq_res_type'
-    web_pars['starting_month'] = month_choice if month_choice != "None" else None 
+    web_pars['starting_month'] = month_choice if month_choice != "No seasonality" else None 
     web_pars['monthly_humidity'] = np.array(list(map(float, monthly_humidity)))
 
     return web_pars
@@ -736,6 +736,7 @@ def get_current_time():
     global msim_with
     global prev_time
     if msim_with is None:
+        print("Noooooooooooooooooone")
         return 0
     min_percent = 100
     for (i, sim) in enumerate(msim_with.sims):
@@ -1078,13 +1079,13 @@ def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple
         if die: raise
 
     # Create and send output files (base64 encoded content)
-    #try:
-    #    files_all,summary_all = get_output_files(msim_with.sims)
-    #except Exception as E:
-    #    files = {}
-    #    summary = {}
-    #    errs.append(log_err('Unable to save output files!', E))
-    #    if die: raise
+    try:
+        files_all,summary_all = get_output_files(msim_with.sims)
+    except Exception as E:
+        files = {}
+        summary = {}
+        errs.append(log_err('Unable to save output files!', E))
+        if die: raise
 
     output = {}
     output['errs']     = errs
@@ -1103,6 +1104,10 @@ def get_output_files_impl(sim):
     ''' Create output files for download '''
 
     datestamp = sc.getdate(dateformat='%Y-%b-%d_%H.%M.%S')
+    del sim.pars['starting_month']
+    del sim.pars['multipleir_humidity_coef']
+    del sim.pars['monthly_humidity']
+
     ss = sim.to_excel()
 
     files = {}

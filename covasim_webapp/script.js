@@ -358,7 +358,7 @@ var vm = new Vue({
             reset_choice: 'Default',
             virus_name_list: Array.from({ length: 20 }, () => ('COVID-19')),
             month_options: [
-                'None',
+                'No seasonality',
                 'January',
                 'February',
                 'March',
@@ -372,7 +372,7 @@ var vm = new Vue({
                 'November',
                 'December'
             ],
-            month_choice_list: Array.from({ length: 20 }, () => ('None')),
+            month_choice_list: Array.from({ length: 20 }, () => ('No seasonality')),
             monthly_humidity_list: Array.from({ length: 20 }, () => ([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88])),
             infection_step_options: ['Covasim', 'Cumulative'],
             infection_step_choice_list: Array.from({ length: 20 }, () => ('Covasim')),
@@ -409,24 +409,14 @@ var vm = new Vue({
             interval_vaccine_list: Array.from({ length: 20 }, () => (28)),
             vaccine_choice_list: Array.from({ length: 20 }, () => ('pfizer')),
             
-            variant_options:{
-                "COVID-19": [
-                    'wild',
-                    'alpha',
-                    'beta',
-                    'gamma',
-                    'delta',
-                    'custom'
-                ],
-                "Morbilli": [
-                    "classic",
-                    "custom"
-                ],
-                "Influenza": [
-                    "classic",
-                    "custom"
-                ],
-            },
+            variant_options:[
+                'wild',
+                'alpha',
+                'beta',
+                'gamma',
+                'delta',
+                'custom'
+            ],
             variant_choice_list: Array.from({ length: 20 }, () => ('wild')),
             parameters_by_variant: {
                 "possible_name": {
@@ -1023,7 +1013,7 @@ var vm = new Vue({
             this.cur_rel_sus_fig = Array.from({ length: 20 }, () => ({}));
             this.variant_figs = Array.from({ length: 20 }, () => ({}));
             this.infection_step_choice_list = Array.from({ length: 20 }, () => ('Covasim'));
-            this.month_choice_list = Array.from({ length: 20 }, () => ('None'));
+            this.month_choice_list = Array.from({ length: 20 }, () => ('No seasonality'));
             this.monthly_humidity_list = Array.from({ length: 20 }, () => ([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88]));
             this.rel_sus_choice_list = Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
             this.vaccine_choice_list = Array.from({ length: 20 }, () => ('pfizer')),

@@ -316,7 +316,7 @@
             <div class="form-row mb-3">
               <div class="col">
                 <select :disabled="running" id="examples_variant_tr" v-model="variant_choice_list[i]" :name="'variant_choice'" class="form-control" aria-label="Example presets" @change=handleChangeVariant(i)>
-                  <option v-for="(item, index) in variant_options[virus_name_list[i]]" :value="item">
+                  <option v-for="(item, index) in variant_options" :value="item">
                     {{ item }}
                   </option>
                 </select>
@@ -710,7 +710,7 @@
               <div class="row">
                 <fieldset class="col-md-6">
                   <div v-for="(item, index) in month_options" class="form-group">
-                    <div v-if="item !== 'None' && index < 7">
+                    <div v-if="item !== 'No seasonality' && index < 7">
                       <label>{{item}}</label>
                       <input :id="item + '_id' + i" :disabled="running" class="form-control" v-model="monthly_humidity_list[i][index - 1]">
                     </div>
@@ -718,7 +718,7 @@
                 </fieldset>
                 <fieldset class="col-md-6">
                   <div v-for="(item, index) in month_options" class="form-group">
-                    <div v-if="item !== 'None' && index > 6">
+                    <div v-if="item !== 'No seasonality' && index > 6">
                       <label>{{item}}</label>
                       <input :id="item + '_id' + i" :disabled="running" class="form-control" v-model="monthly_humidity_list[i][index - 1]">
                     </div>
