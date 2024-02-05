@@ -91,51 +91,14 @@ def get_defaults(region=None, merge=False, die=die):
         region = 'Default'
 
     regions = {
-        # 'n_imports': {
-        #     'Default': 0,
-        #     'Optimistic': 0,
-        #     'Pessimistic': 10,
-        # },
         'beta': {
             'Default': 0.015,
             'Optimistic': 0.010,
             'Pessimistic': 0.025,
         },
-        #'web_exp2inf': {
-        #    'Default': 4.0,
-        #    'Optimistic': 5.0,
-        #    'Pessimistic': 3.0,
-        #},
-        #'web_inf2sym': {
-        #    'Default': 1.0,
-        #    'Optimistic': 0.0,
-        #    'Pessimistic': 3.0,
-        #},
-        #'rel_symp_prob': {
-        #    'Default': 1.0,
-        #    'Optimistic': 1.2,
-        #    'Pessimistic': 0.5,
-        #},
-        #'rel_severe_prob': {
-        #    'Default': 1.0,
-        #    'Optimistic': 0.3,
-        #    'Pessimistic': 3.0,
-        #},
-        #'rel_crit_prob': {
-        #    'Default': 1.0,
-        #    'Optimistic': 0.7,
-        #    'Pessimistic': 5.0,
-        #},
-        #'rel_death_prob': {
-        #    'Default': 1.0,
-        #    'Optimistic': 0.5,
-        #    'Pessimistic': 2.0,
-        #},
     }
 
     sim_pars = dict(
-        #pop_size     = dict(best=10000, min=1, max=max_pop,  name='Population size',            tip='Number of agents simulated in the model'),
-        #pop_infected = dict(best=[10] * max_city_count,    min=0, max=max_pop,  name='Initial infections',         tip='Number of initial seed infections in the model'),
         n_imports    = dict(best=[0] * max_city_count,     min=0, max=100,      name='Daily imported infections',  tip='Number of infections that are imported each day'),
         rand_seed    = dict(best=[0] * max_city_count,     min=0, max=100,      name='Random seed',                tip='The parameter of the random number generator; with a single stimulation, it does not matter'),
         n_days       = dict(best=90,     min=1, max=max_days, name="Simulation duration",        tip='Total duration (in days) of the simulation'),
@@ -143,24 +106,9 @@ def get_defaults(region=None, merge=False, die=die):
 
     epi_pars = dict(
         beta            = dict(best=[0.015] * max_city_count, min=0.0, max=0.2, name='Beta (infectiousness)',              tip ='Probability of infection per contact per day'),
-        #web_exp2inf     = dict(best=[4.0] * max_city_count,   min=0.0, max=30,  name='Time to infectiousness (days)',      tip ='Average number of days between exposure and being infectious'),
-        #web_inf2sym     = dict(best=[1.0] * max_city_count,   min=0.0, max=30,  name='Asymptomatic period (days)',         tip ='Average number of days between exposure and developing symptoms'),
-        #web_dur         = dict(best=[10.0] * max_city_count,  min=0.0, max=30,  name='Infection duration (days)',          tip ='Average number of days between infection and recovery (viral shedding period)'),
-        #web_timetodie   = dict(best=[6.0] * max_city_count,   min=0.0, max=30,  name='Time until death (days)',            tip ='Average number of days between becoming critically ill and death'),
-        #rel_symp_prob   = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Symptomatic probability multiplier', tip ='Adjustment factor on literature-derived values for proportion of infected people who become symptomatic'),
-        #rel_severe_prob = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Severe probability multiplier',      tip ='Adjustment factor on literature-derived values for proportion of symptomatic people who develop severe disease'),
-        #rel_crit_prob   = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Critical probability multiplier',    tip ='Adjustment factor on literature-derived values for proportion of people with severe disease who become crtiically ill'),
-        #rel_death_prob  = dict(best=[1.0] * max_city_count,   min=0.0, max=10,  name='Death probability multiplier',       tip ='Adjustment factor on literature-derived values for proportion of critically ill people who die'),
         tourist_contact_count  = dict(best=[4] * max_city_count,   min=0.0, max=10,  name='Tourist contact number multiplier',       tip ='Tourist contact count is equal this coefficient multiple by number of random contacts'),
     )
 
-    #for parkey,valuedict in regions.items():
-    #    if parkey in sim_pars:
-    #        sim_pars[parkey]['best'] = valuedict[region] # NB, needs to be refactored -- 'Default' is just a placeholder until we have actual regions
-    #    elif parkey in epi_pars:
-    #        epi_pars[parkey]['best'] = valuedict[region]
-    #    else:
-    #        raise Exception(f'Key {parkey} not found')
     if merge:
         output = {**sim_pars, **epi_pars}
     else:
@@ -489,7 +437,7 @@ def parse_rel_sus_type(rel_sus_type):
         raise Exception(f"Unrecognised sus type: {rel_sus_type}")
 
 
-def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, errs, die, infection_step, rel_sus_type, rel_trans_type, infectiousTableConfig, population_volume, month_choice, monthly_humidity, city_ind):
+def parse_parameters(sim_pars, epi_pars, int_pars, n_days, verbose, die, infection_step, rel_sus_type, rel_trans_type, infectiousTableConfig, population_volume, month_choice, monthly_humidity, city_ind):
     ''' Sanitize web parameters into actual simulation ones '''
     orig_pars = cv.make_pars()
 
@@ -502,44 +450,21 @@ def parse_parameters(sim_pars, epi_pars, int_pars, n_days, location, verbose, er
         minval = defaults[key]['min']
         maxval = defaults[key]['max']
 
-        try:
-            web_pars[key] = np.clip(float(entry['best']), minval, maxval)
-        except Exception as E:
-            user_key = entry['name']
-            user_val = entry['best']
-            err = f'Could not convert parameter "{user_key}" from value "{user_val}"; using default value instead.'
-            errs.append(log_err(err, E))
-            web_pars[key] = best
-            if die: raise
+        web_pars[key] = np.clip(float(entry['best']), minval, maxval)
 
         if key in sim_pars:
             sim_pars[key]['best'] = web_pars[key]
         else:
             epi_pars[key]['best'] = web_pars[key]
 
-    # Convert durations
-    #web_pars['dur'] = sc.dcp(orig_pars['dur']) # This is complicated, so just copy it
-    #web_pars['dur']['exp2inf']['par1']  = web_pars.pop('web_exp2inf')
-    #web_pars['dur']['inf2sym']['par1']  = web_pars.pop('web_inf2sym')
-    #web_pars['dur']['crit2die']['par1'] = web_pars.pop('web_timetodie')
-    #web_dur = web_pars.pop('web_dur')
-    #for key in ['asym2rec', 'mild2rec', 'sev2rec', 'crit2rec']:
-    #    web_pars['dur'][key]['par1'] = web_dur
-
     # Add n_days
     web_pars['n_days'] = n_days
-
-    # Add demographic
-    web_pars['location'] = location
 
     # Add the intervention
     web_pars['interventions'] = parse_interventions(int_pars, population_volume == '100K(Random)')
 
     # Handle CFR -- ignore symptoms and set to 1
-    #if web_pars['rand_seed'] == 0:
-    #    web_pars['rand_seed'] = None
     web_pars['timelimit'] = max_time  # Set the time limit
-    #web_pars['pop_size'] = int(web_pars['pop_size'])  # Set data type
     
     web_pars['beta_layer'] = parseInfectiousConfig(infectiousTableConfig, city_ind)
     web_pars['is_additive_formula'] = (infection_step == "Cumulative")
@@ -687,43 +612,47 @@ def parse_interaction_records(interaction_records, tabs):
     return adjacency_matrix
 
 
-def separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, virus_name_list, month_choice_list, monthly_humidity_list, cross_immunity_data):
+def separate_by_tabs(kwargs):
+    tabs = kwargs['tabs']
+
     def filter_inds(ll):
         return list(ll[i] for i in tabs)
-    sim_pars_list = []
-    epi_pars_list = []
+    
+    def separate_sim_pars(sim_pars_list): 
+        res = []
+        for city_ind in tabs:
+            sim_pars_copy = copy.deepcopy(sim_pars_list)
+            for k in sim_pars_copy.keys():
+                if k == 'n_days':
+                    sim_pars_copy[k]['best'] = sim_pars_copy[k]['best']
+                else:
+                    sim_pars_copy[k]['best'] = sim_pars_copy[k]['best'][city_ind]
+            res.append(sim_pars_copy)
+        return res
 
-    # separate sim_pars
-    for city_ind in tabs:
-        sim_pars_copy = copy.deepcopy(sim_pars)
-        for k in sim_pars_copy.keys():
-            if k == 'n_days':
-                sim_pars_copy[k]['best'] = sim_pars_copy[k]['best']
-            else:
-                sim_pars_copy[k]['best'] = sim_pars_copy[k]['best'][city_ind]
-        sim_pars_list.append(sim_pars_copy)
+    def separate_epi_pars(epi_pars_list):
+        res = []
+        for city_ind in tabs:
+            epi_pars_copy = copy.deepcopy(epi_pars_list)
+            for k in epi_pars_copy.keys():
+                epi_pars_copy[k]['best'] = epi_pars_copy[k]['best'][city_ind]
+            res.append(epi_pars_copy)
+        return res
 
-    # separate epi_pars
-    for city_ind in tabs:
-        epi_pars_copy = copy.deepcopy(epi_pars)
-        for k in epi_pars_copy.keys():
-            epi_pars_copy[k]['best'] = epi_pars_copy[k]['best'][city_ind]
-        epi_pars_list.append(epi_pars_copy)
+    res_dict = {}
+    for par_k, par_v in kwargs.items():
+        if par_k == "sim_pars_list":
+            res_dict[par_k] = separate_sim_pars(par_v)
+        elif par_k == "epi_pars_list":
+            res_dict[par_k] = separate_epi_pars(par_v)
+        elif "_list" in par_k:
+            res_dict[par_k] = filter_inds(par_v)
+        else:
+            res_dict[par_k] = par_v
+    return res_dict
 
-    # filter other
-    int_pars_list = filter_inds(int_pars)
-    infection_step_list = filter_inds(infection_step_list) 
-    rel_sus_type_list = filter_inds(rel_sus_type_list) 
-    rel_trans_type_list = filter_inds(rel_trans_type_list) 
-    population_volume_list = filter_inds(population_volume_list)
-    introduced_variants_list = filter_inds(introduced_variants_list)
-    virus_name_list = filter_inds(virus_name_list)
-    cross_immunity_data = filter_inds(cross_immunity_data)
-    month_choice_list = filter_inds(month_choice_list)
-    monthly_humidity_list = filter_inds(monthly_humidity_list) 
-    return sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, virus_name_list, month_choice_list, monthly_humidity_list, cross_immunity_data
 
-msim_with = None
+neo_simulator = None
 prev_time = []
 
 def get_time_from_log(sim):
@@ -733,13 +662,13 @@ def get_time_from_log(sim):
 
 @app.register_RPC()
 def get_current_time():
-    global msim_with
+    global neo_simulator
     global prev_time
-    if msim_with is None:
+    if neo_simulator is None or neo_simulator.msim_with is None:
         print("Noooooooooooooooooone")
         return 0
     min_percent = 100
-    for (i, sim) in enumerate(msim_with.sims):
+    for (i, sim) in enumerate(neo_simulator.msim_with.sims):
         try:
             tt = get_time_from_log(sim)
             prev_time[i] = tt
@@ -840,7 +769,7 @@ def execute_function(func, *args):
 
 def build_city(sim):
     pop = lp.make_people_from_file(location2filename[sim['label']], sim['popfile'])
-    return cv.Sim(pars=sim['pars'], variants=sim['variants'], datafile=sim['datafile'], analyzers=sim['analyzers'], label=sim['label']).init_people(prepared_pop=pop)
+    return cv.Sim(**sim).init_people(prepared_pop=pop)
 
 
 def build_parallel_cities(sims):
@@ -976,127 +905,306 @@ def get_variants_and_cross(introduced_variants_list, cross_immunity_data, is_mul
     return get_variant_and_cross_for_not_multi(introduced_variants_list, cross_immunity_data)
 
 
+class NeoSimulator:
 
-@app.register_RPC()
-def run_sim(sim_pars=None, epi_pars=None, int_pars=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, location=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
-    ''' Create, run, and plot everything '''
-    global msim_with
-    errs = []
-    sim_pars_out, epi_pars_out, int_pars_out = copy.deepcopy(sim_pars), copy.deepcopy(epi_pars), copy.deepcopy(int_pars)
-    (sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, introduced_variants_list, virus_name_list, month_choice_list, monthly_humidity_list, cross_immunity_data) = separate_by_tabs(sim_pars, epi_pars, int_pars, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, tabs, introduced_variants_list, virus_name_list, month_choice_list, monthly_humidity_list, cross_immunity_data)
-    try:
-        web_pars_list = []
+    class MultiParametersSim:
+        predefined_pops = ['100K', '100K(Random)', '500K', '1M', '3M']
 
-        for (sim_pars, epi_pars, int_pars, infection_step, rel_sus_type, rel_trans_type, population_volume, month_choice, monthly_humidity, city_ind) in \
-            zip(sim_pars_list, epi_pars_list, int_pars_list, infection_step_list, rel_sus_type_list, rel_trans_type_list, population_volume_list, month_choice_list, monthly_humidity_list, tabs):            
-            web_pars = parse_parameters(sim_pars=sim_pars, epi_pars=epi_pars, int_pars=int_pars, n_days=n_days, location=location, verbose=verbose, errs=errs, die=die, infection_step=infection_step, rel_sus_type=rel_sus_type, rel_trans_type=rel_trans_type, infectiousTableConfig=infectiousTableConfig, population_volume=population_volume, month_choice=month_choice, monthly_humidity=monthly_humidity, city_ind=city_ind)
-            if False:
-                print(f'Input parameters for {city_ind}:')
-                print(web_pars)
-                print("---------------")
-            web_pars_list.append(web_pars)
-    except Exception as E:
-        print(E)
-        errs.append(log_err('Parameter conversion failed!', E))
-        if die: raise
+        def __init__(self, params_dict):
+            # sim parameters
+            self.parss = None
+            self.datafiles = None 
+            self.analyzers = None 
+            self.virus_parameterss = None 
+            self.variantss = None 
+            self.popfiles = None 
+            self.labels = None
+            # help parameters
+            self.n_cities = None
+            self.is_predefined_pop_s = None
+            # common(for sims) parameters
+            self.adjacency_matrix = None
+            self.mulitple_cities = None
+            self.show_contact_stat = None
+            # Initialize all
+            self.initialize(params_dict)
 
-    predefined_pops = ['100K', '100K(Random)', '500K', '1M', '3M']
-    variants_list, cross_list = get_variants_and_cross(introduced_variants_list, cross_immunity_data, multiple_cities, tabs)
-    # Create the sim and update the parameters
-    try:
-        sims = []
-        print(web_pars_list, population_volume_list, variants_list, cross_list, tabs)
-        for pars, population_volume, variants, cross_matrix, virus_name, city_ind in zip(web_pars_list, population_volume_list, variants_list, cross_list, virus_name_list, tabs):
-            new_pop_size = parse_population_size(population_volume)
-            pars['pop_size'] = new_pop_size
-            pars['pop_type'] = 'synthpops' if population_volume != "100K(Random)" else 'random'
-            pars['n_variants'] = len(variants)
-            pars['immunity'] = cross_matrix
-            popfile = f"synthpops_files/synth_pop_{population_volume}.ppl"
-            analyzer = store_seir(show_contact_stat=show_contact_stat, label='seir')
-            pars['pop_infected'] = 0
-            if virus_name in virus2filename:
-                virus_parameters = VirusParameters.load(virus2filename[virus_name])
-            else:
-                virus_parameters = VirusParameters()
-            if population_volume not in predefined_pops:
-                sim = dict(pars=pars, datafile=datafile, analyzers=analyzer, virus_parameters=virus_parameters, variants=variants, label=population_volume, popfile=popfile)
-            else:
-                lbl = f"City {city_ind}"
-                if pars['pop_type'] != 'random':
-                    sim = cv.Sim(pars=pars, datafile=datafile, variants=variants, virus_parameters=virus_parameters, popfile=popfile, analyzers=analyzer, label=lbl)
+        def initialize(self, params_dict):
+            tabs = params_dict['tabs']
+            # make n_cities
+            self.n_cities = len(tabs)
+            # make is_predefined_pop_s
+            self.is_predefined_pop_s = self.get_is_predefined_pop_s(params_dict['population_volume_list'])
+            # make datafiles
+            self.datafiles = self.get_datafiles(params_dict['datafile'], self.n_cities)
+            # make analyzers
+            self.analyzers = self.get_analyzers(self.n_cities, params_dict['show_contact_stat'])
+            # make params_dict['show_contact_stat']
+            self.show_contact_stat = params_dict['show_contact_stat']
+            # make virus_parameterss
+            self.virus_parameterss = self.get_virus_parameterss(params_dict['virus_name_list'])
+            # make variantss
+            self.variantss, cross_list = self.get_variantss(
+                params_dict['introduced_variants_list'], 
+                params_dict['cross_immunity_data'], 
+                params_dict['multiple_cities'], 
+                tabs)
+            # make popfiles
+            self.popfiles = self.get_popfiles(params_dict['population_volume_list'])
+            # make labels
+            self.labels = self.get_labels(tabs, params_dict['population_volume_list'])
+            # make adjacency_matrix
+            self.adjacency_matrix = parse_interaction_records(params_dict['interaction_records'], tabs) if params_dict['multiple_cities'] else None
+            # make mulitple_cities
+            self.multiple_cities = params_dict['multiple_cities']
+            # make parss
+            self.parss = self.get_parss(params_dict, cross_list, self.variantss)
+
+        def get_parss(self, params_dict, cross_list, variant_list):
+            web_pars_list = []
+            for (sim_pars, epi_pars, int_pars, infection_step, rel_sus_type, 
+                rel_trans_type, population_volume, month_choice, monthly_humidity, city_ind) in \
+                zip(params_dict['sim_pars_list'], params_dict['epi_pars_list'], params_dict['int_pars_list'], 
+                    params_dict['infection_step_list'], params_dict['rel_sus_type_list'], 
+                    params_dict['rel_trans_type_list'], params_dict['population_volume_list'], 
+                    params_dict['month_choice_list'], params_dict['monthly_humidity_list'], params_dict['tabs']):            
+                web_pars = parse_parameters(
+                    sim_pars=sim_pars, epi_pars=epi_pars, int_pars=int_pars, 
+                    n_days=params_dict['n_days'], verbose=params_dict['verbose'], die=params_dict['die'], 
+                    infection_step=infection_step, rel_sus_type=rel_sus_type, rel_trans_type=rel_trans_type,
+                    infectiousTableConfig=params_dict['infectiousTableConfig'], population_volume=population_volume, 
+                    month_choice=month_choice, monthly_humidity=monthly_humidity, city_ind=city_ind)
+                web_pars_list.append(web_pars)
+            
+            parss = []
+            for pars, population_volume, variants, cross_matrix in \
+                zip(web_pars_list, params_dict['population_volume_list'], variant_list, cross_list):
+                #
+                new_pop_size = parse_population_size(population_volume)
+                pars['pop_size'] = new_pop_size
+                pars['pop_type'] = 'synthpops' if population_volume != "100K(Random)" else 'random'
+                pars['n_variants'] = len(variants)
+                pars['immunity'] = cross_matrix
+                pars['pop_infected'] = 0
+                parss.append(pars)
+            return parss
+
+
+        def get_datafiles(self, datafile, n_cities):
+            datafiles = []
+            for _ in range(n_cities):
+                datafiles.append(datafile)
+            return datafiles
+
+
+        def get_variantss(self, introduced_variants_list, cross_immunity_data, multiple_cities, tabs):
+            variants_list, cross_list = get_variants_and_cross(introduced_variants_list, cross_immunity_data, multiple_cities, tabs)
+            return variants_list, cross_list
+
+        def get_virus_parameterss(self, virus_name_list):
+            res = []
+            for virus_name in virus_name_list:
+                if virus_name in virus2filename:
+                    virus_pars = VirusParameters.load(virus2filename[virus_name])
                 else:
-                    sim = cv.Sim(pars=pars, datafile=datafile, variants=variants, virus_parameters=virus_parameters, popfile=popfile, contacts=dict(a=35), beta_layer=dict(a=pars['beta_layer']['c']), analyzers=analyzer, label=lbl)
-            sims.append(sim)
-        sims = build_parallel_cities(sims)
-    except Exception as E:
-        print('Sim creation failed!')
-        print(E)
-        errs.append(log_err('Sim creation failed!', E))
-        if die: raise
+                    virus_pars = VirusParameters()
+                res.append(virus_pars)
+            return res
 
-    # Core algorithm
-    try:
-        cites_count = len(tabs)
-        adjacency_matrix = parse_interaction_records(interaction_records, tabs) if multiple_cities else None
-        msim_with = cv.MultiSim(sims=sims)
-        init_log_files(msim_with.sims)
-        msim_with.run(n_cpus=cites_count, mulitple_cities=multiple_cities, adjacency_matrix=adjacency_matrix, keep_people=True, verbose=False)
-        init_log_files(msim_with.sims)
+        def get_popfiles(self, population_volume_list):
+            popfiles = []
+            for population_volume in population_volume_list:
+                popfiles.append(f"synthpops_files/synth_pop_{population_volume}.ppl")
+            return popfiles
 
-    except TimeoutError as TE:
-        err = f"The simulation stopped on day {sim.t} because run time limit ({sim['timelimit']} seconds) was exceeded. Please reduce the population size and/or number of days simulated."
-        errs.append(log_err(err, TE))
-        if die: raise
-    except Exception as E:
-        errs.append(log_err('Sim run failed!', E))
-        if die: raise
+        def get_is_predefined_pop_s(self, population_volume_list):
+            res = []
+            for population_volume in population_volume_list:
+                is_predefined_pop = population_volume not in self.predefined_pops
+                res.append(is_predefined_pop)
+            return res
+
+
+        def get_analyzers(self, n_cities, show_contact_stat):
+            analyzers = []
+            for _ in range(n_cities):
+                analyzers.append(store_seir(show_contact_stat=show_contact_stat, label='seir'))
+            return analyzers
+
+        def get_labels(self, tabs, population_volume_list):
+            labels = []
+            for i in range(len(tabs)):
+                city_ind = tabs[i]
+                population_volume = population_volume_list[i]
+                if population_volume not in self.predefined_pops:
+                    labels.append(population_volume)
+                else:
+                    labels.append(f"City {city_ind}")
+            return labels
+
+        
+        def get_city_parameters(self, i):
+            pars = self.parss[i]
+            basic_res = dict(
+                pars=pars, datafile=self.datafiles[i], analyzers=self.analyzers[i], 
+                virus_parameters=self.virus_parameterss[i], variants=self.variantss[i], 
+                popfile=self.popfiles[i], label=self.labels[i])
+            if pars['pop_type'] == 'random':
+                basic_res[contacts] = dict(a=35)
+                basic_res[beta_layer] = dict(a=pars['beta_layer']['c'])
+            return basic_res
+
+
+    def __init__(self, **params_dict):
+        self.all_params = None
+        self.sims = None
+        self.msim_with = None
+        self.graphs = None
+        self.output = None
+        self.initialize(params_dict)
+
+
+    def initialize(self, params_dict):
+        self._copy_pars_for_result(
+            params_dict['sim_pars_list'], 
+            params_dict['epi_pars_list'], 
+            params_dict['int_pars_list']
+        )
+        self.create_simulation(params_dict)
+
+
+    def _copy_pars_for_result(self, sim_pars_list, epi_pars_list, int_pars_list):
+        self.output = {}
+        self.output['sim_pars'] = copy.deepcopy(sim_pars_list)
+        self.output['epi_pars'] = copy.deepcopy(epi_pars_list)
+        self.output['int_pars'] = copy.deepcopy(int_pars_list)
+
+    def construct_sims(self, parameters_sim):
+        sims = []
+        for i in range(parameters_sim.n_cities):
+            city_parameters = parameters_sim.get_city_parameters(i)
+            if parameters_sim.is_predefined_pop_s[i]:
+                sims.append(city_parameters)
+            else:
+                sims.append(cv.Sim(**city_parameters))
+        return sims
+
+    def create_sims(self, parameters_sims):
+        sims = self.construct_sims(parameters_sims)
+        self.sims = build_parallel_cities(sims)
+
+    def create_simulation(self, params_dict):
+        # separate by tabs every city
+        separated_parameters = separate_by_tabs(params_dict)
+        # pass it in order parsing and treat all
+        self.all_params = self.MultiParametersSim(separated_parameters)
+        # Create the sim and update the parameters
+        self.create_sims(self.all_params)
+
+    def _run_impl(self):
+        self.msim_with = cv.MultiSim(sims=self.sims)
+        init_log_files(self.msim_with.sims)
+        self.msim_with.run(
+            n_cpus=self.all_params.n_cities, 
+            mulitple_cities=self.all_params.multiple_cities, 
+            adjacency_matrix=self.all_params.adjacency_matrix, 
+            keep_people=True, verbose=False)
+        print("after")
+
+        init_log_files(self.msim_with.sims) # TODO (replace on some codes)
     
-    try:
-        is_several_cities = len(tabs) > 1
-        cites_count = len(tabs) 
-        n_cpus = cites_count + is_several_cities
-        with concurrent.futures.ProcessPoolExecutor(max_workers=n_cpus) as pool:
-            results_graph = pool.map(plot_all_graphs, msim_with.sims, repeat(show_contact_stat, cites_count))
+    def run_simulation(self):
+        try:
+            self._run_impl()
+        except TimeoutError as TE:
+            print("Time error")
+            if die: raise
+        except Exception as E:
+            print("Some error")
+            print(E)
+            if die: raise
 
-        graphs = {}
+
+    def _plot_impl(self):
+        n_cities = self.all_params.n_cities
+        is_several_cities = n_cities > 1
+        n_cpus = n_cities + is_several_cities
+        show_contact_stat = self.all_params.show_contact_stat
+        with concurrent.futures.ProcessPoolExecutor(max_workers=n_cpus) as pool:
+            results_graph = pool.map(
+                plot_all_graphs, self.msim_with.sims, 
+                repeat(show_contact_stat, n_cities))
+
+        self.graphs = {}
         for graph_group in graph_groups:
-            graphs[graph_group] = {}
+            self.graphs[graph_group] = {}
         for (city_ind, graph) in enumerate(results_graph):
             for (k, v) in graph.items():
-                graphs[k][city_ind] = v
+                self.graphs[k][city_ind] = v
         # comparing graph
         if is_several_cities:
-            comparing_graph = plot_comparing(msim_with.sims, show_contact_stat)
+            comparing_graph = plot_comparing(self.msim_with.sims, show_contact_stat)
             for (k, v) in comparing_graph.items():
-                graphs[k]['comparing'] = v
-            graphs[Rest].pop('comparing')
-            graphs[Spread_parameters_by_age].pop('comparing')
+                self.graphs[k]['comparing'] = v
+            self.graphs[Rest].pop('comparing')
+            self.graphs[Spread_parameters_by_age].pop('comparing')
+        # write result graph to output
+        self.output['graphs'] = self.graphs
+
+    def plot_simulation(self):
+        try:
+            self._plot_impl()
+        except Exception as E:
+            print('Plotting failed!')
+            print(E)
+            if die: raise
+
+    def _result_prepare_impl(self):
+        files_all, summary_all = get_output_files(self.msim_with.sims)
+        self.output['files_all']    = files_all
+        self.output['summary_all']  = summary_all
+
+    def results_prepare_simulation(self):
+        try:
+            self._result_prepare_impl()
+        except Exception as E:
+            print('Result prepared failed!')
+            print(E)
+            if die: raise
 
 
-    except Exception as E:
-        errs.append(log_err('Plotting failed!', E))
-        if die: raise
-
-    # Create and send output files (base64 encoded content)
-    try:
-        files_all,summary_all = get_output_files(msim_with.sims)
-    except Exception as E:
-        files = {}
-        summary = {}
-        errs.append(log_err('Unable to save output files!', E))
-        if die: raise
-
-    output = {}
-    output['errs']     = errs
-    output['sim_pars'] = sim_pars_out
-    output['epi_pars'] = epi_pars_out
-    output['int_pars'] = int_pars_out
-    output['graphs']   = graphs
-    output['files_all']    = None #files_all
-    output['summary_all']  = None #summary_all
-
-    return output
+@app.register_RPC()
+def run_sim(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
+    ''' Create, run, and plot everything '''
+    global neo_simulator
+    neo_simulator = NeoSimulator(
+        sim_pars_list=sim_pars_list, 
+        epi_pars_list=epi_pars_list, 
+        int_pars_list=int_pars_list, 
+        datafile=datafile, 
+        multiple_cities=multiple_cities, 
+        show_contact_stat=show_contact_stat, 
+        n_days=n_days,
+        infection_step_list=infection_step_list, 
+        rel_sus_type_list=rel_sus_type_list, 
+        rel_trans_type_list=rel_trans_type_list,
+        population_volume_list=population_volume_list, 
+        infectiousTableConfig=infectiousTableConfig,
+        introduced_variants_list=introduced_variants_list, 
+        tabs=tabs, 
+        cross_immunity_data=cross_immunity_data, 
+        interaction_records=interaction_records, 
+        virus_name_list=virus_name_list, 
+        month_choice_list=month_choice_list, 
+        monthly_humidity_list=monthly_humidity_list, 
+        verbose=verbose, 
+        die=die
+    )
+    # core algorithm
+    neo_simulator.run_simulation()
+    neo_simulator.plot_simulation()
+    neo_simulator.results_prepare_simulation()
+    return neo_simulator.output
 
 
 
@@ -1141,6 +1249,37 @@ def get_output_files(sims):
     return files_all, summary_all
 
 
+@app.register_RPC()
+def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
+    global neo_simulator
+    try:
+        neo_simulator = NeoSimulator(
+            sim_pars_list=sim_pars_list, 
+            epi_pars_list=epi_pars_list, 
+            int_pars_list=int_pars_list, 
+            datafile=datafile, 
+            multiple_cities=multiple_cities, 
+            show_contact_stat=show_contact_stat, 
+            n_days=n_days,
+            infection_step_list=infection_step_list, 
+            rel_sus_type_list=rel_sus_type_list, 
+            rel_trans_type_list=rel_trans_type_list,
+            population_volume_list=population_volume_list, 
+            infectiousTableConfig=infectiousTableConfig,
+            introduced_variants_list=introduced_variants_list, 
+            tabs=tabs, 
+            cross_immunity_data=cross_immunity_data, 
+            interaction_records=interaction_records, 
+            virus_name_list=virus_name_list, 
+            month_choice_list=month_choice_list, 
+            monthly_humidity_list=monthly_humidity_list, 
+            verbose=verbose, 
+            die=die
+        )
+        return "succeed"
+    except Exception as E:
+        return str(E)
+
 #%% Run the server using Flask
 
 if __name__ == "__main__":
@@ -1150,7 +1289,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8236
+        app.config['SERVER_PORT'] = 8237
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

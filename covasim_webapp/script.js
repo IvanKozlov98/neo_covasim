@@ -354,8 +354,6 @@ var vm = new Vue({
             interactionTableConfig,
             running: false,
             errs: [],
-            reset_options: ['Default', 'Optimistic', 'Pessimistic'],
-            reset_choice: 'Default',
             virus_name_list: Array.from({ length: 20 }, () => ('COVID-19')),
             month_options: [
                 'No seasonality',
@@ -957,14 +955,13 @@ var vm = new Vue({
                     this.reset_datafile()
                 }
                 const kwargs = {
-                    sim_pars: this.sim_pars,
-                    epi_pars: this.epi_pars,
-                    int_pars: this.int_pars,
+                    sim_pars_list: this.sim_pars,
+                    epi_pars_list: this.epi_pars,
+                    int_pars_list: this.int_pars,
                     datafile: this.datafile.server_path,
                     multiple_cities: this.multiple_cities,
                     show_contact_stat: this.show_contact_stat,
                     n_days: this.sim_length.best,
-                    location: this.reset_choice,
                     infection_step_list: this.infection_step_choice_list,
                     month_choice_list: this.month_choice_list,
                     monthly_humidity_list: this.monthly_humidity_list,
@@ -978,18 +975,19 @@ var vm = new Vue({
                     virus_name_list: this.virus_name_list,
                     tabs: this.tabs
                 }
-                this.observeTime();
+                //this.observeTime();
                 console.log('run_sim: ', kwargs);
                 const response = await sciris.rpc('run_sim', undefined, kwargs);
                 this.result.graphs = response.data.graphs;
                 this.result.files_all = response.data.files_all;
                 this.result.summary_all = response.data.summary_all;
-                this.errs = response.data.errs;
+                this.errs = [];
+                
                 // this.panel_open = this.errs.length > 0; // Better solution would be to have a pin button
                 this.sim_pars = response.data.sim_pars;
                 this.epi_pars = response.data.epi_pars;
                 this.int_pars = response.data.int_pars;
-                this.history.push(JSON.parse(JSON.stringify({ sim_pars: this.sim_pars, epi_pars: this.epi_pars, reset_choice: this.reset_choice, infection_step_choice_list: this.infection_step_choice_list, rel_sus_choice_list: this.rel_sus_choice_list, rel_trans_choice_list: this.rel_trans_choice_list, population_volume_choice_list: this.population_volume_choice_list, int_pars: this.int_pars, result: this.result })));
+                this.history.push(JSON.parse(JSON.stringify({ sim_pars: this.sim_pars, epi_pars: this.epi_pars, infection_step_choice_list: this.infection_step_choice_list, rel_sus_choice_list: this.rel_sus_choice_list, rel_trans_choice_list: this.rel_trans_choice_list, population_volume_choice_list: this.population_volume_choice_list, int_pars: this.int_pars, result: this.result })));
                 this.historyIdx = this.history.length - 1;
 
             } catch (e) {
@@ -1004,7 +1002,7 @@ var vm = new Vue({
         },
 
         async resetPars() {
-            const response = await sciris.rpc('get_defaults', [this.reset_choice]);
+            const response = await sciris.rpc('get_defaults', ["Default"]);
             this.sim_pars = response.data.sim_pars;
             this.epi_pars = response.data.epi_pars;
             this.sim_length = this.sim_pars['n_days'];
@@ -1083,7 +1081,6 @@ var vm = new Vue({
                 multiple_cities: this.multiple_cities,
                 show_contact_stat: this.show_contact_stat,
                 sim_length_best: this.sim_length.best,
-                reset_choice: this.reset_choice,
                 infection_step_choice_list: this.infection_step_choice_list,
                 month_choice_list: this.month_choice_list,
                 monthly_humidity_list: this.monthly_humidity_list,
@@ -1171,7 +1168,6 @@ var vm = new Vue({
         loadPars() {
             this.sim_pars = this.history[this.historyIdx].sim_pars;
             this.epi_pars = this.history[this.historyIdx].epi_pars;
-            this.reset_choice = this.history[this.historyIdx].reset_choice;
             this.int_pars = this.history[this.historyIdx].int_pars;
             this.result = this.history[this.historyIdx].result;
         },
