@@ -846,13 +846,14 @@
      
 
       <!-- Sidebar Footer: Errors-->
-      <template v-slot:footer>
+      <template>
         <div v-if="errs.length > 0" class="errorbox" role="tablist">
           <p>During the simulation, the following warning(s) were encountered:</p>
           <b-card v-for="(err, index) in errs" :value="err">
-            <b-card-text>{{err.message}}</b-card-text>
-            <pre v-if="is_debug">{{ err.exception }}</pre>
+            <b-card-text>Step: {{err.message}}</b-card-text>
+            <pre v-if="is_debug">Inner exception: {{ err.exception }}.</pre>
           </b-card>
+          <p>Try change parameters or update the page:</p>
         </div>
       </template>
 
@@ -884,7 +885,7 @@
   <span>
     <b-button v-if="running" variant="success" size="lg" class="btn-run green" type="button" disabled>
       <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      <span v-if="currentTime === 0"> Building...</span> 
+      <span v-if="currentTime <= 0"> Building...</span> 
       <span v-if="(0 < currentTime) && (currentTime < 100)"> Running...</span> 
       <span v-if="currentTime === 100"> Plotting...</span> 
     </b-button>

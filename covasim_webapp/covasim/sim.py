@@ -6,6 +6,8 @@ Defines the Sim class, Covasim's core class.
 import numpy as np
 import pandas as pd
 import time
+import string
+import random
 import sciris as sc
 from . import utils as cvu
 from . import misc as cvm
@@ -83,6 +85,7 @@ class Sim(cvb.BaseSim):
         self.load_data(datafile) # Load the data, if provided
         self.is_additive_formula = self.pars['is_additive_formula']
         self.init_humidity(pars)
+        self.logfile = "log" + self.label + '_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6)) + '.txt'
 
         return
 
@@ -114,7 +117,6 @@ class Sim(cvb.BaseSim):
         # Loop through the number of days and add multipliers
         for _ in range(num_days):
             coef = coefficients[current_month_index]
-            print(current_month_index, coef)
             output.append(get_multiplier(coef))
             
             # Check if the month needs to change
@@ -129,14 +131,12 @@ class Sim(cvb.BaseSim):
     def init_humidity(self, pars):
         self.with_month = "starting_month" in pars and pars["starting_month"]
         if self.with_month:
-            print(pars["starting_month"])
             self.humidity_coef = self.generate_humidity_coefficients(
                 start_month=pars['starting_month'], 
                 num_days=self.npts, 
                 coefficients=self.pars['monthly_humidity'],
                 mult_coefs=self.pars['multipleir_humidity_coef']
             )
-            print(self.humidity_coef)
         else:
             self.humidity_coef = np.ones(shape=(self.npts), dtype=float)
 
@@ -959,10 +959,10 @@ class Sim(cvb.BaseSim):
         while self.t < until:
             # log time
             cur_percent = int(self.t / self.pars["n_days"] * 100)
-            if cur_percent - prev_percent > 4:
+            if cur_percent - prev_percent > 4 or cur_percent == 100:
                 prev_percent = cur_percent
                 # write to file
-                with open(f'{self.label}_timelog.txt', 'w') as file:
+                with open(self.logfile, 'w') as file:
                     file.write(str(cur_percent)) 
             # Check if we were asked to stop
             elapsed = T.toc(output=True)

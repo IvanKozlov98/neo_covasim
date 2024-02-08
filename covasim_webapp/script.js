@@ -304,7 +304,7 @@ var vm = new Vue({
                 'Spread parameters by age': false,
                 'Rest': false
             },
-            debug: false,
+            debug: true,
             tabs: [], 
             city_options: [],
             tabCounter: 0,
@@ -643,7 +643,8 @@ var vm = new Vue({
             this.vaccine_choice_list[newInd] = clone(this.vaccine_choice_list[oldInd]); 
             this.variant_choice_list[newInd] = clone(this.variant_choice_list[oldInd]); 
             this.virus_name_list[newInd] = clone(this.virus_name_list[oldInd]); 
-            this.rel_trans_choice_list[newInd] = clone(this.rel_trans_choice_list[oldInd]); 
+            this.rel_trans_choice_list[newInd] = clone(this.rel_trans_choice_list[oldInd]);
+            // this.infectiousTableConfig[newInd] = clone(this.infectiousTableConfig); TODO
             this.population_volume_choice_list[newInd] = clone(this.population_volume_choice_list[oldInd]);
             // copy sim_pars
             const sim_pars_keys = Object.keys(this.sim_pars);
@@ -937,8 +938,10 @@ var vm = new Vue({
         async observeTime() {
             const response = await sciris.rpc('get_current_time');
             this.currentTime = response.data;
-            if (this.currentTime != 100) {
-                setTimeout(this.observeTime, 100);
+            if (this.currentTime != 100 && this.errs.length == 0) {
+                setTimeout(this.observeTime, 500);
+            } else {
+                this.currentTime = 0;
             }
         },
 
@@ -946,55 +949,77 @@ var vm = new Vue({
             this.running = true;
             // this.graphs = this.$options.data().graphs; // Uncomment this to clear the graphs on each run
             this.errs = this.$options.data().errs;
-
-            console.log('status:', this.status);
-
-            // Run a a single sim
+            if(this.datafile.local_path === null){
+                this.reset_datafile()
+            }
+            const kwargs = {
+                sim_pars_list: this.sim_pars,
+                epi_pars_list: this.epi_pars,
+                int_pars_list: this.int_pars,
+                datafile: this.datafile.server_path,
+                multiple_cities: this.multiple_cities,
+                show_contact_stat: this.show_contact_stat,
+                n_days: this.sim_length.best,
+                infection_step_list: this.infection_step_choice_list,
+                month_choice_list: this.month_choice_list,
+                monthly_humidity_list: this.monthly_humidity_list,
+                rel_sus_type_list: this.rel_sus_choice_list,
+                rel_trans_type_list: this.rel_trans_choice_list,
+                interaction_records: this.interactionRecords,
+                population_volume_list: this.population_volume_choice_list,
+                infectiousTableConfig: this.infectiousTableConfig,
+                introduced_variants_list: this.introduced_variants_list,
+                cross_immunity_data: this.filtered,
+                virus_name_list: this.virus_name_list,
+                tabs: this.tabs
+            }
+            
             try {
-                if(this.datafile.local_path === null){
-                    this.reset_datafile()
+                //
+
+                const response_create = await sciris.rpc('create_simulation', undefined, kwargs);
+                if (response_create.data !== "success") {
+                    this.errs.push({
+                        message: response_create.data.errs[0].message,
+                        exception: response_create.data.errs[0].exception
+                    })
+                    throw new Error();
                 }
-                const kwargs = {
-                    sim_pars_list: this.sim_pars,
-                    epi_pars_list: this.epi_pars,
-                    int_pars_list: this.int_pars,
-                    datafile: this.datafile.server_path,
-                    multiple_cities: this.multiple_cities,
-                    show_contact_stat: this.show_contact_stat,
-                    n_days: this.sim_length.best,
-                    infection_step_list: this.infection_step_choice_list,
-                    month_choice_list: this.month_choice_list,
-                    monthly_humidity_list: this.monthly_humidity_list,
-                    rel_sus_type_list: this.rel_sus_choice_list,
-                    rel_trans_type_list: this.rel_trans_choice_list,
-                    interaction_records: this.interactionRecords,
-                    population_volume_list: this.population_volume_choice_list,
-                    infectiousTableConfig: this.infectiousTableConfig,
-                    introduced_variants_list: this.introduced_variants_list,
-                    cross_immunity_data: this.filtered,
-                    virus_name_list: this.virus_name_list,
-                    tabs: this.tabs
+                this.observeTime();
+                const response_run = await sciris.rpc('run_simulation', undefined);
+                if (response_run.data !== "success" ) {
+                    this.errs.push({
+                        message: response_run.data.errs[0].message,
+                        exception: response_run.data.errs[0].exception
+                    })
+                    throw new Error();
                 }
-                //this.observeTime();
-                console.log('run_sim: ', kwargs);
-                const response = await sciris.rpc('run_sim', undefined, kwargs);
-                this.result.graphs = response.data.graphs;
-                this.result.files_all = response.data.files_all;
-                this.result.summary_all = response.data.summary_all;
-                this.errs = [];
-                
-                // this.panel_open = this.errs.length > 0; // Better solution would be to have a pin button
-                this.sim_pars = response.data.sim_pars;
-                this.epi_pars = response.data.epi_pars;
-                this.int_pars = response.data.int_pars;
+                const response_plot = await sciris.rpc('plot_simulation', undefined);
+                if (response_plot.data !== "success" ) {
+                    this.errs.push({
+                        message: response_plot.data.errs[0].message,
+                        exception: response_plot.data.errs[0].exception
+                    })
+                    throw new Error();
+                }
+                const response_results_prepare = await sciris.rpc('results_prepare_simulation', undefined);
+                if ("errs" in response_results_prepare.data) {
+                    this.errs.push({
+                        message: response_results_prepare.data.errs[0].message,
+                        exception: response_results_prepare.data.errs[0].exception
+                    })
+                    throw new Error();
+                }
+                this.result.graphs = response_results_prepare.data.graphs;
+                this.result.files_all = response_results_prepare.data.files_all;
+                this.result.summary_all = response_results_prepare.data.summary_all;                
+                this.sim_pars = response_results_prepare.data.sim_pars;
+                this.epi_pars = response_results_prepare.data.epi_pars;
+                this.int_pars = response_results_prepare.data.int_pars;
                 this.history.push(JSON.parse(JSON.stringify({ sim_pars: this.sim_pars, epi_pars: this.epi_pars, infection_step_choice_list: this.infection_step_choice_list, rel_sus_choice_list: this.rel_sus_choice_list, rel_trans_choice_list: this.rel_trans_choice_list, population_volume_choice_list: this.population_volume_choice_list, int_pars: this.int_pars, result: this.result })));
                 this.historyIdx = this.history.length - 1;
 
             } catch (e) {
-                this.errs.push({
-                    message: 'Unable to submit model.',
-                    exception: `${e.constructor.name}: ${e.message}`
-                })
                 this.panel_open = true
             }
             this.running = false;

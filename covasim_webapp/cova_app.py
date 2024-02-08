@@ -250,9 +250,6 @@ def get_gantt(int_pars_list=None, intervention_config=None, n_days=90, tabs=None
             response['json'] = fig.to_json()
         intervention_figs.append(response)
     
-    print("GET_GANNT")
-    print(intervention_figs)
-
     return intervention_figs
 
 
@@ -656,7 +653,7 @@ neo_simulator = None
 prev_time = []
 
 def get_time_from_log(sim):
-    with open(f'{sim.label}_timelog.txt', 'r') as file:
+    with open(sim.logfile, 'r') as file:
         line = file.readline()
     return int(line)
 
@@ -665,15 +662,13 @@ def get_current_time():
     global neo_simulator
     global prev_time
     if neo_simulator is None or neo_simulator.msim_with is None:
-        print("Noooooooooooooooooone")
-        return 0
+        return -1
     min_percent = 100
     for (i, sim) in enumerate(neo_simulator.msim_with.sims):
         try:
             tt = get_time_from_log(sim)
             prev_time[i] = tt
         except Exception as E:
-            print(f"was exception {E}")
             tt = prev_time[i]
         min_percent = tt if tt < min_percent else min_percent
     return min_percent
@@ -684,7 +679,7 @@ def init_log_files(sims):
     prev_time = []
     for sim in sims:
         prev_time.append(0)
-        with open(f'{sim.label}_timelog.txt', 'w') as file:
+        with open(sim.logfile, 'w') as file:
             file.write('0') 
 
 # Core plotting
@@ -769,7 +764,8 @@ def execute_function(func, *args):
 
 def build_city(sim):
     pop = lp.make_people_from_file(location2filename[sim['label']], sim['popfile'])
-    return cv.Sim(**sim).init_people(prepared_pop=pop)
+    res = cv.Sim(**sim).init_people(prepared_pop=pop)
+    return res
 
 
 def build_parallel_cities(sims):
@@ -873,7 +869,6 @@ def get_variant_and_cross_for_multi(introduced_variants_list, cross_immunity_dat
         variants = []
         for variant_dict_raw in introduced_variants_set:
             variant_dict = var_d_raw2var_d(variant_dict_raw)
-            print(introduced_variants_list[i])
             variants.append(cv.variant(
                 variant=variant_dict, 
                 n_imports=( 0 if hasnt_list_this_variant(introduced_variants_list[i], variant_dict_raw) else variant_dict_raw['n_import']), 
@@ -1086,7 +1081,10 @@ class NeoSimulator:
             if parameters_sim.is_predefined_pop_s[i]:
                 sims.append(city_parameters)
             else:
-                sims.append(cv.Sim(**city_parameters))
+                sims.append(cv.Sim(pars=city_parameters['pars'], datafile=city_parameters['datafile'], analyzers=city_parameters['analyzers'], 
+                virus_parameters=city_parameters['virus_parameters'], variants=city_parameters['variants'], 
+                popfile=city_parameters['popfile'], label=city_parameters['label']))
+
         return sims
 
     def create_sims(self, parameters_sims):
@@ -1109,22 +1107,7 @@ class NeoSimulator:
             mulitple_cities=self.all_params.multiple_cities, 
             adjacency_matrix=self.all_params.adjacency_matrix, 
             keep_people=True, verbose=False)
-        print("after")
-
-        init_log_files(self.msim_with.sims) # TODO (replace on some codes)
     
-    def run_simulation(self):
-        try:
-            self._run_impl()
-        except TimeoutError as TE:
-            print("Time error")
-            if die: raise
-        except Exception as E:
-            print("Some error")
-            print(E)
-            if die: raise
-
-
     def _plot_impl(self):
         n_cities = self.all_params.n_cities
         is_several_cities = n_cities > 1
@@ -1151,61 +1134,78 @@ class NeoSimulator:
         # write result graph to output
         self.output['graphs'] = self.graphs
 
-    def plot_simulation(self):
-        try:
-            self._plot_impl()
-        except Exception as E:
-            print('Plotting failed!')
-            print(E)
-            if die: raise
-
     def _result_prepare_impl(self):
         files_all, summary_all = get_output_files(self.msim_with.sims)
         self.output['files_all']    = files_all
         self.output['summary_all']  = summary_all
 
-    def results_prepare_simulation(self):
-        try:
-            self._result_prepare_impl()
-        except Exception as E:
-            print('Result prepared failed!')
-            print(E)
-            if die: raise
+
+def get_error_obj(message, exception):
+    return dict(errs=[dict(
+            message=message, 
+            exception=str(exception))])
 
 
 @app.register_RPC()
-def run_sim(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
-    ''' Create, run, and plot everything '''
+def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
     global neo_simulator
-    neo_simulator = NeoSimulator(
-        sim_pars_list=sim_pars_list, 
-        epi_pars_list=epi_pars_list, 
-        int_pars_list=int_pars_list, 
-        datafile=datafile, 
-        multiple_cities=multiple_cities, 
-        show_contact_stat=show_contact_stat, 
-        n_days=n_days,
-        infection_step_list=infection_step_list, 
-        rel_sus_type_list=rel_sus_type_list, 
-        rel_trans_type_list=rel_trans_type_list,
-        population_volume_list=population_volume_list, 
-        infectiousTableConfig=infectiousTableConfig,
-        introduced_variants_list=introduced_variants_list, 
-        tabs=tabs, 
-        cross_immunity_data=cross_immunity_data, 
-        interaction_records=interaction_records, 
-        virus_name_list=virus_name_list, 
-        month_choice_list=month_choice_list, 
-        monthly_humidity_list=monthly_humidity_list, 
-        verbose=verbose, 
-        die=die
-    )
-    # core algorithm
-    neo_simulator.run_simulation()
-    neo_simulator.plot_simulation()
-    neo_simulator.results_prepare_simulation()
-    return neo_simulator.output
+    try:
+        neo_simulator = NeoSimulator(
+            sim_pars_list=sim_pars_list, 
+            epi_pars_list=epi_pars_list, 
+            int_pars_list=int_pars_list, 
+            datafile=datafile, 
+            multiple_cities=multiple_cities, 
+            show_contact_stat=show_contact_stat, 
+            n_days=n_days,
+            infection_step_list=infection_step_list, 
+            rel_sus_type_list=rel_sus_type_list, 
+            rel_trans_type_list=rel_trans_type_list,
+            population_volume_list=population_volume_list, 
+            infectiousTableConfig=infectiousTableConfig,
+            introduced_variants_list=introduced_variants_list, 
+            tabs=tabs, 
+            cross_immunity_data=cross_immunity_data, 
+            interaction_records=interaction_records, 
+            virus_name_list=virus_name_list, 
+            month_choice_list=month_choice_list, 
+            monthly_humidity_list=monthly_humidity_list, 
+            verbose=verbose, 
+            die=die
+        )
+        return "success"
+    except Exception as E:
+        return get_error_obj("Create simulation error", E)
 
+@app.register_RPC()
+def run_simulation():
+    global neo_simulator
+    try:
+        neo_simulator._run_impl()
+        return "success"
+    except TimeoutError as TE:
+        return get_error_obj("Timeout error", TE)
+    except Exception as E:
+        return get_error_obj("Run simulation error", E)
+
+@app.register_RPC()
+def plot_simulation():
+    global neo_simulator
+    try:
+        neo_simulator._plot_impl()
+        return "success"
+    except Exception as E:
+        return get_error_obj("Plotting simulation error", E)
+
+
+@app.register_RPC()
+def results_prepare_simulation():
+    global neo_simulator
+    try:
+        neo_simulator._result_prepare_impl()
+        return neo_simulator.output
+    except Exception as E:
+        return get_error_obj("Result prepared error", E)
 
 
 def get_output_files_impl(sim):
@@ -1249,37 +1249,6 @@ def get_output_files(sims):
     return files_all, summary_all
 
 
-@app.register_RPC()
-def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
-    global neo_simulator
-    try:
-        neo_simulator = NeoSimulator(
-            sim_pars_list=sim_pars_list, 
-            epi_pars_list=epi_pars_list, 
-            int_pars_list=int_pars_list, 
-            datafile=datafile, 
-            multiple_cities=multiple_cities, 
-            show_contact_stat=show_contact_stat, 
-            n_days=n_days,
-            infection_step_list=infection_step_list, 
-            rel_sus_type_list=rel_sus_type_list, 
-            rel_trans_type_list=rel_trans_type_list,
-            population_volume_list=population_volume_list, 
-            infectiousTableConfig=infectiousTableConfig,
-            introduced_variants_list=introduced_variants_list, 
-            tabs=tabs, 
-            cross_immunity_data=cross_immunity_data, 
-            interaction_records=interaction_records, 
-            virus_name_list=virus_name_list, 
-            month_choice_list=month_choice_list, 
-            monthly_humidity_list=monthly_humidity_list, 
-            verbose=verbose, 
-            die=die
-        )
-        return "succeed"
-    except Exception as E:
-        return str(E)
-
 #%% Run the server using Flask
 
 if __name__ == "__main__":
@@ -1289,7 +1258,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8237
+        app.config['SERVER_PORT'] = 8238
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:
