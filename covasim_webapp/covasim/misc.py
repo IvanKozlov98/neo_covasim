@@ -120,6 +120,8 @@ def load(*args, do_migrate=True, update=True, verbose=True, **kwargs):
         if cmp != 0:
             print(f'Note: you have Covasim v{v_curr}, but are loading an object from v{v_obj}')
             if do_migrate:
+                print(obj)
+                print(type(obj))
                 obj = migrate(obj, update=update, verbose=verbose)
     return obj
 
@@ -379,7 +381,7 @@ def migrate(obj, update=True, verbose=True, die=False):
     # Unreconized object type
     else:
         errormsg = f'Object {obj} of type {type(obj)} is not understood and cannot be migrated: must be a sim, multisim, scenario, or people object'
-        warn(errormsg, errtype=TypeError, verbose=verbose, die=die)
+        warn(errormsg, category=TypeError, verbose=verbose, die=die)
         if die:
             raise TypeError(errormsg)
         elif verbose: # pragma: no cover

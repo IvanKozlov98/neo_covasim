@@ -85,7 +85,8 @@ class Sim(cvb.BaseSim):
         self.load_data(datafile) # Load the data, if provided
         self.is_additive_formula = self.pars['is_additive_formula']
         self.init_humidity(pars)
-        self.logfile = "log" + self.label + '_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6)) + '.txt'
+        tmp_label = "default" if self.label is None else self.label
+        self.logfile = "log" + tmp_label + '_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6)) + '.txt'
 
         return
 
@@ -503,7 +504,6 @@ class Sim(cvb.BaseSim):
             self.load_population(init_people=False)
 
         # Actually make the people
-        print("Befoooooore")
         self.people = cvpop.make_people(self, prepared_pop=prepared_pop, reset=reset, verbose=verbose, **kwargs)
         self.people.initialize(sim_pars=self.pars) # Fully initialize the people
         self.reset_layer_pars(force=False) # Ensure that layer keys match the loaded population

@@ -101,10 +101,6 @@ class variant(sc.prettyobj):
         self.label = label
         self.p = variant_pars
 
-        print("IN variant")
-        print(variant)
-        print(variant_pars)
-
         return
 
 

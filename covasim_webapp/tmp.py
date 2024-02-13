@@ -5,6 +5,8 @@ import sciris as sc
 import synthpops as sp
 import json
 import location_preprocessor as lp
+from covasim import parameters as cvpar
+
 from covasim import utils as cvu
 from sus_prob_analyzer import store_seir
 from scipy import optimize
@@ -209,7 +211,7 @@ def plotly_dist_sus(distname):
 def plot_nabs():
     import plotly.express as px
 
-    #analyzer = store_seir(show_contact_stat=False, label='seir')
+    #analyzer = store_seir(show_all=False, label='seir')
     ## dict(form='nab_decay', decay_rate1=0.007701635339554948, decay_time1=250, decay_rate2=0.001)
     ## dict(form='exp_decay', init_val=-0.2, half_life=40)
     #pars = {
@@ -377,11 +379,17 @@ def get_humidity(filename):
 def run_simple_example():
     pars = {
         "pop_type": 'hybrid',
-        "starting_month": "March"
+        "starting_month": "March",
+        "n_variants": 1,
+        "variant_map": {
+            0: "wild"
+        },
+        "variant_pars": {"wild": cvpar.get_variant_pars()['wild']}
     }
     sim = cv.Sim(pars=pars, rand_seed=0, variants=cv.variant('wild', days=0))
+    sim.init_people(prepared_pop="synthpops_files/synth_pop_N.Novgorod.ppl")
     sim.run()
     cv.plotly_sim([sim])
 
 if __name__ == '__main__':
-    get_humidity("Wild.xlsx")
+    run_simple_example()

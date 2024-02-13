@@ -12,6 +12,7 @@ import base64
 import copy
 import tempfile
 import traceback
+import time
 import numpy as np
 import sciris as sc
 import scirisweb as sw
@@ -695,7 +696,7 @@ def process_graphs(figs, description):
         jsons.append(output)
     return jsons
 
-def plot_all_graphs(cur_sim, show_contact_stat):
+def plot_all_graphs(cur_sim, show_all):
     graphs = {}
     
     for graph_group in graph_groups:
@@ -715,28 +716,28 @@ def plot_all_graphs(cur_sim, show_contact_stat):
     graphs[Immunity] += process_graphs(cv.plotly_hist_immunity_per_day(cur_sim), get_description('immunities'))
     graphs[Immunity] += process_graphs(cv.plotly_nabs([cur_sim]), get_description('nab_common'))
 
-    if show_contact_stat:
+    if show_all:
         graphs[General_spread_parameters] += process_graphs(cv.plotly_part_80([cur_sim]), get_description('part_80'))
         graphs[General_spread_parameters] += process_graphs(cv.plotly_hist_number_source_per_day(cur_sim), get_description('hist_number_source_per_day'))
         graphs[General_spread_parameters] += process_graphs(cv.plotly_hist_number_source_cum(cur_sim), get_description('hist_number_source_cum'))
-
+        # By group ages
+        graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_not_infected_people_by_sus(cur_sim), get_description('not_infected_people_by_sus'))
+        graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_not_infected_people_by_sus_norm(cur_sim), get_description('not_infected_people_by_sus_norm'))
+        graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_risk_infected_by_age_group_per_day(cur_sim), get_description('risk_infected_by_age_group_per_day'))
+        graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_risk_infected_by_age_group_cum(cur_sim), get_description('risk_infected_by_age_group_cum'))
+        # Rest
+        graphs[Rest] += process_graphs(cv.plotly_infected_non_infected_group(cur_sim), get_description('infected_non_infected_group'))
+        graphs[Rest] += process_graphs(cv.plotly_contact_to_sus_trans(cur_sim), get_description('contact_to_sus_trans'))
     # By layers
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_sars([cur_sim]), get_description('sars'))
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_per_day([cur_sim]), get_description('viral_load_per_day'))
     graphs[Spread_parameters_by_layer] += process_graphs(cv.plotly_viral_load_cum([cur_sim]), get_description('viral_load_cum'))
 
-    # By group ages
-    graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_not_infected_people_by_sus(cur_sim), get_description('not_infected_people_by_sus'))
-    graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_not_infected_people_by_sus_norm(cur_sim), get_description('not_infected_people_by_sus_norm'))
-    graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_risk_infected_by_age_group_per_day(cur_sim), get_description('risk_infected_by_age_group_per_day'))
-    graphs[Spread_parameters_by_age] += process_graphs(cv.plotly_risk_infected_by_age_group_cum(cur_sim), get_description('risk_infected_by_age_group_cum'))
-    # Rest
-    graphs[Rest] += process_graphs(cv.plotly_infected_non_infected_group(cur_sim), get_description('infected_non_infected_group'))
-    graphs[Rest] += process_graphs(cv.plotly_contact_to_sus_trans(cur_sim), get_description('contact_to_sus_trans'))
-    
+
+
     return graphs
 
-def plot_comparing(sims, show_contact_stat):
+def plot_comparing(sims, show_all):
     graphs = {}
     for graph_group in graph_groups:
         graphs[graph_group] = []
@@ -747,7 +748,7 @@ def plot_comparing(sims, show_contact_stat):
     graphs[General_spread_parameters] = []
     graphs[General_spread_parameters] += process_graphs(cv.plotly_rs(sims), get_description('rs'))
     graphs[General_spread_parameters] += process_graphs(cv.plotly_ars(sims), get_description('ars'))
-    if show_contact_stat:
+    if show_all:
         graphs[General_spread_parameters] += process_graphs(cv.plotly_part_80(sims), get_description('part_80'))
 
     graphs[Immunity] += process_graphs(cv.plotly_nabs(sims), get_description('nab_common'))
@@ -764,7 +765,13 @@ def execute_function(func, *args):
 
 def build_city(sim):
     pop = lp.make_people_from_file(location2filename[sim['label']], sim['popfile'])
-    res = cv.Sim(**sim).init_people(prepared_pop=pop)
+    #pop = sp.Pop.load('synthpops_files/synth_pop_N.Novgorod.ppl')
+    print("Befire firiii")
+    res = cv.Sim(
+        pars=sim['pars'], datafile=sim['datafile'], analyzers=sim['analyzers'], 
+        virus_parameters=sim['virus_parameters'], variants=sim['variants'], 
+        label=sim['label']
+    ).init_people(prepared_pop=pop)
     return res
 
 
@@ -920,7 +927,7 @@ class NeoSimulator:
             # common(for sims) parameters
             self.adjacency_matrix = None
             self.mulitple_cities = None
-            self.show_contact_stat = None
+            self.show_all = None
             # Initialize all
             self.initialize(params_dict)
 
@@ -933,9 +940,9 @@ class NeoSimulator:
             # make datafiles
             self.datafiles = self.get_datafiles(params_dict['datafile'], self.n_cities)
             # make analyzers
-            self.analyzers = self.get_analyzers(self.n_cities, params_dict['show_contact_stat'])
-            # make params_dict['show_contact_stat']
-            self.show_contact_stat = params_dict['show_contact_stat']
+            self.analyzers = self.get_analyzers(self.n_cities, params_dict['show_all'])
+            # make params_dict['show_all']
+            self.show_all = params_dict['show_all']
             # make virus_parameterss
             self.virus_parameterss = self.get_virus_parameterss(params_dict['virus_name_list'])
             # make variantss
@@ -1020,10 +1027,10 @@ class NeoSimulator:
             return res
 
 
-        def get_analyzers(self, n_cities, show_contact_stat):
+        def get_analyzers(self, n_cities, show_all):
             analyzers = []
             for _ in range(n_cities):
-                analyzers.append(store_seir(show_contact_stat=show_contact_stat, label='seir'))
+                analyzers.append(store_seir(show_all=show_all, label='seir'))
             return analyzers
 
         def get_labels(self, tabs, population_volume_list):
@@ -1045,8 +1052,8 @@ class NeoSimulator:
                 virus_parameters=self.virus_parameterss[i], variants=self.variantss[i], 
                 popfile=self.popfiles[i], label=self.labels[i])
             if pars['pop_type'] == 'random':
-                basic_res[contacts] = dict(a=35)
-                basic_res[beta_layer] = dict(a=pars['beta_layer']['c'])
+                basic_res["contacts"] = dict(a=35)
+                basic_res["beta_layer"] = dict(a=pars['beta_layer']['c'])
             return basic_res
 
 
@@ -1081,9 +1088,10 @@ class NeoSimulator:
             if parameters_sim.is_predefined_pop_s[i]:
                 sims.append(city_parameters)
             else:
-                sims.append(cv.Sim(pars=city_parameters['pars'], datafile=city_parameters['datafile'], analyzers=city_parameters['analyzers'], 
-                virus_parameters=city_parameters['virus_parameters'], variants=city_parameters['variants'], 
-                popfile=city_parameters['popfile'], label=city_parameters['label']))
+                sims.append(cv.Sim(
+                    pars=city_parameters['pars'], datafile=city_parameters['datafile'], analyzers=city_parameters['analyzers'], 
+                    virus_parameters=city_parameters['virus_parameters'], variants=city_parameters['variants'], 
+                    popfile=city_parameters['popfile'], label=city_parameters['label']))
 
         return sims
 
@@ -1112,11 +1120,11 @@ class NeoSimulator:
         n_cities = self.all_params.n_cities
         is_several_cities = n_cities > 1
         n_cpus = n_cities + is_several_cities
-        show_contact_stat = self.all_params.show_contact_stat
+        show_all = self.all_params.show_all
         with concurrent.futures.ProcessPoolExecutor(max_workers=n_cpus) as pool:
             results_graph = pool.map(
                 plot_all_graphs, self.msim_with.sims, 
-                repeat(show_contact_stat, n_cities))
+                repeat(show_all, n_cities))
 
         self.graphs = {}
         for graph_group in graph_groups:
@@ -1126,7 +1134,7 @@ class NeoSimulator:
                 self.graphs[k][city_ind] = v
         # comparing graph
         if is_several_cities:
-            comparing_graph = plot_comparing(self.msim_with.sims, show_contact_stat)
+            comparing_graph = plot_comparing(self.msim_with.sims, show_all)
             for (k, v) in comparing_graph.items():
                 self.graphs[k]['comparing'] = v
             self.graphs[Rest].pop('comparing')
@@ -1147,7 +1155,7 @@ def get_error_obj(message, exception):
 
 
 @app.register_RPC()
-def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_contact_stat=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
+def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_all=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
     global neo_simulator
     try:
         neo_simulator = NeoSimulator(
@@ -1156,7 +1164,7 @@ def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None
             int_pars_list=int_pars_list, 
             datafile=datafile, 
             multiple_cities=multiple_cities, 
-            show_contact_stat=show_contact_stat, 
+            show_all=show_all, 
             n_days=n_days,
             infection_step_list=infection_step_list, 
             rel_sus_type_list=rel_sus_type_list, 
@@ -1175,6 +1183,7 @@ def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None
         )
         return "success"
     except Exception as E:
+        raise E
         return get_error_obj("Create simulation error", E)
 
 @app.register_RPC()
@@ -1258,7 +1267,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         app.config['SERVER_PORT'] = int(sys.argv[1])
     else:
-        app.config['SERVER_PORT'] = 8238
+        app.config['SERVER_PORT'] = 8239
     if len(sys.argv) > 2:
         autoreload = int(sys.argv[2])
     else:

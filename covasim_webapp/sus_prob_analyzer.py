@@ -7,11 +7,11 @@ from covasim import utils as cvu
 
 class store_seir(cv.Analyzer):
 
-    def __init__(self, show_contact_stat, *args, **kwargs):
+    def __init__(self, show_all, *args, **kwargs):
         super().__init__(*args, **kwargs) # This is necessary to initialize the class properly
         self.bounds = np.linspace(0, 1.4701, 20)
 
-        self.show_contact_stat = show_contact_stat
+        self.show_all = show_all
         self.people2contact_count = None
         self.state_statistics = None
         self.rel_sus_trans = None
@@ -245,7 +245,7 @@ class store_seir(cv.Analyzer):
         self.neo_strike_numbers = []
         self.neo_cum_strike_numbers = []
         t0 = time.time()
-        if self.show_contact_stat:
+        if self.show_all:
             self.calc_contact_stats(sim)
         t1 = time.time()
         self.state_statistics = sim.state_statistics
@@ -274,7 +274,7 @@ class store_seir(cv.Analyzer):
         for i in range(timestep_ar, len(self.new_infections), timestep_ar):
             cur_sum = np.sum(self.new_infections[i:(i+timestep_ar)])
             susceptible_mean_on_week = np.mean(sim.susceptible_count_per_day[i:(i + timestep_ar)])
-            self.ars.append(cur_sum / susceptible_mean_on_week * 100.0)
+            self.ars.append(cur_sum / (susceptible_mean_on_week + 1) * 100.0)
             prev_sum = cur_sum
         self.ars = np.array(self.ars)
 

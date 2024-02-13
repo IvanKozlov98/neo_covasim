@@ -777,7 +777,6 @@ def plotly_interventions(sim, fig, basename="", max_y=1, add_to_legend=False): #
     ''' Add vertical lines for interventions to the plot '''
     go = import_plotly() # Load Plotly
     freq_count = 300
-    print("plotly_interventions")
     was_plot_interv = set()
     if sim['interventions']:
         for interv in sim['interventions']:
@@ -1567,7 +1566,6 @@ def get_df_hist_immunity_per_day(cur_analyzer, days):
     dfs = []
     for day in days:
         y, bins = cur_analyzer.immunity_histograms[day]
-        print(y[:1000])
         df = pd.DataFrame({
             'day': [day] * len(bins), 
             'X': bins,

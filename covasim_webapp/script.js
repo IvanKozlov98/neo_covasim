@@ -339,7 +339,7 @@ var vm = new Vue({
             rel_sus_figs: {},
             cur_rel_sus_fig: [],
             multiple_cities: false,
-            show_contact_stat: false,
+            show_all: false,
             progresss: 70,
             result: { // Store currently displayed results
                 graphs: [],
@@ -940,8 +940,6 @@ var vm = new Vue({
             this.currentTime = response.data;
             if (this.currentTime != 100 && this.errs.length == 0) {
                 setTimeout(this.observeTime, 500);
-            } else {
-                this.currentTime = 0;
             }
         },
 
@@ -958,7 +956,7 @@ var vm = new Vue({
                 int_pars_list: this.int_pars,
                 datafile: this.datafile.server_path,
                 multiple_cities: this.multiple_cities,
-                show_contact_stat: this.show_contact_stat,
+                show_all: this.show_all,
                 n_days: this.sim_length.best,
                 infection_step_list: this.infection_step_choice_list,
                 month_choice_list: this.month_choice_list,
@@ -1010,6 +1008,8 @@ var vm = new Vue({
                     })
                     throw new Error();
                 }
+                // post run operations
+                this.currentTime = 0;
                 this.result.graphs = response_results_prepare.data.graphs;
                 this.result.files_all = response_results_prepare.data.files_all;
                 this.result.summary_all = response_results_prepare.data.summary_all;                
@@ -1104,7 +1104,7 @@ var vm = new Vue({
                 int_pars: this.int_pars,
                 datafile_server_path: this.datafile.server_path,
                 multiple_cities: this.multiple_cities,
-                show_contact_stat: this.show_contact_stat,
+                show_all: this.show_all,
                 sim_length_best: this.sim_length.best,
                 infection_step_choice_list: this.infection_step_choice_list,
                 month_choice_list: this.month_choice_list,
@@ -1138,32 +1138,25 @@ var vm = new Vue({
         async uploadPars() {
             try {
                 const response = await sciris.upload('upload_pars');  //, [], {}, '');
-                this.sim_pars = response.data.sim_pars;
-                this.epi_pars = response.data.epi_pars;
-                this.int_pars = response.data.int_pars;
-                this.datafile.server_path = response.data.datafile_server_path;
-                
-                this.multiple_cities = response.data.multiple_cities;
-                this.show_contact_stat = response.data.show_contact_stat;
-                this.sim_length.best = response.data.sim_length_best;
-                this.infection_step_choice_list = response.data.infection_step_choice_list;
-                this.rel_sus_choice_list = response.data.rel_sus_choice_list;
-                this.month_choice_list = response.data.month_choice_list;
-                this.monthly_humidity_list = response.data.monthly_humidity_list;
-                this.rel_trans_choice_list = response.data.rel_trans_choice_list;
-                this.interactionRecords = response.data.interactionRecords;
-                this.population_volume_choice_list = response.data.population_volume_choice_list;
-                this.infectiousTableConfig = response.data.infectiousTableConfig;
-                this.introduced_variants_list = response.data.introduced_variants_list;
-                this.filtered = response.data.filtered;
-                this.fields = response.data.fields;
-                this.tabs = response.data.tabs;
 
-                
-
+                console.log("start");
+                for (const key in response.data) {
+                    if (response.data.hasOwnProperty(key)) {
+                      console.log(key);
+                      if (key == "datafile_server_path")
+                        this.datafile.server_path = response.data.datafile_server_path;
+                      else if (key == "sim_length_best") 
+                        this.sim_length.best = response.data.sim_length_best;
+                      else {
+                        if (key in this)
+                            this[key] = response.data[key];
+                      }
+                      console.log("setted");
+                    }
+                }
+                console.log("end");
+                // update other
                 this.tabCounter = this.tabs.length + 1;
-
-                
                 this.result.graphs = [];
                 this.intervention_figs = [{}, {}, {}, {}, {}];
                 this.handleSimpleCase();

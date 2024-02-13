@@ -253,15 +253,16 @@ class People(cvb.BasePeople):
         self.set_pars(sim_pars) # Replace the saved parameters with this simulation's
         self.set_prognoses()
 
-        self.rel_crit_prob_indiv = np.full((sim_pars['n_variants'], len(self)), 1.0, dtype=cvd.default_float)
-        for i in range(sim_pars['n_variants']):
-            variant_label = self.pars['variant_map'][i]
-            oral_microbiota_percent = self.pars['variant_pars'][variant_label]['oral_microbiota_percent']
-            oral_microbiota_factor = self.pars['variant_pars'][variant_label]['oral_microbiota_factor']
-            rel_crit_prob_probs = np.full(len(self), oral_microbiota_percent, dtype=cvd.default_float)
-            is_severe_incr = cvu.binomial_arr(rel_crit_prob_probs)
-            inds_severe_incr = np.arange(len(self))[is_severe_incr]
-            self.rel_crit_prob_indiv[i, inds_severe_incr] = oral_microbiota_factor
+        if 0 in self.pars["variant_map"]: # TODO (IvanKozlov98 is bad arch)
+            self.rel_crit_prob_indiv = np.full((sim_pars['n_variants'], len(self)), 1.0, dtype=cvd.default_float)
+            for i in range(sim_pars['n_variants']):
+                variant_label = self.pars['variant_map'][i]
+                oral_microbiota_percent = self.pars['variant_pars'][variant_label]['oral_microbiota_percent']
+                oral_microbiota_factor = self.pars['variant_pars'][variant_label]['oral_microbiota_factor']
+                rel_crit_prob_probs = np.full(len(self), oral_microbiota_percent, dtype=cvd.default_float)
+                is_severe_incr = cvu.binomial_arr(rel_crit_prob_probs)
+                inds_severe_incr = np.arange(len(self))[is_severe_incr]
+                self.rel_crit_prob_indiv[i, inds_severe_incr] = oral_microbiota_factor
       
         self.initialized = True
         return

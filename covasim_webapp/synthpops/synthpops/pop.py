@@ -384,13 +384,13 @@ class Pop(sc.prettyobj):
             school_types_distr_by_age = spsch.get_school_types_distr_by_age(school_type_age_ranges)
             school_type_by_age = spsch.get_school_types_by_age_single(school_types_distr_by_age)
 
-            print(f"""{school_size_distr_by_type} = school_size_distr_by_type
-                  {school_size_brackets} = school_size_brackets
-                  {uids_in_school} = uids_in_school,
-                  {uids_in_school_by_age} = uids_in_school_by_age,
-                  {ages_in_school_count} = ages_in_school_count,
-                  {school_types_distr_by_age} = school_types_distr_by_age,
-                  {school_type_age_ranges} = school_type_age_ranges""")
+            #print(f"""{school_size_distr_by_type} = school_size_distr_by_type
+            #      {school_size_brackets} = school_size_brackets
+            #      {uids_in_school} = uids_in_school,
+            #      {uids_in_school_by_age} = uids_in_school_by_age,
+            #      {ages_in_school_count} = ages_in_school_count,
+            #      {school_types_distr_by_age} = school_types_distr_by_age,
+            #      {school_type_age_ranges} = school_type_age_ranges""")
             student_age_lists, student_uid_lists, school_types = spsch.send_students_to_school_with_school_types(school_size_distr_by_type,
                                                                                                                  school_size_brackets,
                                                                                                                  uids_in_school,

@@ -468,11 +468,8 @@ class MultiSim(cvb.FlexPretty):
             msim.reduce()
             msim.plot() # Plots the combined sim
         '''
-        print(f"{self.which} mmmmmm")
-
         # Plot a single curve, possibly with a range
         if not plot_sims and self.which in ['combined', 'reduced']:
-            print(f"{self.which} mmmmmm")
             fig = self.base_sim.plot(to_plot=to_plot, colors=colors, **kwargs)
 
         # PLot individual sims on top of each other
@@ -1151,7 +1148,6 @@ class Scenarios(cvb.ParsObj):
         spreadsheet.freshbytes()
         with pd.ExcelWriter(spreadsheet.bytes, engine='xlsxwriter') as writer:
             for key in self.result_keys('main'): # Multidimensional variant keys can't be exported
-                print(f"Key: {key}")
                 result_df = pd.DataFrame.from_dict(sc.flattendict(self.results[key], sep='_'))
                 result_df.to_excel(writer, sheet_name=key)
         spreadsheet.load()
