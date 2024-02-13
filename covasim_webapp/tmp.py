@@ -386,10 +386,8 @@ def run_simple_example():
         },
         "variant_pars": {"wild": cvpar.get_variant_pars()['wild']}
     }
-    sim = cv.Sim(pars=pars, rand_seed=0, variants=cv.variant('wild', days=0))
-    sim.init_people(prepared_pop="synthpops_files/synth_pop_N.Novgorod.ppl")
+    sim = cv.Sim(pars=pars, rand_seed=0, variants=cv.variant('wild', days=0), analyzers=[store_seir(show_all=False, save_people_history=True)])
     sim.run()
-    cv.plotly_sim([sim])
 
 if __name__ == '__main__':
     run_simple_example()

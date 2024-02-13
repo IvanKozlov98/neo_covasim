@@ -876,6 +876,9 @@
       <b-form-checkbox class="mr-3" v-model="show_all">Verbose show</b-form-checkbox>
     </span>
     <span>
+      <b-form-checkbox class="mr-3" v-model="save_people_history">Save people stats</b-form-checkbox>
+    </span>
+    <span>
       <b-form-checkbox class="mr-3" v-model="multiple_cities">Multiple cities</b-form-checkbox>
     </span>
     <div>
@@ -963,11 +966,17 @@
           <button id="download_json" class="btn btn-primary blueish" type="button" @click="downloadJson">
             <span class="sr-only">Download</span> JSON <span class="ti-download"/>
           </button>
+          <button v-if="save_people_history" id="download_people_history" class="btn btn-primary blueish" type="button" @click="downloadPeopleHistory">
+            <span class="sr-only">Download</span> People Date History <span class="ti-download"/>
+          </button>
           <b-tooltip target="download_xlsx">
             Download results as an XLSX file
           </b-tooltip>
           <b-tooltip target="download_json">
             Download results as a JSON file
+          </b-tooltip>
+          <b-tooltip target="download_people_history">
+            Download results of people history as a XLSX file
           </b-tooltip>
         </div>
       </template>

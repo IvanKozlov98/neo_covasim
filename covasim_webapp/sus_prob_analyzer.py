@@ -7,7 +7,10 @@ from covasim import utils as cvu
 
 class store_seir(cv.Analyzer):
 
-    def __init__(self, show_all, *args, **kwargs):
+    keys_history = ["date_exposed", "date_infectious", 'date_symptomatic', 'date_severe', 'date_critical', 'date_recovered']
+    number_recover_max_history = 3
+
+    def __init__(self, show_all, save_people_history, *args, **kwargs):
         super().__init__(*args, **kwargs) # This is necessary to initialize the class properly
         self.bounds = np.linspace(0, 1.4701, 20)
 
@@ -51,6 +54,9 @@ class store_seir(cv.Analyzer):
         self.nab_histograms = []
         self.immunity_histograms = []
 
+        self.save_people_history = save_people_history
+        self.people2history = None
+
         return
     
     def _init_sizes_of_box(self, ppl):
@@ -73,6 +79,11 @@ class store_seir(cv.Analyzer):
                 self.sizes_of_box_by_ages[j][i] = np.count_nonzero(
                         (self.bounds[i] <= ppl.rel_sus) * (ppl.rel_sus < self.bounds[i + 1]) * (self.ages_bounds[j] <= ppl.age) * (ppl.age < self.ages_bounds[j + 1]))
             self.sizes_of_box_by_ages[j] += 1
+        
+        if self.save_people_history:
+            self.people2history = np.zeros(shape=(self.number_recover_max_history, len(self.keys_history), len(ppl)))
+            self.cur_index_people2history = np.zeros(shape=(len(ppl)), dtype=np.uint8) # update it on recovered
+            self.inds_array = np.arange(len(ppl), dtype=int)
 
     def init_stats(self, sim):
         # never sick
@@ -143,6 +154,45 @@ class store_seir(cv.Analyzer):
         self.state_history_recovered[5][sim.t] = np.count_nonzero(sim.people.severe[inds_rec] * (~sim.people.critical[inds_rec]))
         self.state_history_recovered[6][sim.t] = np.count_nonzero(sim.people.critical[inds_rec])
 
+    def update_people2history(self, sim):
+        if not self.save_people_history:
+            return 
+        # work with exposed
+        infected_inds = sim.people.inds_new_infections
+        self.people2history[self.cur_index_people2history[infected_inds], 0, infected_inds] = sim.t
+        self.people2history[self.cur_index_people2history[infected_inds], 1, infected_inds] = sim.people.date_infectious[infected_inds]
+        self.people2history[self.cur_index_people2history[infected_inds], 2, infected_inds] = sim.people.date_symptomatic[infected_inds]
+        self.people2history[self.cur_index_people2history[infected_inds], 3, infected_inds] = sim.people.date_severe[infected_inds]
+        self.people2history[self.cur_index_people2history[infected_inds], 4, infected_inds] = sim.people.date_critical[infected_inds]
+        self.people2history[self.cur_index_people2history[infected_inds], 5, infected_inds] = sim.people.date_recovered[infected_inds]
+        self.cur_index_people2history[infected_inds] = np.clip(self.cur_index_people2history[infected_inds] + 1, 0, self.number_recover_max_history - 1)
+        #print("_______")
+        #print(self.people2history[0, :6, :10])
+        #print("_______")
+
+
+    def get_excel_people_history(self):
+        import pandas as pd
+        # Convert to spreadsheet
+        spreadsheet = sc.Spreadsheet()
+        spreadsheet.freshbytes()
+        result_dfs = [pd.DataFrame(
+            data={
+                "exposed": self.people2history[i, 0],
+                "infectious": self.people2history[i, 1],
+                "symptomatic": self.people2history[i, 2],
+                "severe": self.people2history[i, 3],
+                "critical": self.people2history[i, 4],
+                "recovered": self.people2history[i, 5],
+            }
+        ) for i in range(self.number_recover_max_history)]
+        with pd.ExcelWriter(spreadsheet.bytes, engine='xlsxwriter') as writer:
+            for i in range(self.number_recover_max_history):
+                result_dfs[i].to_excel(writer, sheet_name=f'Results time {i}')
+        spreadsheet.load()
+        return spreadsheet
+
+
     def apply(self, sim):
         ppl = sim.people
         self.new_infections.append(len(ppl.inds_new_infections))
@@ -194,6 +244,10 @@ class store_seir(cv.Analyzer):
         # work with health status
         self.update_state_history(sim=sim)
         self.update_state_history_of_recovered(sim=sim)
+
+        # work with storing dates
+        self.update_people2history(sim=sim)
+
         return
 
     def right_hist(self, arr):

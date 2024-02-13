@@ -340,6 +340,7 @@ var vm = new Vue({
             cur_rel_sus_fig: [],
             multiple_cities: false,
             show_all: false,
+            save_people_history: false,
             progresss: 70,
             result: { // Store currently displayed results
                 graphs: [],
@@ -957,6 +958,7 @@ var vm = new Vue({
                 datafile: this.datafile.server_path,
                 multiple_cities: this.multiple_cities,
                 show_all: this.show_all,
+                save_people_history: this.save_people_history,
                 n_days: this.sim_length.best,
                 infection_step_list: this.infection_step_choice_list,
                 month_choice_list: this.month_choice_list,
@@ -1105,6 +1107,7 @@ var vm = new Vue({
                 datafile_server_path: this.datafile.server_path,
                 multiple_cities: this.multiple_cities,
                 show_all: this.show_all,
+                save_people_history: this.save_people_history,
                 sim_length_best: this.sim_length.best,
                 infection_step_choice_list: this.infection_step_choice_list,
                 month_choice_list: this.month_choice_list,
@@ -1230,6 +1233,14 @@ var vm = new Vue({
                 const res = await fetch(this.result.files_all[i].json.content);
                 const blob = await res.blob();
                 saveAs(blob, this.result.files_all[i].json.filename);
+            }
+        },
+
+        async downloadPeopleHistory() {
+            for (let i = 0; i < this.tabs.length; i++) {
+                const res = await fetch(this.result.files_all[i].xlsx_people_history.content);
+                const blob = await res.blob();
+                saveAs(blob, this.result.files_all[i].xlsx_people_history.filename);
             }
         },
 

@@ -928,6 +928,7 @@ class NeoSimulator:
             self.adjacency_matrix = None
             self.mulitple_cities = None
             self.show_all = None
+            self.save_people_history = None
             # Initialize all
             self.initialize(params_dict)
 
@@ -940,9 +941,11 @@ class NeoSimulator:
             # make datafiles
             self.datafiles = self.get_datafiles(params_dict['datafile'], self.n_cities)
             # make analyzers
-            self.analyzers = self.get_analyzers(self.n_cities, params_dict['show_all'])
+            self.analyzers = self.get_analyzers(self.n_cities, params_dict['show_all'], params_dict['save_people_history'])
             # make params_dict['show_all']
             self.show_all = params_dict['show_all']
+            # make save_people_history 
+            self.save_people_history = params_dict['save_people_history']
             # make virus_parameterss
             self.virus_parameterss = self.get_virus_parameterss(params_dict['virus_name_list'])
             # make variantss
@@ -1027,10 +1030,10 @@ class NeoSimulator:
             return res
 
 
-        def get_analyzers(self, n_cities, show_all):
+        def get_analyzers(self, n_cities, show_all, save_people_history):
             analyzers = []
             for _ in range(n_cities):
-                analyzers.append(store_seir(show_all=show_all, label='seir'))
+                analyzers.append(store_seir(show_all=show_all, save_people_history=save_people_history, label='seir'))
             return analyzers
 
         def get_labels(self, tabs, population_volume_list):
@@ -1143,7 +1146,7 @@ class NeoSimulator:
         self.output['graphs'] = self.graphs
 
     def _result_prepare_impl(self):
-        files_all, summary_all = get_output_files(self.msim_with.sims)
+        files_all, summary_all = get_output_files(self.msim_with.sims, self.all_params.save_people_history)
         self.output['files_all']    = files_all
         self.output['summary_all']  = summary_all
 
@@ -1155,7 +1158,7 @@ def get_error_obj(message, exception):
 
 
 @app.register_RPC()
-def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_all=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
+def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_all=False, save_people_history=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
     global neo_simulator
     try:
         neo_simulator = NeoSimulator(
@@ -1165,6 +1168,7 @@ def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None
             datafile=datafile, 
             multiple_cities=multiple_cities, 
             show_all=show_all, 
+            save_people_history=save_people_history,
             n_days=n_days,
             infection_step_list=infection_step_list, 
             rel_sus_type_list=rel_sus_type_list, 
@@ -1195,6 +1199,7 @@ def run_simulation():
     except TimeoutError as TE:
         return get_error_obj("Timeout error", TE)
     except Exception as E:
+        raise E
         return get_error_obj("Run simulation error", E)
 
 @app.register_RPC()
@@ -1217,7 +1222,7 @@ def results_prepare_simulation():
         return get_error_obj("Result prepared error", E)
 
 
-def get_output_files_impl(sim):
+def get_output_files_impl(sim, save_people_history):
     ''' Create output files for download '''
 
     datestamp = sc.getdate(dateformat='%Y-%b-%d_%H.%M.%S')
@@ -1239,6 +1244,13 @@ def get_output_files_impl(sim):
         'content': 'data:application/text;base64,' + base64.b64encode(json_string.encode()).decode("utf-8"),
     }
 
+    if save_people_history:
+        history_people = sim.get_analyzer('seir').get_excel_people_history()
+        files['xlsx_people_history'] = {
+            'filename': f'covasim_results_{sim.label}_{datestamp}_people_history.xlsx',
+            'content': 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + base64.b64encode(history_people.blob).decode("utf-8"),
+        }
+
     # Summary output
     summary = {
         'days': sim.npts-1,
@@ -1248,11 +1260,11 @@ def get_output_files_impl(sim):
     return files, summary
 
 
-def get_output_files(sims):
+def get_output_files(sims, save_people_history):
     files_all = []
     summary_all = []
     for sim in sims:
-        files_sim, summary_sim = get_output_files_impl(sim)
+        files_sim, summary_sim = get_output_files_impl(sim, save_people_history)
         files_all.append(files_sim)
         summary_all.append(summary_sim)
     return files_all, summary_all
