@@ -37,7 +37,7 @@ class VirusParameters:
         nab_eff         = dict(alpha_inf=1.08, alpha_inf_diff=1.812, beta_inf=0.967, alpha_symp_inf=-0.739, beta_symp_inf=0.038, alpha_sev_symp=-0.014, beta_sev_symp=0.079), # Parameters to map nabs to efficacy
         beta_dist       = dict(dist='neg_binomial', par1=1.0, par2=0.45, step=0.01), # Distribution to draw individual level transmissibility; dispersion from https://www.researchsquare.com/article/rs-29548/v1     
         rel_sus_type = 'constants',
-        multipleir_humidity_coef = np.array([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88]),
+        multipleir_humidity_coef = np.array([1.8, 1.6, 1.44, 1.22, 1.11, 1.11, 1.22, 1.44, 1.6, 1.8]),
         prognoses = dict(
             age_cutoffs   = np.array([0,       10,      20,      30,      40,      50,      60,      70,      80,      90,]),     # Age cutoffs (lower limits)
             sus_ORs       = np.array([0.34,    0.67,    1.00,    1.00,    1.00,    1.00,    1.24,    1.47,    1.47,    1.47]),    # Odds ratios for relative susceptibility -- from Zhang et al., https://science.sciencemag.org/content/early/2020/05/04/science.abb8001; 10-20 and 60-70 bins are the average across the ORs
@@ -195,7 +195,7 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
         'Inside Temperature (°C)': [22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22]
     }
     pars['starting_month'] = None
-    pars['multipleir_humidity_coef'] = np.array([1.0, 1.222, 1.44, 1.66, 1.8, 1.8, 1.66, 1.44, 1.222, 1.0])
+    pars['multipleir_humidity_coef'] = np.array([1.8, 1.6, 1.44, 1.22, 1.11, 1.11, 1.22, 1.44, 1.6, 1.8])
 
     # Population parameters
     pars['pop_size']     = 20e3     # Number of agents, i.e., people susceptible to SARS-CoV-2

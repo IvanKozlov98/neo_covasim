@@ -481,10 +481,8 @@ def parse_parameters(sim_pars, epi_pars, int_pars, n_days, verbose, die, infecti
     web_pars['rel_sus_type'] = parse_rel_sus_type(rel_sus_type)
     web_pars['rel_trans_type'] = 'beta_dist' if rel_trans_type == 'Independent(sus)' else 'eq_res_type'
     web_pars['starting_month'] = month_choice if month_choice != "No seasonality" else None 
-    web_pars['monthly_weather'] = None if monthly_weather_file == "" else pd.read_csv(weather2filename[monthly_weather_file]).to_dict('list')
-    print("web_pars['monthly_weather']")
-    print(web_pars['monthly_weather'])
-    print("___________")
+    if monthly_weather_file != "":
+        web_pars['monthly_weather'] = pd.read_csv(weather2filename[monthly_weather_file]).to_dict('list')
 
     return web_pars
 

@@ -846,6 +846,12 @@ def get_time_axis(sim):
     else:
         return np.arange(sim.results['date'][:].size)
 
+def get_time_axis_mult(sims):
+    for sim in sims:
+        if sim.with_month:
+            return change_starting_month(sim.results['date'], sim.pars['starting_month'])
+    return np.arange(sims[0].results['date'][:].size)
+
 def plotly_sim(sims, do_show=False): # pragma: no cover
     ''' Main simulation results -- parallel of sim.plot() '''
 
@@ -884,6 +890,7 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
         'Protection': 'Protection coef'
     }
 
+    x = get_time_axis_mult(sims)
     for p,title,keylabels in to_plot.enumitems():
         fig = go.Figure()
         # plot several sims
@@ -892,7 +899,6 @@ def plotly_sim(sims, do_show=False): # pragma: no cover
             for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
                 label = sim.results[key].name
                 this_color = sim.results[key].color
-                x = get_time_axis(sim)
                 y = sim.results[key][:]
                 max_y = np.max(sim.results[key][:]) if np.max(sim.results[key][:]) > max_y else max_y 
                 has_testing = any(list(map(lambda x: 'testing' in x.label, sim['interventions'])))
@@ -968,11 +974,11 @@ def plot_by_variant(sims, do_show=False): # pragma: no cover
     sims_count = len(sims)
     brightnesses = np.linspace(0, 1, sims_count + 1)[1:]
     
+    x = get_time_axis_mult(sims)
     for is_cum in [True, False]:
         fig = go.Figure()
         for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
             variant_names = [variant.label for variant in sim.pars['variants']]
-            x = get_time_axis(sim)
             max_y = 0
             is_showlegend = (i == sims_count - 1)
             for (j, variant_name) in enumerate(variant_names):
@@ -1376,10 +1382,11 @@ def plotly_part_80(sims, do_show=False):
     sims_count = len(sims)
     brightnesses = np.linspace(0, 1, sims_count + 1)[1:]
 
+    x = get_time_axis_mult(sims)
+
     for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
         cur_analyzer= sim.get_analyzer('seir')
         y = cur_analyzer.spread_count_stat
-        x = get_time_axis(sim)
         fig.add_trace(
             go.Scatter(x=x, y=y, 
                 name=sim.label,
@@ -1675,12 +1682,13 @@ def plotly_nabs(sims, do_show=False):
             name=f"{sim_label}: {label}", hovertext=list(map(lambda t: str(t)+ '; ' + sim_label + '; ' + label, zip(x, y.astype(float)))), hoverinfo="text"))
 
     # plot several sims
+    x = get_time_axis_mult(sims)
+
     for key in keylabels:
         max_y = 0
         for (i, (sim, brightness)) in enumerate(zip(sims, brightnesses)):
             label = sim.results[key].name
             this_color = sim.results[key].color
-            x = get_time_axis(sim)
             y = sim.results[key][:]
             max_y = np.max(sim.results[key][:]) if np.max(sim.results[key][:]) > max_y else max_y 
             new_label = label2new_label[label] if label in label2new_label else label

@@ -732,7 +732,7 @@ class Sim(cvb.BaseSim):
             # Deal with variant parameters
             asymp_factor = self['asymp_factor']
             variant_label = self.pars['variant_map'][variant]
-            beta = cvd.default_float(self['beta'] * self['rel_beta'] * self['variant_pars'][variant_label]['rel_beta'] * self.humidity_coef[t])
+            beta__ = cvd.default_float(self['beta'] * self['rel_beta'] * self['variant_pars'][variant_label]['rel_beta'])
 
             inf_variant = people.infectious * (people.infectious_variant == variant)
             if ~inf_variant.any():
@@ -742,6 +742,7 @@ class Sim(cvb.BaseSim):
                 p1 = layer['p1'] # 1 2 2 2 3 3
                 p2 = layer['p2'] # 5 6 7 8 9 10
                 betas = layer['beta']
+                beta = beta__ if lkey == 'c' or lkey == "tourists_layer" else beta__ * self.humidity_coef[t]
 
                 # Compute relative transmission and susceptibility
                 sus_imm = people.sus_imm[variant,:]
