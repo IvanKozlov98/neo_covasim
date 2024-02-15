@@ -128,16 +128,28 @@ class Sim(cvb.BaseSim):
 
         return output
 
+    def calc_monthly_humidity(self, monthly_weather_pars):
+        insideTemp = np.array(monthly_weather_pars['Inside Temperature (°C)'])
+        outsideTemp = np.array(monthly_weather_pars['Outside Temperature (°C)'])
+        outsideHumid = np.array(monthly_weather_pars['Outside Humidity (%)'])
+        satVarPIn = 6.122 * np.exp(17.62 * insideTemp / (243.12 + insideTemp))
+        satVarPOut = 6.122 * np.exp(17.62 * outsideTemp / (243.12 + outsideTemp))
+        monthly_humidity = (insideTemp + 273) * outsideHumid * satVarPOut / ((outsideTemp + 273) * satVarPIn)
+        return monthly_humidity
+
 
     def init_humidity(self, pars):
         self.with_month = "starting_month" in pars and pars["starting_month"]
         if self.with_month:
+            monthly_humidity = self.calc_monthly_humidity(self.pars['monthly_weather'])
+            print(f"monthly_humidity = {monthly_humidity}")
             self.humidity_coef = self.generate_humidity_coefficients(
                 start_month=pars['starting_month'], 
                 num_days=self.npts, 
-                coefficients=self.pars['monthly_humidity'],
+                coefficients=monthly_humidity,
                 mult_coefs=self.pars['multipleir_humidity_coef']
             )
+            print(f"self.humidity_coef = {self.humidity_coef[:100]}")
         else:
             self.humidity_coef = np.ones(shape=(self.npts), dtype=float)
 

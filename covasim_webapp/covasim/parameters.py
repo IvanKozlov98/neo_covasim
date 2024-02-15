@@ -189,7 +189,11 @@ def make_pars(set_prognoses=False, prog_by_age=True, version=None, **kwargs):
     pars = {}
 
     # Weather parameters
-    pars['monthly_humidity'] = np.array([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88])
+    pars['monthly_weather'] = {
+        'Outside Temperature (°C)': [-6.9, -6.1, -0.9, 6.9, 13.2, 17.2, 20.0, 17.9, 11.8, 5.8, -0.1, -4.3], 
+        'Outside Humidity (%)': [0.86, 0.82, 0.74, 0.66, 0.65, 0.68, 0.72, 0.74, 0.8, 0.82, 0.85, 0.87], 
+        'Inside Temperature (°C)': [22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22]
+    }
     pars['starting_month'] = None
     pars['multipleir_humidity_coef'] = np.array([1.0, 1.222, 1.44, 1.66, 1.8, 1.8, 1.66, 1.44, 1.222, 1.0])
 

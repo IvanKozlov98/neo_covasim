@@ -705,26 +705,14 @@
                 </option>
               </select>
               
-
-              <legend>Monthly humidity</legend>
-              <div class="row">
-                <fieldset class="col-md-6">
-                  <div v-for="(item, index) in month_options" class="form-group">
-                    <div v-if="item !== 'No seasonality' && index < 7">
-                      <label>{{item}}</label>
-                      <input :id="item + '_id' + i" :disabled="running" class="form-control" v-model="monthly_humidity_list[i][index - 1]">
-                    </div>
-                  </div>
-                </fieldset>
-                <fieldset class="col-md-6">
-                  <div v-for="(item, index) in month_options" class="form-group">
-                    <div v-if="item !== 'No seasonality' && index > 6">
-                      <label>{{item}}</label>
-                      <input :id="item + '_id' + i" :disabled="running" class="form-control" v-model="monthly_humidity_list[i][index - 1]">
-                    </div>
-                  </div>
-                </fieldset>
-              </div>
+              <button id="upload-weather-parameters-button" :disabled="running" class="btn btn-primary" type="button" @click="uploadWeatherPars(i)">
+                <span class="ti-upload"> </span>
+                <span class="sr-only"> Upload weather parameters </span>
+              </button>
+              <p>{{monthly_weather_file_list[i]}}</p>
+              <b-tooltip target="upload-weather-parameters-button">
+                Upload weather parameters
+              </b-tooltip>
 
           </b-tabs>
         </b-card>

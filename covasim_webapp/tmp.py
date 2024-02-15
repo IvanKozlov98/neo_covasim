@@ -375,6 +375,13 @@ def get_humidity(filename):
     virus_name_ind = df[df[0] == 'Humidity table'].index[0]
     return np.array(list(map(float, df.iloc[virus_name_ind + 2].values[1:])))
 
+def read_weather_file(filename):
+    df = pd.read_csv(filename)
+    outside_temp = np.array(df['Outside Temperature (°C)'])
+    outside_humidity = np.array(df['Outside Humidity (%)'])
+    inside_temp = np.array(df['Inside Temperature (°C)'])
+    print(df.to_dict('list'))
+
 
 def run_simple_example():
     pars = {
@@ -390,4 +397,5 @@ def run_simple_example():
     sim.run()
 
 if __name__ == '__main__':
-    run_simple_example()
+    #run_simple_example()
+    read_weather_file("Moscow_weather.csv")

@@ -372,7 +372,7 @@ var vm = new Vue({
                 'December'
             ],
             month_choice_list: Array.from({ length: 20 }, () => ('No seasonality')),
-            monthly_humidity_list: Array.from({ length: 20 }, () => ([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88])),
+            monthly_weather_file_list: Array.from({ length: 20 }, () => ('')),
             infection_step_options: ['Covasim', 'Cumulative'],
             infection_step_choice_list: Array.from({ length: 20 }, () => ('Covasim')),
             rel_sus_options: [
@@ -639,7 +639,7 @@ var vm = new Vue({
             this.variant_figs[newInd] = clone(this.variant_figs[oldInd]); 
             this.infection_step_choice_list[newInd] = clone(this.infection_step_choice_list[oldInd]);
             this.month_choice_list[newInd] = clone(this.month_choice_list[oldInd]);
-            this.monthly_humidity_list[newInd] = clone(this.monthly_humidity_list[oldInd]);
+            this.monthly_weather_file_list[newInd] = clone(this.monthly_weather_file_list[oldInd]);
             this.rel_sus_choice_list[newInd] = clone(this.rel_sus_choice_list[oldInd]); 
             this.vaccine_choice_list[newInd] = clone(this.vaccine_choice_list[oldInd]); 
             this.variant_choice_list[newInd] = clone(this.variant_choice_list[oldInd]); 
@@ -962,7 +962,7 @@ var vm = new Vue({
                 n_days: this.sim_length.best,
                 infection_step_list: this.infection_step_choice_list,
                 month_choice_list: this.month_choice_list,
-                monthly_humidity_list: this.monthly_humidity_list,
+                monthly_weather_file_list: this.monthly_weather_file_list,
                 rel_sus_type_list: this.rel_sus_choice_list,
                 rel_trans_type_list: this.rel_trans_choice_list,
                 interaction_records: this.interactionRecords,
@@ -1039,7 +1039,7 @@ var vm = new Vue({
             this.variant_figs = Array.from({ length: 20 }, () => ({}));
             this.infection_step_choice_list = Array.from({ length: 20 }, () => ('Covasim'));
             this.month_choice_list = Array.from({ length: 20 }, () => ('No seasonality'));
-            this.monthly_humidity_list = Array.from({ length: 20 }, () => ([0.88, 0.83, 0.75, 0.69, 0.69, 0.71, 0.75, 0.79, 0.84, 0.84, 0.88, 0.88]));
+            this.monthly_weather_file_list = Array.from({ length: 20 }, () => (''));
             this.rel_sus_choice_list = Array.from({ length: 20 }, () => ('Constant (Covasim default)')),
             this.vaccine_choice_list = Array.from({ length: 20 }, () => ('pfizer')),
             this.variant_choice_list = Array.from({ length: 20 }, () => ('wild')),
@@ -1111,7 +1111,7 @@ var vm = new Vue({
                 sim_length_best: this.sim_length.best,
                 infection_step_choice_list: this.infection_step_choice_list,
                 month_choice_list: this.month_choice_list,
-                monthly_humidity_list: this.monthly_humidity_list,
+                monthly_weather_file_list: this.monthly_weather_file_list,
                 rel_sus_choice_list: this.rel_sus_choice_list,
                 rel_trans_choice_list: this.rel_trans_choice_list,
                 interactionRecords: this.interactionRecords,
@@ -1214,6 +1214,17 @@ var vm = new Vue({
                     this.deleteVariant(city_ind_int, 0);
                 }
                 this.addVariant(city_ind_int);
+            } catch (error) {
+                sciris.fail(this, 'Could not upload city', error);
+            }
+        },
+
+        async uploadWeatherPars(city_ind) {
+            try {
+                const response = await sciris.upload('upload_weather');
+                const city_ind_int = parseInt(city_ind);
+                const monthly_weather_name = response.data;
+                this.monthly_weather_file_list = changeOnlyOne(this.monthly_weather_file_list, city_ind_int, monthly_weather_name);
             } catch (error) {
                 sciris.fail(this, 'Could not upload city', error);
             }

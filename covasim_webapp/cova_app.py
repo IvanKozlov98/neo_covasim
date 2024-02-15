@@ -44,6 +44,7 @@ bgcolor  = '#eee' # Background color for app
 plotbg   = '#dde'
 location2filename = dict()
 virus2filename = dict()
+weather2filename = dict()
 
 Incidence_and_outcomes = 'Incidence and outcomes'
 General_spread_parameters = 'General spread parameters'
@@ -186,6 +187,17 @@ def upload_virus(fname):
     shutil.copy(fname, new_filename)
     virus2filename[virus_name] = new_filename
     return virus_name
+
+@app.register_RPC(call_type='upload')
+def upload_weather(fname):
+    import pandas as pd
+    import os
+    import shutil
+    weather_name = fname
+    new_filename = f"tmp_excels/{os.path.basename(fname)}"
+    shutil.copy(fname, new_filename)
+    weather2filename[weather_name] = new_filename
+    return weather_name
 
 
 @app.register_RPC(call_type='upload')
@@ -435,7 +447,7 @@ def parse_rel_sus_type(rel_sus_type):
         raise Exception(f"Unrecognised sus type: {rel_sus_type}")
 
 
-def parse_parameters(sim_pars, epi_pars, int_pars, n_days, verbose, die, infection_step, rel_sus_type, rel_trans_type, infectiousTableConfig, population_volume, month_choice, monthly_humidity, city_ind):
+def parse_parameters(sim_pars, epi_pars, int_pars, n_days, verbose, die, infection_step, rel_sus_type, rel_trans_type, infectiousTableConfig, population_volume, month_choice, monthly_weather_file, city_ind):
     ''' Sanitize web parameters into actual simulation ones '''
     orig_pars = cv.make_pars()
 
@@ -469,7 +481,10 @@ def parse_parameters(sim_pars, epi_pars, int_pars, n_days, verbose, die, infecti
     web_pars['rel_sus_type'] = parse_rel_sus_type(rel_sus_type)
     web_pars['rel_trans_type'] = 'beta_dist' if rel_trans_type == 'Independent(sus)' else 'eq_res_type'
     web_pars['starting_month'] = month_choice if month_choice != "No seasonality" else None 
-    web_pars['monthly_humidity'] = np.array(list(map(float, monthly_humidity)))
+    web_pars['monthly_weather'] = None if monthly_weather_file == "" else pd.read_csv(weather2filename[monthly_weather_file]).to_dict('list')
+    print("web_pars['monthly_weather']")
+    print(web_pars['monthly_weather'])
+    print("___________")
 
     return web_pars
 
@@ -968,17 +983,17 @@ class NeoSimulator:
         def get_parss(self, params_dict, cross_list, variant_list):
             web_pars_list = []
             for (sim_pars, epi_pars, int_pars, infection_step, rel_sus_type, 
-                rel_trans_type, population_volume, month_choice, monthly_humidity, city_ind) in \
+                rel_trans_type, population_volume, month_choice, monthly_weather_file, city_ind) in \
                 zip(params_dict['sim_pars_list'], params_dict['epi_pars_list'], params_dict['int_pars_list'], 
                     params_dict['infection_step_list'], params_dict['rel_sus_type_list'], 
                     params_dict['rel_trans_type_list'], params_dict['population_volume_list'], 
-                    params_dict['month_choice_list'], params_dict['monthly_humidity_list'], params_dict['tabs']):            
+                    params_dict['month_choice_list'], params_dict['monthly_weather_file_list'], params_dict['tabs']):            
                 web_pars = parse_parameters(
                     sim_pars=sim_pars, epi_pars=epi_pars, int_pars=int_pars, 
                     n_days=params_dict['n_days'], verbose=params_dict['verbose'], die=params_dict['die'], 
                     infection_step=infection_step, rel_sus_type=rel_sus_type, rel_trans_type=rel_trans_type,
                     infectiousTableConfig=params_dict['infectiousTableConfig'], population_volume=population_volume, 
-                    month_choice=month_choice, monthly_humidity=monthly_humidity, city_ind=city_ind)
+                    month_choice=month_choice, monthly_weather_file=monthly_weather_file, city_ind=city_ind)
                 web_pars_list.append(web_pars)
             
             parss = []
@@ -1158,7 +1173,7 @@ def get_error_obj(message, exception):
 
 
 @app.register_RPC()
-def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_all=False, save_people_history=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_humidity_list=None, verbose=True, die=die):
+def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None, datafile=None, multiple_cities=False, show_all=False, save_people_history=False, n_days=None, infection_step_list=None, rel_sus_type_list=None, rel_trans_type_list=None, population_volume_list=None, infectiousTableConfig=None, introduced_variants_list=None, tabs=None, cross_immunity_data=None, interaction_records=None, virus_name_list=None, month_choice_list=None, monthly_weather_file_list=None, verbose=True, die=die):
     global neo_simulator
     try:
         neo_simulator = NeoSimulator(
@@ -1181,7 +1196,7 @@ def create_simulation(sim_pars_list=None, epi_pars_list=None, int_pars_list=None
             interaction_records=interaction_records, 
             virus_name_list=virus_name_list, 
             month_choice_list=month_choice_list, 
-            monthly_humidity_list=monthly_humidity_list, 
+            monthly_weather_file_list=monthly_weather_file_list, 
             verbose=verbose, 
             die=die
         )
@@ -1228,7 +1243,7 @@ def get_output_files_impl(sim, save_people_history):
     datestamp = sc.getdate(dateformat='%Y-%b-%d_%H.%M.%S')
     del sim.pars['starting_month']
     del sim.pars['multipleir_humidity_coef']
-    del sim.pars['monthly_humidity']
+    del sim.pars['monthly_weather']
 
     ss = sim.to_excel()
 
