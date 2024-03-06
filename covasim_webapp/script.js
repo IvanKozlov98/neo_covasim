@@ -355,7 +355,7 @@ var vm = new Vue({
             interactionTableConfig,
             running: false,
             errs: [],
-            virus_name_list: Array.from({ length: 20 }, () => ('COVID-19')),
+            virus_name_list: Array.from({ length: 20 }, () => ('SARS-CoV-2')),
             month_options: [
                 'No seasonality',
                 'January',
